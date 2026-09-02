@@ -1,0 +1,5 @@
+gerbers/
+drc*.json
+render_*.png
+*.kicad_prl
+*-backups/
