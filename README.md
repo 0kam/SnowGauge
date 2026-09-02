@@ -11,9 +11,9 @@ An inexpensive, low-power snow depth logger for remote subalpine sites, designed
 
 The single source of truth is the design specification (Japanese):
 
-- [SnowGauge_設計仕様書_v0.9.md](SnowGauge_設計仕様書_v0.9.md)
+- [SnowGauge_設計仕様書_v0.10.md](SnowGauge_設計仕様書_v0.10.md)
 - [Assembly manual (TFmini Plus variant)](docs/assembly_tfmini_plus.md)
 
 ## Status
 
-Hardware components finalized and ordered (v0.8). Firmware and enclosure development in progress toward the 2026-27 winter comparison trial.
+PCB v1.2 ordered (JLCPCB); breadboard development environment ready. Firmware development starting. Firmware and enclosure development in progress toward the 2026-27 winter comparison trial.
