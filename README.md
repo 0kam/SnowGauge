@@ -11,7 +11,7 @@ An inexpensive, low-power snow depth logger for remote subalpine sites, designed
 
 The single source of truth is the design specification (Japanese):
 
-- [SnowGauge_設計仕様書_v0.10.md](SnowGauge_設計仕様書_v0.10.md)
+- [SnowGauge_設計仕様書_v0.11.md](SnowGauge_設計仕様書_v0.11.md)
 - [Assembly manual (TFmini Plus variant)](docs/assembly_tfmini_plus.md)
 
 ## Status

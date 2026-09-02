@@ -17,7 +17,7 @@ SnowGauge PCB v1.2 (or the equivalent breadboard, `docs/breadboard_guide.html`).
 | Measure | `src/measure.c` | rail on → Vbat → N frames → Vbat → rail off |
 | Shell | `src/shell_cmds.c` | Bench commands over USB CDC ACM |
 
-Not yet: IMU tilt, LittleFS records, BLE, sleep-current tuning, MCUboot (see the development order in `../CLAUDE.md`).
+Not yet: IMU tilt, LittleFS records, BLE, sleep-current tuning (see the development order in `../CLAUDE.md`).
 
 ## Build
 
@@ -66,5 +66,5 @@ Expected: with the rail off the 5 V node is 0 V and the TFmini draws nothing. If
 
 ## Notes / decisions pending
 
-- **MCUboot needs SWD**: the XIAO ships with the Adafruit UF2 bootloader at 0x0. Installing MCUboot (spec §12.1, BLE DFU) overwrites it, which requires an SWD programmer on the pads on the back of the XIAO (J-Link, nRF52840 DK, or a CMSIS-DAP probe). Until then the firmware is flashed as UF2 and BLE DFU is not available.
+- **No MCUboot / BLE DFU in v1 (decided 2026-09-02, spec v0.11)**: the XIAO ships with the Adafruit UF2 bootloader at 0x0 and installing MCUboot would overwrite it, which needs an SWD probe. The firmware is flashed over USB as UF2; field updates mean opening the enclosure and plugging in USB (battery disconnected).
 - Build reproducibility: the SDK version is pinned here (v3.4.0). A `west.yml` manifest for a self-contained workspace can be added when the build moves to CI.
