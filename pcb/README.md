@@ -1,7 +1,7 @@
 # SnowGauge PCB v1.1 (TFmini Plus / TSD20 common board)
 
 - Board: **64 x 50 mm**, 2-layer, all through-hole. Bottom layer is a GND pour.
-- Mounting: 4x M3 (3.2mm) holes at the corners, **57 x 43 mm** center spacing (4.0mm from left/right edges, 3.5mm from top/bottom edges... hole centers at (3.5, 3.5) / (60.5, 3.5) / (3.5, 46.5) / (60.5, 46.5) from the board's top-left corner).
+- Mounting: 4x M3 (3.2mm) holes at the corners, **57 x 43 mm** center spacing (3.5mm from every edge; hole centers at (3.5, 3.5) / (60.5, 3.5) / (3.5, 46.5) / (60.5, 46.5) from the board's top-left corner).
 - Fits the previous prototype enclosure (Takachi BCAP091208G, inner 66 x 96 mm) with the 50mm side across the width.
 - Battery terminal J1 exits at the bottom edge; TFmini terminal J2 exits at the right edge.
 - Generated programmatically: [generate_board.py](generate_board.py) → `SnowGauge.kicad_pcb` (KiCad 10). DRC: 0 errors, 0 unconnected.
