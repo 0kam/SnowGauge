@@ -47,33 +47,29 @@ PARTS = {
     "J1": (("TerminalBlock", "TerminalBlock_MaiXu_MX126-5.0-02P_1x02_P5.00mm"),
            "BATTERY L91x4", (31, 59), 0, {"1": "BATP_RAW", "2": "GND"}),
     "D1": (("Diode_THT", "D_DO-41_SOD81_P10.16mm_Horizontal"),
-           "1N5819", (36, 29), 180, {"1": "VBAT", "2": "BATP_RAW"}),
+           "1N5819", (37.5, 30.3), 180, {"1": "VBAT", "2": "BATP_RAW"}),
     "U1": (("Package_TO_SOT_THT", "TO-220-3_Vertical"),
-           "NJU7223F33", (44, 25), 0, {"1": "3V3_SYS", "2": "VBAT", "3": "GND"}),
+           "NJU7223F33", (27.8, 27), 0, {"1": "3V3_SYS", "2": "VBAT", "3": "GND"}),
     "Q1": (("Package_TO_SOT_THT", "TO-220-3_Vertical"),
            "2SJ334", (56, 25), 0, {"1": "Q1_GATE", "2": "VBAT_SW", "3": "VBAT"}),
     "U2": (("Package_TO_SOT_THT", "TO-220-3_Vertical"),
            "NJU7223F50", (73, 25), 180, {"1": "5V_SENS", "2": "VBAT_SW", "3": "GND"}),
     "Q2": (("Package_TO_SOT_THT", "TO-251-3_Vertical"),
            "2SK4017", (60.58, 50), 180, {"1": "Q2_G", "2": "Q1_GATE", "3": "GND"}),
-    "Q3": (("Package_TO_SOT_THT", "TO-251-3_Vertical"),
-           "2SK4017", (42.5, 61), 0, {"1": "VBAT_MEAS_EN", "2": "MEAS_LO", "3": "GND"}),
     "R1": (("Resistor_THT", "R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal"),
-           "1M", (29.5, 33), 270, {"1": "VBAT", "2": "ADC_NODE"}),
+           "1M", (29.5, 33), 270, {"1": "VBAT_SW", "2": "ADC_NODE"}),
     "R2": (("Resistor_THT", "R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal"),
-           "1M", (29.5, 45), 270, {"1": "ADC_NODE", "2": "MEAS_LO"}),
+           "1M", (29.5, 45), 270, {"1": "ADC_NODE", "2": "GND"}),
     "R3": (("Resistor_THT", "R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal"),
            "10k", (53, 44), 0, {"1": "SENSOR_EN", "2": "Q2_G"}),
     "R4": (("Resistor_THT", "R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal"),
            "100k", (63.6, 43.5), 270, {"1": "Q2_G", "2": "GND"}),
     "R5": (("Resistor_THT", "R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal"),
            "100k", (53.5, 28), 270, {"1": "VBAT", "2": "Q1_GATE"}),
-    "R6": (("Resistor_THT", "R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal"),
-           "100k", (50, 57.5), 0, {"1": "VBAT_MEAS_EN", "2": "GND"}),
     "R7": (("Resistor_THT", "R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal"),
            "1k", (58, 54.5), 0, {"1": "UART_TX_MCU", "2": "TFMINI_RX"}),
     "C1": (("Capacitor_THT", "C_Disc_D5.0mm_W2.5mm_P5.00mm"),
-           "0.1u", (39.5, 27), 270, {"1": "VBAT", "2": "GND"}),
+           "0.1u", (23.3, 28), 270, {"1": "VBAT", "2": "GND"}),
     "C2": (("Capacitor_THT", "C_Disc_D5.0mm_W2.5mm_P5.00mm"),
            "0.1u", (53, 40), 0, {"1": "3V3_SYS", "2": "GND"}),
     "C3": (("Capacitor_THT", "C_Disc_D5.0mm_W2.5mm_P5.00mm"),
@@ -81,7 +77,7 @@ PARTS = {
     "C5": (("Capacitor_THT", "C_Disc_D5.0mm_W2.5mm_P5.00mm"),
            "0.1u", (77.5, 26), 270, {"1": "GND", "2": "5V_SENS"}),
     "C6": (("Capacitor_THT", "C_Disc_D5.0mm_W2.5mm_P5.00mm"),
-           "10u", (45.5, 31.7), 0, {"1": "3V3_SYS", "2": "GND"}),
+           "10u", (64, 59), 0, {"1": "3V3_SYS", "2": "GND"}),
     "C4": (("Capacitor_THT", "CP_Radial_D10.0mm_P5.00mm"),
            "OS-CON 470u/16V", (71, 40), 270, {"1": "5V_SENS", "2": "GND"}),
     "J2": (("TerminalBlock", "TerminalBlock_MaiXu_MX126-5.0-04P_1x04_P5.00mm"),
@@ -89,7 +85,7 @@ PARTS = {
     "J3": (("Connector_PinHeader_2.54mm", "PinHeader_1x04_P2.54mm_Vertical"),
            "I2C SPARE", (52, 62), 90, {"1": "I2C_SCL", "2": "I2C_SDA", "3": "GND", "4": "3V3_SYS"}),
     "A1": ("XIAO", "XIAO nRF52840 Sense", (42, 44), 90,
-           {"1": "ADC_NODE", "4": "VBAT_MEAS_EN", "5": "I2C_SDA", "6": "I2C_SCL",
+           {"1": "ADC_NODE", "5": "I2C_SDA", "6": "I2C_SCL",
             "7": "UART_TX_MCU", "8": "UART_RX", "11": "SENSOR_EN",
             "12": "3V3_SYS", "13": "GND"}),
     "H1": (("MountingHole", "MountingHole_3.2mm_M3"), "M3", (23.5, 19.5), 0, {}),
@@ -144,18 +140,18 @@ def track(netname, pts, layer=pcbnew.F_Cu, width=SIG_W):
 
 P = pad_xy
 # battery feed on B.Cu (bottom-left is crowded on top)
-track("BATP_RAW", [P("J1", "1"), (31.5, 58), (31.5, 30), (27, 29.5), P("D1", "2")], layer=pcbnew.B_Cu, width=0.8)
+track("BATP_RAW", [P("J1", "1"), (27.6, 57.5), (27.6, 30), P("D1", "2")], layer=pcbnew.B_Cu, width=0.6)
 # VBAT rail along y=22
-track("VBAT", [(29.5, 22), (61.08, 22)], width=POWER_W)
-track("VBAT", [P("D1", "1"), (36, 22)], width=POWER_W)
-track("VBAT", [P("U1", "2"), (46.54, 22)], width=POWER_W)
+track("VBAT", [(25, 22), (61.08, 22)], width=POWER_W)
+track("VBAT", [P("D1", "1"), (37.5, 22)], width=POWER_W)
+track("VBAT", [P("U1", "2"), (30.34, 22)], width=POWER_W)
 track("VBAT", [P("Q1", "3"), (61.08, 22)], width=POWER_W)
-track("VBAT", [P("C1", "1"), (39.5, 22)], width=POWER_W)
-track("VBAT", [P("R1", "1"), (29.5, 22)], width=POWER_W)
+track("VBAT", [P("C1", "1"), (23.3, 26.5), (25, 26.5), (25, 22)], width=POWER_W)
+
 track("VBAT", [P("R5", "1"), (53.5, 22)], width=POWER_W)
 # 3V3: U1 OUT -> x=46 vertical -> pad12; C6 taps the vertical, C2 taps near pad12
-track("3V3_SYS", [P("U1", "1"), (44, 30), (46, 30), (46, 31.7), (46, 41.46), P("A1", "12")])
-track("3V3_SYS", [P("C6", "1"), (46, 31.7)])
+track("3V3_SYS", [P("U1", "1"), (27.8, 28.6), (33, 28.6), (33, 33.1), (46, 33.1), (46, 41.46), P("A1", "12")])
+track("3V3_SYS", [P("C6", "1"), (59.62, 59), (59.62, 62)])
 track("3V3_SYS", [P("C2", "1"), (53, 41.46), (49.62, 41.46)])
 # high-side switch chain
 track("Q1_GATE", [P("Q1", "1"), (56, 35.62), (56, 42), (58.29, 42), P("Q2", "2")])
@@ -170,11 +166,9 @@ track("5V_SENS", [P("U2", "1"), (73, 31), (77, 31), (77, 40), P("C4", "1")], wid
 track("5V_SENS", [P("C5", "2"), (77, 31)], width=POWER_W)
 track("5V_SENS", [(77, 36), P("J2", "1")], width=POWER_W)
 # battery monitor divider (left edge)
+track("VBAT_SW", [P("C3", "1"), (58, 33.6), (31, 33.6), P("R1", "1")], layer=pcbnew.B_Cu)
 track("ADC_NODE", [P("R1", "2"), P("R2", "1")])
 track("ADC_NODE", [P("R1", "2"), (27.8, 40.62), (27.8, 35), (34.38, 35), P("A1", "1")])
-track("MEAS_LO", [P("R2", "2"), (28.5, 54), (28.5, 62), (42, 63.5), (44.79, 63), P("Q3", "2")], layer=pcbnew.B_Cu)
-track("VBAT_MEAS_EN", [P("A1", "4"), (31.8, 44), (31.8, 56.5), (40, 56.5), (40, 58.5), (42.5, 58.5), P("Q3", "1")])
-track("VBAT_MEAS_EN", [P("R6", "1"), (48.5, 57.5), (48.5, 56.5), (40, 56.5)])
 # UART
 track("UART_TX_MCU", [P("A1", "7"), (34.38, 53.5), (56.5, 53.5), (56.5, 54.5), P("R7", "1")])
 track("TFMINI_RX", [P("R7", "2"), (78, 54.5), (78, 51), P("J2", "4")])
@@ -220,18 +214,14 @@ def silk(text, x, y, size=1.2, bold=False):
     t.SetTextThickness(FromMM(size * (0.2 if bold else 0.15)))
     board.Add(t)
 
-silk("SnowGauge v1.1", 50, 18.3, 1.6, True)
+silk("SnowGauge v1.2", 50, 18.3, 1.6, True)
 silk("BAT+", 31, 56.2, 1.0)
 silk("BAT-", 36, 56.2, 1.0)
-silk("NO USB WHILE BATTERY CONNECTED!", 50, 64.8, 1.2, True)
-silk("TFmini", 73.2, 33.8, 1.0)
-silk("RED", 74.9, 36, 1.0)
-silk("BLK", 74.9, 41, 1.0)
-silk("GRN", 74.9, 46, 1.0)
-silk("WHT", 74.9, 51, 1.0)
+silk("NO USB WHILE BATTERY CONNECTED!", 50, 64.4, 1.2, True)
+silk("TFmini J2: RED BLK GRN WHT", 68, 35.9, 0.9)
 silk("SCL SDA GND 3V3", 55.8, 59.7, 0.9)
-silk("U2: F50=TFmini / F33=TSD20", 69, 21.9, 0.85)
-silk("USB", 42, 34.6, 1.0)
+silk("U2: F50=TFmini / F33=TSD20", 64, 29.4, 0.85)
+silk("USB", 42, 35.2, 1.0)
 
 pcbnew.ZONE_FILLER(board).Fill(board.Zones())
 board.Save(OUT)

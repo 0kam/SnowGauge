@@ -1,0 +1,397 @@
+<title>SnowGauge ブレッドボード配線図</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+:root{
+  --paper:#F4F6F5; --card:#FFFFFF; --ink:#22303A; --muted:#5C6B76;
+  --accent:#33658A; --accent-soft:#E3ECF2; --line:#D9E0DD; --warn-bg:#FBF0E8; --warn-bd:#C96F2E;
+  --w-vbat:#D62828; --w-gnd:#3A4148; --w-33:#E07A00; --w-5v:#C2185B; --w-vsw:#8E2F3C;
+  --w-en:#2E7D32; --w-gate:#7A5230; --w-adc:#6A4CA5; --w-tx:#1565C0; --w-rx:#5BA8DF;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--paper);color:var(--ink);font-family:"Zen Kaku Gothic New",-apple-system,"Hiragino Sans",sans-serif;line-height:1.75;font-size:15.5px}
+.wrap{max-width:1080px;margin:0 auto;padding:0 24px 96px}
+header{padding:52px 0 26px;border-bottom:3px solid var(--accent)}
+.eyebrow{font-family:"IBM Plex Mono",monospace;font-size:12px;letter-spacing:.14em;color:var(--accent);text-transform:uppercase}
+h1{font-size:32px;font-weight:700;text-wrap:balance;margin-top:6px}
+.lede{color:var(--muted);margin-top:10px;max-width:44em}
+h2{font-size:22px;font-weight:700;margin:56px 0 6px;padding-top:18px}
+h2 .no{font-family:"IBM Plex Mono",monospace;color:var(--accent);margin-right:10px;font-size:18px}
+h3{font-size:16.5px;font-weight:700;margin:24px 0 8px}
+.sub{color:var(--muted);margin-bottom:16px;max-width:46em}
+section{border-top:1px solid var(--line)}
+p{max-width:46em}
+.board{background:var(--card);border:1px solid var(--line);border-radius:8px;overflow-x:auto;margin-top:18px}
+.board svg{display:block;min-width:1060px}
+.legend{display:flex;flex-wrap:wrap;gap:8px 18px;padding:12px 18px;border-top:1px solid var(--line);font-size:13px}
+.legend span{display:inline-flex;align-items:center;gap:7px}
+.legend i{display:inline-block;width:22px;height:4px;border-radius:2px}
+table{border-collapse:collapse;width:100%;margin-top:12px;background:var(--card);font-size:14px}
+th,td{border:1px solid var(--line);padding:7px 10px;text-align:left;vertical-align:top}
+th{background:var(--accent-soft);font-size:13px}
+td.n{font-family:"IBM Plex Mono",monospace;font-weight:600;white-space:nowrap}
+td.h{font-family:"IBM Plex Mono",monospace;white-space:nowrap}
+.chip{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.tablebox{overflow-x:auto}
+.step{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:8px;padding:16px 20px;margin-top:16px}
+.step h3{margin-top:0;display:flex;align-items:baseline;gap:10px}
+.step h3 .sno{font-family:"IBM Plex Mono",monospace;color:var(--accent);font-size:13.5px}
+ul,ol{padding-left:1.4em;max-width:46em}
+li{margin:4px 0}
+.check{list-style:none;padding-left:0}
+.check li{padding-left:30px;position:relative}
+.check li::before{content:"";position:absolute;left:2px;top:6px;width:15px;height:15px;border:2px solid var(--accent);border-radius:3px;background:#fff}
+.warn{background:var(--warn-bg);border:1px solid var(--warn-bd);border-left-width:4px;border-radius:8px;padding:13px 17px;margin:16px 0;max-width:52em}
+.warn b{color:#9A4E12}
+.kbd{background:var(--accent-soft);border-radius:4px;padding:1px 7px;font-family:"IBM Plex Mono",monospace;font-size:13px;white-space:nowrap}
+footer{margin-top:64px;border-top:1px solid var(--line);padding-top:14px;font-size:12.5px;color:var(--muted)}
+@media print{.board{overflow:visible}}
+</style>
+
+<div class="wrap">
+<header>
+  <div class="eyebrow">SnowGauge — breadboard prototype / TFmini Plus</div>
+  <h1>SnowGauge ブレッドボード配線図</h1>
+  <p class="lede">PCBが届くまでの開発・ファームウェア検証用に、はんだ付けなしでSnowGaugeを組む配線図です。830穴ブレッドボード1枚とジャンパワイヤで組めます。回路は<b>PCB v1.2と同一トポロジ</b>（電池監視の分圧をスイッチ済みレールに接続する改良版。Q3・R6は廃止）なので、ここで書いたファームウェアはそのままPCBで動きます。</p>
+</header>
+
+<section>
+<h2><span class="no">1</span>座標の読み方</h2>
+<p class="sub">列番号（1〜63）×行（a〜e / f〜j）で穴を指定します。<b>同じ列のa〜e、f〜jはそれぞれ内部でつながっています</b>（中央の溝をまたぐと別グループ）。上下の赤・青の長いレールは横一列すべてつながっています。</p>
+<ul>
+<li>上の<b style="color:var(--w-vbat)">赤レール = VBAT</b>（ダイオード通過後の電池+）／ 上の<b>青レール = GND</b></li>
+<li>下の青レールもGND（⑯のブリッジ線で上とつなぐ）。下の赤レールは使いません</li>
+<li>例: <span class="kbd">c10</span> = 10列目のc行</li>
+</ul>
+</section>
+
+<section>
+<h2><span class="no">2</span>配線図</h2>
+<div class="board">
+<svg viewBox="0 0 1060 470" xmlns="http://www.w3.org/2000/svg" font-family="'Zen Kaku Gothic New',sans-serif">
+<defs>
+<style>
+ .w{fill:none;stroke-width:3;stroke-linecap:round;fill-opacity:0}
+ .comp{fill:#FFFFFF;stroke:#22303A;stroke-width:1.6;rx:5}
+ .cname{font-weight:700;font-size:12px;fill:#22303A}
+ .pin{font-family:'IBM Plex Mono',monospace;font-size:9.5px;fill:#22303A}
+ .rowlab{font-family:'IBM Plex Mono',monospace;font-size:10px;fill:#8a939b}
+ .res{fill:#E8DCC8;stroke:#22303A;stroke-width:1.3;rx:4}
+ .cap{fill:#E5A33C;stroke:#22303A;stroke-width:1.2}
+</style>
+<pattern id="holes" width="19" height="20" patternUnits="userSpaceOnUse">
+  <circle cx="9" cy="10" r="1.7" fill="#C9D2CE"/>
+</pattern>
+<g id="badge"><circle r="10" fill="#33658A"/><circle r="10" fill="none" stroke="#fff" stroke-width="1.4"/></g>
+</defs>
+
+<!-- breadboard body -->
+<rect x="20" y="40" width="1020" height="390" rx="10" fill="#FBFCFB" stroke="#B9C4BF" stroke-width="1.5"/>
+<!-- rails -->
+<line x1="45" y1="64" x2="1015" y2="64" stroke="#D62828" stroke-width="2"/>
+<line x1="45" y1="80" x2="1015" y2="80" stroke="#3A4148" stroke-width="2"/>
+<rect x="45" y="58" width="970" height="12" fill="url(#holes)" opacity="0.55"/>
+<rect x="45" y="74" width="970" height="12" fill="url(#holes)" opacity="0.55"/>
+<text x="1022" y="68" class="rowlab" fill="#D62828">＋ VBAT</text>
+<text x="1022" y="84" class="rowlab">− GND</text>
+<line x1="45" y1="392" x2="1015" y2="392" stroke="#3A4148" stroke-width="2"/>
+<rect x="45" y="386" width="970" height="12" fill="url(#holes)" opacity="0.55"/>
+<text x="1022" y="396" class="rowlab">− GND</text>
+<!-- hole banks a-e, f-j : x(col)=30+col*19+9?? holes pattern anchored: bank rect x=39 -->
+<rect x="39" y="110" width="931" height="100" fill="url(#holes)"/>
+<rect x="39" y="250" width="931" height="100" fill="url(#holes)"/>
+<!-- trench -->
+<rect x="30" y="212" width="1000" height="36" fill="#EEF1EF"/>
+<!-- row labels -->
+<g class="rowlab">
+<text x="30" y="124">a</text><text x="30" y="144">b</text><text x="30" y="164">c</text><text x="30" y="184">d</text><text x="30" y="204">e</text>
+<text x="30" y="264">f</text><text x="30" y="284">g</text><text x="30" y="304">h</text><text x="30" y="324">i</text><text x="30" y="344">j</text>
+</g>
+<!-- column numbers every 5 -->
+<g class="rowlab" text-anchor="middle">
+<text x="143" y="105">5</text><text x="238" y="105">10</text><text x="333" y="105">15</text><text x="428" y="105">20</text><text x="523" y="105">25</text><text x="618" y="105">30</text><text x="713" y="105">35</text><text x="808" y="105">40</text><text x="903" y="105">45</text>
+</g>
+
+<!-- x(col) = 48 + (col-1)*19 ; row y: a120 b140 c160 d180 e200 f260 g280 h300 i320 j340 -->
+
+<!-- battery wires -->
+<path class="w" stroke="var(--w-vbat)" d="M67 160 C 40 300, 20 380, 14 452"/>
+<text x="20" y="466" class="cname" fill="var(--w-vbat)">電池 赤(+)</text>
+<path class="w" stroke="var(--w-gnd)" d="M120 80 C 90 300, 70 400, 60 452"/>
+<text x="86" y="466" class="cname">電池 黒(−)</text>
+<use href="#badge" x="40" y="200"/><text x="40" y="204" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">1</text>
+<use href="#badge" x="88" y="120"/><text x="88" y="124" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">6</text>
+
+<!-- D1 diode b2-b6 -->
+<rect x="67" y="133" width="76" height="14" rx="4" fill="#2f3a42"/>
+<rect x="124" y="133" width="10" height="14" fill="#F4F6F5"/>
+<text x="70" y="129" class="cname">D1 1N5819(帯=右)</text>
+<use href="#badge" x="58" y="155"/><text x="58" y="159" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">2</text>
+<!-- J red a6 -> rail -->
+<path class="w" stroke="var(--w-vbat)" d="M143 120 C 148 100, 148 84, 143 66"/>
+<use href="#badge" x="160" y="94"/><text x="160" y="98" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">3</text>
+
+<!-- U1 c10-c12 -->
+<rect x="212" y="118" width="70" height="30" class="comp"/>
+<text x="217" y="112" class="cname">U1 F33 (3.3V)</text>
+<g class="pin"><text x="214" y="140">OUT</text><text x="240" y="140">IN</text><text x="258" y="140">GND</text></g>
+<g stroke="#8a939b" stroke-width="3"><line x1="219" y1="148" x2="219" y2="158"/><line x1="238" y1="148" x2="238" y2="158"/><line x1="257" y1="148" x2="257" y2="158"/></g>
+<use href="#badge" x="196" y="128"/><text x="196" y="132" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">4</text>
+<path class="w" stroke="var(--w-vbat)" d="M238 120 C 242 100, 242 84, 238 66"/>
+<use href="#badge" x="252" y="92"/><text x="252" y="96" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">5</text>
+<path class="w" stroke="var(--w-gnd)" d="M257 120 C 263 104, 263 92, 259 82"/>
+<use href="#badge" x="274" y="102"/><text x="274" y="106" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">7</text>
+<!-- caps C1 e11-e12, C2 d10-d12, C6 c10-c12 -->
+<ellipse cx="247" cy="200" rx="12" ry="8" class="cap"/><text x="262" y="204" class="pin">C1</text>
+<ellipse cx="228" cy="180" rx="14" ry="8" class="cap"/><text x="207" y="184" class="pin">C2</text>
+<ellipse cx="228" cy="160" rx="14" ry="8" class="cap"/><text x="207" y="150" class="pin">C6(10µ)</text>
+<use href="#badge" x="247" y="222"/><text x="247" y="226" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">8</text>
+
+<!-- XIAO cols 20-26 -->
+<rect x="400" y="190" width="140" height="90" rx="8" fill="#22303A"/>
+<text x="470" y="230" fill="#fff" text-anchor="middle" font-size="12" font-weight="700">XIAO nRF52840</text>
+<text x="470" y="246" fill="#9fb0bd" text-anchor="middle" font-size="10">USB ← 左向き</text>
+<g class="pin" fill="#22303A">
+<text x="409" y="186" transform="rotate(-60 409 186)">D0/A0</text>
+<text x="428" y="186" transform="rotate(-60 428 186)">D1</text>
+<text x="447" y="186" transform="rotate(-60 447 186)">D2</text>
+<text x="466" y="186" transform="rotate(-60 466 186)">D3</text>
+<text x="485" y="186" transform="rotate(-60 485 186)">D4</text>
+<text x="504" y="186" transform="rotate(-60 504 186)">D5</text>
+<text x="523" y="186" transform="rotate(-60 523 186)">D6</text>
+</g>
+<g class="pin" fill="#22303A">
+<text x="401" y="296" transform="rotate(60 401 296)">5V×</text>
+<text x="420" y="296" transform="rotate(60 420 296)">GND</text>
+<text x="439" y="296" transform="rotate(60 439 296)">3V3</text>
+<text x="458" y="296" transform="rotate(60 458 296)">D10</text>
+<text x="477" y="296" transform="rotate(60 477 296)">D9</text>
+<text x="496" y="296" transform="rotate(60 496 296)">D8</text>
+<text x="515" y="296" transform="rotate(60 515 296)">D7</text>
+</g>
+<use href="#badge" x="470" y="170"/><text x="470" y="174" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">9</text>
+<!-- 3V3 jumper a10 -> g22 -->
+<path class="w" stroke="var(--w-33)" d="M219 120 C 300 60, 420 200, 446 280"/>
+<use href="#badge" x="330" y="112"/><text x="330" y="116" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">10</text>
+<!-- GND g21 -> bottom rail -->
+<path class="w" stroke="var(--w-gnd)" d="M427 280 C 420 330, 418 370, 421 392"/>
+<use href="#badge" x="408" y="340"/><text x="408" y="344" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">11</text>
+<!-- rail bridge col 48 -->
+<path class="w" stroke="var(--w-gnd)" d="M941 82 C 985 180, 985 320, 941 390"/>
+<use href="#badge" x="980" y="238"/><text x="980" y="242" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">12</text>
+
+<!-- Q2 bottom h28-h30 -->
+<rect x="551" y="308" width="66" height="26" class="comp"/>
+<text x="551" y="352" class="cname">Q2 2SK4017</text>
+<g class="pin"><text x="556" y="325">G</text><text x="577" y="325">D</text><text x="596" y="325">S</text></g>
+<use href="#badge" x="634" y="320"/><text x="634" y="324" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">13</text>
+<!-- R3 j23-j28 -->
+<rect x="459" y="333" width="96" height="13" class="res"/>
+<text x="472" y="362" class="pin">R3 10k</text>
+<use href="#badge" x="448" y="340"/><text x="448" y="344" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">14</text>
+<!-- R4 i28 -> bottom rail -->
+<rect x="566" y="352" width="13" height="34" class="res"/>
+<text x="583" y="372" class="pin">R4 100k</text>
+<use href="#badge" x="558" y="384"/><text x="558" y="388" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">15</text>
+<!-- Q2 S g30 -> bottom rail -->
+<path class="w" stroke="var(--w-gnd)" d="M599 300 C 606 340, 606 370, 601 392"/>
+<use href="#badge" x="618" y="360"/><text x="618" y="364" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">16</text>
+
+<!-- Q1 top c32-c34 -->
+<rect x="627" y="118" width="66" height="30" class="comp"/>
+<text x="627" y="112" class="cname">Q1 2SJ334</text>
+<g class="pin"><text x="633" y="140">G</text><text x="654" y="140">D</text><text x="673" y="140">S</text></g>
+<use href="#badge" x="710" y="132"/><text x="710" y="136" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">17</text>
+<!-- R5 b32-b34 -->
+<rect x="631" y="152" width="58" height="12" class="res"/>
+<text x="694" y="162" class="pin">R5 100k</text>
+<use href="#badge" x="660" y="176"/><text x="660" y="180" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">18</text>
+<!-- Q2 D -> Q1 G : g29 -> a32 -->
+<path class="w" stroke="var(--w-gate)" d="M580 280 C 590 210, 616 150, 637 122"/>
+<use href="#badge" x="600" y="212"/><text x="600" y="216" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">19</text>
+<!-- Q1 S -> rail -->
+<path class="w" stroke="var(--w-vbat)" d="M675 118 C 680 100, 680 84, 675 66"/>
+<use href="#badge" x="692" y="92"/><text x="692" y="96" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">20</text>
+
+<!-- U2 c38-c40 -->
+<rect x="741" y="118" width="70" height="30" class="comp"/>
+<text x="741" y="112" class="cname">U2 F50 (5V)</text>
+<g class="pin"><text x="743" y="140">OUT</text><text x="769" y="140">IN</text><text x="787" y="140">GND</text></g>
+<use href="#badge" x="827" y="132"/><text x="827" y="136" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">21</text>
+<!-- VBAT_SW: a33 -> a39 -->
+<path class="w" stroke="var(--w-vsw)" d="M656 120 C 690 92, 740 92, 770 118"/>
+<use href="#badge" x="713" y="98"/><text x="713" y="102" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">22</text>
+<!-- U2 GND -> rail -->
+<path class="w" stroke="var(--w-gnd)" d="M789 120 C 795 106, 795 92, 791 82"/>
+<use href="#badge" x="806" y="100"/><text x="806" y="104" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">23</text>
+<!-- C3 e39-e40 -->
+<ellipse cx="780" cy="200" rx="12" ry="8" class="cap"/><text x="795" y="204" class="pin">C3</text>
+<use href="#badge" x="757" y="200"/><text x="757" y="204" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">24</text>
+
+<!-- C4 cols42/44 + C5 -->
+<circle cx="836" cy="150" r="17" fill="#4a2f7a"/><rect x="819" y="133" width="7" height="34" rx="3" fill="#F4F6F5" opacity="0.85"/>
+<text x="828" y="126" class="pin" font-weight="700">C4 +左</text>
+<ellipse cx="855" cy="164" rx="13" ry="7" class="cap"/><text x="868" y="178" class="pin">C5</text>
+<use href="#badge" x="884" y="150"/><text x="884" y="154" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">25</text>
+<!-- 5V: a38 -> a42 -->
+<path class="w" stroke="var(--w-5v)" d="M751 118 C 770 96, 800 96, 827 118"/>
+<use href="#badge" x="790" y="88"/><text x="790" y="92" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">26</text>
+<!-- C4- a44 -> GND rail -->
+<path class="w" stroke="var(--w-gnd)" d="M865 120 C 870 104, 870 92, 866 82"/>
+<use href="#badge" x="880" y="104"/><text x="880" y="108" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">27</text>
+
+<!-- divider R1 c33-c36, R2 b36-b41, jumpers -->
+<rect x="660" y="176" width="52" height="12" class="res" transform="rotate(14 660 176)"/>
+<text x="700" y="182" class="pin">R1 1M</text>
+<use href="#badge" x="648" y="196"/><text x="648" y="200" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">28</text>
+<rect x="713" y="196" width="90" height="12" class="res"/>
+<text x="738" y="222" class="pin">R2 1M</text>
+<use href="#badge" x="820" y="202"/><text x="820" y="206" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">29</text>
+<path class="w" stroke="var(--w-gnd)" d="M808 180 C 814 140, 814 100, 810 82"/>
+<use href="#badge" x="826" y="118"/><text x="826" y="122" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">30</text>
+<path class="w" stroke="var(--w-adc)" d="M713 190 C 620 60, 480 70, 409 116"/>
+<use href="#badge" x="560" y="76"/><text x="560" y="80" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">31</text>
+
+<!-- R7 a26-a31 + TFmini wires -->
+<rect x="525" y="114" width="90" height="12" class="res"/>
+<text x="536" y="108" class="pin">R7 1k</text>
+<use href="#badge" x="512" y="132"/><text x="512" y="136" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">32</text>
+<path class="w" stroke="var(--w-tx)" d="M618 160 C 700 240, 900 300, 1035 320"/>
+<text x="962" y="344" class="cname" fill="var(--w-tx)">TFmini 白(RX)へ</text>
+<use href="#badge" x="750" y="242"/><text x="750" y="246" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">33</text>
+<path class="w" stroke="var(--w-rx)" d="M523 300 C 640 400, 880 420, 1035 400"/>
+<text x="940" y="440" class="cname" fill="var(--w-rx)">TFmini 緑(TX)から</text>
+<use href="#badge" x="700" y="380"/><text x="700" y="384" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">34</text>
+<path class="w" stroke="var(--w-5v)" d="M836 200 C 900 260, 990 280, 1035 282"/>
+<text x="962" y="270" class="cname" fill="var(--w-5v)">TFmini 赤(+5V)へ</text>
+<use href="#badge" x="920" y="272"/><text x="920" y="276" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">35</text>
+<path class="w" stroke="var(--w-gnd)" d="M950 80 C 1000 140, 1030 190, 1042 240"/>
+<text x="964" y="236" class="cname">TFmini 黒(GND)</text>
+<use href="#badge" x="1004" y="160"/><text x="1004" y="164" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">36</text>
+</svg>
+<div class="legend">
+  <span><i style="background:var(--w-vbat)"></i>VBAT</span>
+  <span><i style="background:var(--w-gnd)"></i>GND</span>
+  <span><i style="background:var(--w-33)"></i>3.3V</span>
+  <span><i style="background:var(--w-vsw)"></i>VBAT_SW(スイッチ後)</span>
+  <span><i style="background:var(--w-5v)"></i>5V(測定時のみ)</span>
+  <span><i style="background:var(--w-gate)"></i>Q1ゲート</span>
+  <span><i style="background:var(--w-adc)"></i>電圧測定</span>
+  <span><i style="background:var(--w-tx)"></i>UART TX→白</span>
+  <span><i style="background:var(--w-rx)"></i>UART 緑→RX</span>
+</div>
+</div>
+<p style="margin-top:12px;font-size:13.5px;color:var(--muted)">※ 図の曲線は「どの穴からどの穴へ」の対応を示すもので、実際のジャンパの這わせ方は自由です。丸数字は下のチェックリストと対応。</p>
+</section>
+
+<section>
+<h2><span class="no">3</span>組立チェックリスト</h2>
+<p class="sub">上から順に。<b>各ステップ末尾のテスター確認に合格してから次へ。</b>XIAOとTFminiを挿すのは電源確認のあとです。</p>
+
+<div class="step">
+<h3><span class="sno">STEP 1</span>電源部</h3>
+<div class="tablebox"><table>
+<tr><th style="width:46px">番号</th><th style="width:150px">部品/線</th><th>挿す場所</th></tr>
+<tr><td class="n">①</td><td>電池ボックス 赤線</td><td class="h">c2</td></tr>
+<tr><td class="n">②</td><td>D1 1N5819</td><td class="h">b2 → b6（帯=右、b6側）</td></tr>
+<tr><td class="n">③</td><td><i class="chip" style="background:var(--w-vbat)"></i>ジャンパ 赤</td><td class="h">a6 → 上の赤レール(VBAT)</td></tr>
+<tr><td class="n">④</td><td>U1 NJU7223F33</td><td class="h">c10, c11, c12（印字面を手前: 10=OUT, 11=IN, 12=GND）</td></tr>
+<tr><td class="n">⑤</td><td><i class="chip" style="background:var(--w-vbat)"></i>ジャンパ 赤</td><td class="h">a11 → 赤レール</td></tr>
+<tr><td class="n">⑥</td><td>電池ボックス 黒線</td><td class="h">上の青レール(GND)</td></tr>
+<tr><td class="n">⑦</td><td><i class="chip" style="background:var(--w-gnd)"></i>ジャンパ 黒</td><td class="h">a12 → 青レール</td></tr>
+<tr><td class="n">⑧</td><td>C1 / C2 / C6</td><td class="h">C1: e11↔e12ㅤC2: d10↔d12ㅤC6(10µF): c10↔c12（向きなし）</td></tr>
+</table></div>
+<ul class="check">
+<li>赤レール−青レール間: <span class="kbd">電池電圧 −0.2〜0.35V</span></li>
+<li>c10（U1のOUT）−青レール間: <span class="kbd">3.25〜3.35V</span></li>
+</ul>
+</div>
+
+<div class="step">
+<h3><span class="sno">STEP 2</span>XIAO</h3>
+<div class="tablebox"><table>
+<tr><th style="width:46px">番号</th><th style="width:150px">部品/線</th><th>挿す場所</th></tr>
+<tr><td class="n">⑨</td><td>XIAO nRF52840 Sense</td><td class="h">列20〜26に溝をまたいで。USBコネクタが左（列20側）。上列(e)=D0〜D6 / 下列(f)=5V,GND,3V3,D10,D9,D8,D7</td></tr>
+<tr><td class="n">⑩</td><td><i class="chip" style="background:var(--w-33)"></i>ジャンパ 橙</td><td class="h">a10（U1のOUT列） → g22（3V3ピンの列）</td></tr>
+<tr><td class="n">⑪</td><td><i class="chip" style="background:var(--w-gnd)"></i>ジャンパ 黒</td><td class="h">g21 → 下の青レール</td></tr>
+<tr><td class="n">⑫</td><td><i class="chip" style="background:var(--w-gnd)"></i>ジャンパ 黒</td><td class="h">上の青レール ↔ 下の青レール（右端あたりでブリッジ）</td></tr>
+</table></div>
+<ul class="check">
+<li>電池だけでXIAOのLEDが点灯する</li>
+</ul>
+<div class="warn"><b>最重要:</b> パソコンとUSBでつなぐ時は<b>必ず電池を抜く</b>。向きを間違えて挿すと壊れるので、⑨は挿す前に指差し確認。</div>
+</div>
+
+<div class="step">
+<h3><span class="sno">STEP 3</span>スイッチと5V系</h3>
+<div class="tablebox"><table>
+<tr><th style="width:46px">番号</th><th style="width:150px">部品/線</th><th>挿す場所</th></tr>
+<tr><td class="n">⑬</td><td>Q2 2SK4017</td><td class="h">h28, h29, h30（印字面を手前: 28=G, 29=D, 30=S）</td></tr>
+<tr><td class="n">⑭</td><td>R3 10kΩ</td><td class="h">j23 ↔ j28（D10列 → Q2のG列）</td></tr>
+<tr><td class="n">⑮</td><td>R4 100kΩ</td><td class="h">i28 → 下の青レール</td></tr>
+<tr><td class="n">⑯</td><td><i class="chip" style="background:var(--w-gnd)"></i>ジャンパ 黒</td><td class="h">g30 → 下の青レール</td></tr>
+<tr><td class="n">⑰</td><td>Q1 2SJ334</td><td class="h">c32, c33, c34（印字面を手前: 32=G, 33=D, 34=S）</td></tr>
+<tr><td class="n">⑱</td><td>R5 100kΩ</td><td class="h">b32 ↔ b34（GとSの間）</td></tr>
+<tr><td class="n">⑲</td><td><i class="chip" style="background:var(--w-gate)"></i>ジャンパ</td><td class="h">g29（Q2のD） → a32（Q1のG）</td></tr>
+<tr><td class="n">⑳</td><td><i class="chip" style="background:var(--w-vbat)"></i>ジャンパ 赤</td><td class="h">a34（Q1のS） → 赤レール</td></tr>
+<tr><td class="n">㉑</td><td>U2 NJU7223F50</td><td class="h">c38, c39, c40（38=OUT, 39=IN, 40=GND）。<b>TSD20版はここをF33に</b></td></tr>
+<tr><td class="n">㉒</td><td><i class="chip" style="background:var(--w-vsw)"></i>ジャンパ</td><td class="h">a33（Q1のD） → a39（U2のIN）</td></tr>
+<tr><td class="n">㉓</td><td><i class="chip" style="background:var(--w-gnd)"></i>ジャンパ 黒</td><td class="h">a40 → 青レール</td></tr>
+<tr><td class="n">㉔</td><td>C3 0.1µF</td><td class="h">e39 ↔ e40</td></tr>
+<tr><td class="n">㉕</td><td>C4 OS-CON / C5 0.1µF</td><td class="h">C4: b42(+)↔b44(−) <b>極性注意・長い足が+</b>ㅤC5: c42↔c44</td></tr>
+<tr><td class="n">㉖</td><td><i class="chip" style="background:var(--w-5v)"></i>ジャンパ</td><td class="h">a38（U2のOUT） → a42（5Vノード）</td></tr>
+<tr><td class="n">㉗</td><td><i class="chip" style="background:var(--w-gnd)"></i>ジャンパ 黒</td><td class="h">a44（C4の−） → 青レール</td></tr>
+</table></div>
+<ul class="check">
+<li>なにもしない時: e42−GND間 = <span class="kbd">0V</span></li>
+<li>ジャンパ線で j28（Q2のG）を 3.3V（c10）に触れさせる: e42 = <span class="kbd">4.9〜5.1V</span>、離すと0Vに戻る</li>
+</ul>
+</div>
+
+<div class="step">
+<h3><span class="sno">STEP 4</span>電池電圧の見張り（改良版: スイッチ済みレールから分圧）</h3>
+<div class="tablebox"><table>
+<tr><th style="width:46px">番号</th><th style="width:150px">部品/線</th><th>挿す場所</th></tr>
+<tr><td class="n">㉘</td><td>R1 1MΩ</td><td class="h">c33（Q1のD=VBAT_SW） ↔ c36</td></tr>
+<tr><td class="n">㉙</td><td>R2 1MΩ</td><td class="h">b36 ↔ b41</td></tr>
+<tr><td class="n">㉚</td><td><i class="chip" style="background:var(--w-gnd)"></i>ジャンパ 黒</td><td class="h">a41 → 青レール</td></tr>
+<tr><td class="n">㉛</td><td><i class="chip" style="background:var(--w-adc)"></i>ジャンパ 紫</td><td class="h">a36（分圧の中点） → a20（XIAOのA0列）</td></tr>
+</table></div>
+<ul class="check">
+<li>スイッチON中（上の確認と同時に）: a36−GND間 = <span class="kbd">電池電圧のほぼ半分</span>、OFF中は <span class="kbd">0V</span></li>
+</ul>
+<p style="font-size:13.5px;margin-top:10px">FWメモ: 電池電圧はセンサレールON中にA0を読む（読み値×2）。旧設計のD3・Q3・R6は廃止。</p>
+</div>
+
+<div class="step">
+<h3><span class="sno">STEP 5</span>TFmini Plus</h3>
+<div class="tablebox"><table>
+<tr><th style="width:46px">番号</th><th style="width:150px">部品/線</th><th>挿す場所</th></tr>
+<tr><td class="n">㉜</td><td>R7 1kΩ</td><td class="h">a26（D6=TXの列） ↔ a31</td></tr>
+<tr><td class="n">㉝</td><td>TFmini 白(RX)</td><td class="h">c31（R7の先）</td></tr>
+<tr><td class="n">㉞</td><td>TFmini 緑(TX)</td><td class="h">h26（D7=RXの列）</td></tr>
+<tr><td class="n">㉟</td><td>TFmini 赤(+5V)</td><td class="h">e42（5Vノード）</td></tr>
+<tr><td class="n">㊱</td><td>TFmini 黒(GND)</td><td class="h">上の青レール</td></tr>
+</table></div>
+<ul class="check">
+<li>テストFWで: センサレールON → 距離データ受信、OFF → 5Vノード0V</li>
+<li>µA電流計を電池と直列に: スリープ <span class="kbd">90µA以下</span>（ブレッドボードは接触・リークで数µA上振れすることあり）</li>
+</ul>
+<p style="font-size:13.5px;margin-top:10px">TFminiの線が細くて抜けやすい場合は、ピンヘッダ付きジャンパをかませるか、線先にピンを圧着してください。</p>
+</div>
+</section>
+
+<section>
+<h2><span class="no">4</span>注意メモ</h2>
+<ul>
+<li><b>電池を入れたままUSBをつながない</b>（STEP 2参照）</li>
+<li>向きがある部品: D1（帯）、C4（長い足が+）、U1/U2/Q1/Q2（1-2-3の並び、印字面を手前に）。F33とF50は印字で読み分け</li>
+<li>TFminiのピーク電流(500mA)はブレッドボードの接触抵抗に厳しいので、<b>電源系のジャンパは短く太いものを</b>。測距が不安定ならC4の追加や配線短縮を試す</li>
+<li>スリープ電流の最終評価はPCBで行う（ブレッドボードはリークが乗るため参考値）</li>
+</ul>
+</section>
+
+<footer>
+SnowGauge 設計仕様書 v0.9 / PCB v1.2 トポロジ準拠（分圧はVBAT_SWから・Q3/R6/D3廃止）。ピン配置の正は pcb/README.md。TSD20版はU2をNJU7223F33に差し替えるだけで同一配線。
+</footer>
+</div>
