@@ -1,13 +1,16 @@
-# SnowGauge PCB v1.0 (TFmini Plus / TSD20 common board)
+# SnowGauge PCB v1.1 (TFmini Plus / TSD20 common board)
 
-- Board: 80 x 62 mm, 2-layer, all through-hole. Bottom layer is a GND pour.
+- Board: **64 x 50 mm**, 2-layer, all through-hole. Bottom layer is a GND pour.
+- Mounting: 4x M3 (3.2mm) holes at the corners, **57 x 43 mm** center spacing (4.0mm from left/right edges, 3.5mm from top/bottom edges... hole centers at (3.5, 3.5) / (60.5, 3.5) / (3.5, 46.5) / (60.5, 46.5) from the board's top-left corner).
+- Fits the previous prototype enclosure (Takachi BCAP091208G, inner 66 x 96 mm) with the 50mm side across the width.
+- Battery terminal J1 exits at the bottom edge; TFmini terminal J2 exits at the right edge.
 - Generated programmatically: [generate_board.py](generate_board.py) → `SnowGauge.kicad_pcb` (KiCad 10). DRC: 0 errors, 0 unconnected.
 - One board serves both variants: **U2 = NJU7223F50 for TFmini Plus / NJU7223F33 for TSD20** (same pinout).
 
 ## Ordering (JLCPCB, ~1 week to Japan)
 
-1. Go to jlcpcb.com → "Add gerber file" → upload `SnowGauge_v1.0_gerbers.zip`
-2. Settings: 2 layers, 80x62mm (auto-detected), qty 5 (or 10), 1.6mm, HASL, green — all defaults are fine
+1. Go to jlcpcb.com → "Add gerber file" → upload `SnowGauge_v1.1_gerbers.zip`
+2. Settings: 2 layers, 64x50mm (auto-detected), qty 5 (or 10), 1.6mm, HASL, green — all defaults are fine
 3. Shipping: **DHL or OCS Express** (this is what makes it arrive in ~3-4 days; economy mail takes weeks)
 
 ## Firmware pin map (matches this board — the single source of truth)
