@@ -80,10 +80,8 @@ PARTS = {
            "10u", (64, 59), 0, {"1": "3V3_SYS", "2": "GND"}),
     "C4": (("Capacitor_THT", "CP_Radial_D10.0mm_P5.00mm"),
            "OS-CON 470u/16V", (71, 40), 270, {"1": "5V_SENS", "2": "GND"}),
-    "J2": (("TerminalBlock_Phoenix", "TerminalBlock_Phoenix_MKDS-1,5-2-5.08_1x02_P5.08mm_Horizontal"),
-           "TFmini RED/BLK", (82, 36), 270, {"1": "5V_SENS", "2": "GND"}),
-    "J4": (("TerminalBlock_Phoenix", "TerminalBlock_Phoenix_MKDS-1,5-2-5.08_1x02_P5.08mm_Horizontal"),
-           "TFmini GRN/WHT", (82, 48), 270, {"1": "UART_RX", "2": "TFMINI_RX"}),
+    "J2": (("TerminalBlock_Phoenix", "TerminalBlock_Phoenix_MKDS-1,5-4-5.08_1x04_P5.08mm_Horizontal"),
+           "TFmini 2Px2", (82, 36), 270, {"1": "5V_SENS", "2": "GND", "3": "UART_RX", "4": "TFMINI_RX"}),
     "J3": (("Connector_PinHeader_2.54mm", "PinHeader_1x04_P2.54mm_Vertical"),
            "I2C SPARE", (52, 62), 90, {"1": "I2C_SCL", "2": "I2C_SDA", "3": "GND", "4": "3V3_SYS"}),
     "A1": ("XIAO", "XIAO nRF52840 Sense", (42, 44), 90,
@@ -173,8 +171,8 @@ track("ADC_NODE", [P("R1", "2"), P("R2", "1")])
 track("ADC_NODE", [P("R1", "2"), (27.8, 40.62), (27.8, 35), (34.38, 35), P("A1", "1")])
 # UART
 track("UART_TX_MCU", [P("A1", "7"), (34.38, 53.5), (56.5, 53.5), (56.5, 54.5), P("R7", "1")])
-track("TFMINI_RX", [P("R7", "2"), (78, 54.5), (78, 53.08), P("J4", "2")])
-track("UART_RX", [P("A1", "8"), (61.5, 51.62), (61.5, 52.8), (74, 52.8), (74, 48), P("J4", "1")])
+track("TFMINI_RX", [P("R7", "2"), (78, 54.5), (78, 51.24), P("J2", "4")])
+track("UART_RX", [P("A1", "8"), (61.5, 51.62), (61.5, 52.8), (74, 52.8), (74, 46.16), P("J2", "3")])
 # I2C spare header (B.Cu under the GND pour)
 track("I2C_SCL", [P("A1", "6"), (37, 50.5), (43, 57), (46, 59.2), (52, 61), P("J3", "1")], layer=pcbnew.B_Cu)
 track("I2C_SDA", [P("A1", "5"), (41, 49), (47.5, 53.4), (51, 55.5), (54.54, 60), P("J3", "2")], layer=pcbnew.B_Cu)
@@ -221,7 +219,7 @@ silk("+", 26.3, 61.2, 1.6, True)
 silk("-", 40.6, 61.2, 1.6, True)
 silk("NO USB WHILE BATTERY CONNECTED!", 57, 64.4, 1.1, True)
 silk("RED,BLK", 81, 32.3, 0.8)
-silk("GRN,WHT", 81, 57.2, 0.8)
+silk("GRN,WHT", 81, 56.6, 0.8)
 silk("SCL SDA GND 3V3", 55.8, 59.7, 0.9)
 silk("U2: F50=TFmini / F33=TSD20", 64, 29.4, 0.85)
 silk("USB", 42, 35.2, 1.0)

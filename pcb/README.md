@@ -27,8 +27,7 @@
 ## Connectors
 
 - J1 (screw terminal 2P, 5.08mm): battery + / − ("+"/"-" on silk)
-- J2 (screw terminal 2P, 5.08mm): TFmini RED +5V / BLK GND
-- J4 (screw terminal 2P, 5.08mm): TFmini GRN TX / WHT RX
+- J2 (4 positions at 5.08mm = **two interlocked 2P blocks**): TFmini, top to bottom RED +5V / BLK GND / GRN TX / WHT RX
 - J3 (pin header 1x4): SCL / SDA / GND / 3V3 spare I2C
 - A1: 2x low-profile 1x7 female headers (2.54mm) — socket for XIAO nRF52840 Sense
 
@@ -36,7 +35,7 @@
 
 | Part | Qty | Note |
 |---|---|---|
-| Screw terminal block 2P, **5.08mm pitch** (TB111-2 / MKDS-1,5 type) | 3 | J1 battery, J2 TFmini power, J4 TFmini UART |
+| Screw terminal block 2P, **5.08mm pitch, interlocking** (TB111-2 / MKDS-1,5 type) | 3 | J1 battery; J2 = 2 blocks snapped together (4 contiguous positions) |
 | Female pin socket 1x7, 2.54mm | 2 | XIAO socket. Holes are 0.89mm: fine for round machined tails (~0.5mm) and typical stamped tails; avoid 0.64mm square-tail types |
 | 10uF radial MLCC, **5mm lead pitch** | 1 | C6. A 2.5mm-pitch part needs its leads splayed |
 | Pin header 1x4, 2.54mm | 1 | J3 (optional) |
@@ -52,4 +51,4 @@
 - **Battery divider now fed from VBAT_SW** (the switched rail) instead of VBAT: the ADC node sits at 0V during sleep instead of floating to ~7V through the nRF52840's clamp diode (abs-max violation found in review). Q3, R6 and the D3 GPIO are deleted. Firmware measures battery by enabling SENSOR_EN and reading A0 (x2).
 - **USB corridor cleared**: U1 and C1 moved to the top-left, D1 lowered — a USB-C cable now reaches the socketed XIAO for flashing.
 - TFmini wire-order legend moved where it stays visible after C4 is mounted.
-- Terminals changed to **3x 5.08mm 2P blocks** (J1 battery / J2 TFmini power / J4 TFmini UART) per builder preference — standard Akizuki TB111-class parts drop in.
+- Terminals changed to **3x 5.08mm 2P blocks**; the TFmini pair interlocks into one 4P unit on contiguous 5.08mm positions (J2). Standard Akizuki TB111-class parts drop in.
