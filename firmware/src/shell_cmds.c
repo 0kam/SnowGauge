@@ -1,0 +1,212 @@
+/*
+ * Shell commands for bench testing (USB CDC ACM console).
+ *
+ *   rail on|off|status
+ *   tfmini read [n] [timeout_ms]   burst capture -> statistics
+ *   tfmini raw [ms]                live frame dump
+ *   tfmini rate <hz>               set frame rate (volatile until 'tfmini save')
+ *   tfmini save                    persist TFmini settings
+ *   batt                           battery voltage (turns the rail on briefly if needed)
+ *   measure                        one full cycle: rail -> batt -> N frames -> batt -> rail off
+ *   auto [s]                       automatic measurement period (0 = off)
+ */
+
+#include <zephyr/kernel.h>
+#include <zephyr/shell/shell.h>
+#include <stdlib.h>
+#include <stdarg.h>
+
+#include "sensor_rail.h"
+#include "tfmini.h"
+#include "battery.h"
+#include "measure.h"
+#include "app.h"
+
+static void shell_out(void *ctx, const char *fmt, ...)
+{
+	va_list ap;
+
+	va_start(ap, fmt);
+	shell_vfprintf((const struct shell *)ctx, SHELL_NORMAL, fmt, ap);
+	shell_fprintf((const struct shell *)ctx, SHELL_NORMAL, "\n");
+	va_end(ap);
+}
+
+/* ---- rail ---- */
+
+static int cmd_rail_on(const struct shell *sh, size_t argc, char **argv)
+{
+	int ret = sensor_rail_on();
+
+	shell_print(sh, ret ? "rail on failed (%d)" : "rail ON", ret);
+	return ret;
+}
+
+static int cmd_rail_off(const struct shell *sh, size_t argc, char **argv)
+{
+	int ret = sensor_rail_off();
+
+	shell_print(sh, ret ? "rail off failed (%d)" : "rail OFF", ret);
+	return ret;
+}
+
+static int cmd_rail_status(const struct shell *sh, size_t argc, char **argv)
+{
+	shell_print(sh, "rail is %s", sensor_rail_is_on() ? "ON" : "OFF");
+	return 0;
+}
+
+SHELL_STATIC_SUBCMD_SET_CREATE(sub_rail,
+	SHELL_CMD(on, NULL, "Sensor rail on (SENSOR_EN high)", cmd_rail_on),
+	SHELL_CMD(off, NULL, "Sensor rail off (UART Hi-Z, then SENSOR_EN low)", cmd_rail_off),
+	SHELL_CMD(status, NULL, "Show rail state", cmd_rail_status),
+	SHELL_SUBCMD_SET_END);
+SHELL_CMD_REGISTER(rail, &sub_rail, "Sensor rail control", NULL);
+
+/* ---- tfmini ---- */
+
+static int require_rail(const struct shell *sh)
+{
+	if (!sensor_rail_is_on()) {
+		shell_error(sh, "sensor rail is off - run 'rail on' first");
+		return -EBUSY;
+	}
+	return 0;
+}
+
+static int cmd_tfmini_read(const struct shell *sh, size_t argc, char **argv)
+{
+	uint16_t n = CONFIG_SNOWGAUGE_TFMINI_SAMPLES;
+	uint32_t timeout_ms = CONFIG_SNOWGAUGE_TFMINI_CAPTURE_TIMEOUT_MS;
+	struct measurement m = { 0 };
+	int ret;
+
+	if (require_rail(sh)) {
+		return -EBUSY;
+	}
+	if (argc > 1) {
+		n = (uint16_t)strtoul(argv[1], NULL, 0);
+	}
+	if (argc > 2) {
+		timeout_ms = strtoul(argv[2], NULL, 0);
+	}
+
+	m.uptime_ms = k_uptime_get();
+	ret = tfmini_capture(n, K_MSEC(timeout_ms), &m.lidar);
+	if (ret < 0) {
+		shell_error(sh, "capture failed (%d)", ret);
+		return ret;
+	}
+	measure_print(&m, shell_out, (void *)sh);
+	return 0;
+}
+
+static int cmd_tfmini_raw(const struct shell *sh, size_t argc, char **argv)
+{
+	uint32_t ms = 1000;
+
+	if (require_rail(sh)) {
+		return -EBUSY;
+	}
+	if (argc > 1) {
+		ms = strtoul(argv[1], NULL, 0);
+	}
+
+	tfmini_flush();
+	k_timepoint_t end = sys_timepoint_calc(K_MSEC(ms));
+
+	while (!sys_timepoint_expired(end)) {
+		struct tfmini_frame f;
+
+		if (tfmini_read_frame(&f, sys_timepoint_timeout(end)) == 0) {
+			shell_print(sh, "dist=%5u cm  str=%5u  temp=%d.%d C",
+				    f.dist_cm, f.strength,
+				    f.temp_c_x10 / 10, abs(f.temp_c_x10 % 10));
+		}
+	}
+	return 0;
+}
+
+static int cmd_tfmini_rate(const struct shell *sh, size_t argc, char **argv)
+{
+	uint16_t hz = (uint16_t)strtoul(argv[1], NULL, 0);
+
+	if (require_rail(sh)) {
+		return -EBUSY;
+	}
+	shell_print(sh, "set frame rate %u Hz (use 'tfmini save' to persist)", hz);
+	return tfmini_set_frame_rate(hz);
+}
+
+static int cmd_tfmini_save(const struct shell *sh, size_t argc, char **argv)
+{
+	if (require_rail(sh)) {
+		return -EBUSY;
+	}
+	shell_print(sh, "saving TFmini settings");
+	return tfmini_save_settings();
+}
+
+SHELL_STATIC_SUBCMD_SET_CREATE(sub_tfmini,
+	SHELL_CMD_ARG(read, NULL, "Burst capture: read [n] [timeout_ms]", cmd_tfmini_read, 1, 2),
+	SHELL_CMD_ARG(raw, NULL, "Live frame dump: raw [ms]", cmd_tfmini_raw, 1, 1),
+	SHELL_CMD_ARG(rate, NULL, "Set frame rate: rate <hz>", cmd_tfmini_rate, 2, 0),
+	SHELL_CMD(save, NULL, "Persist TFmini settings", cmd_tfmini_save),
+	SHELL_SUBCMD_SET_END);
+SHELL_CMD_REGISTER(tfmini, &sub_tfmini, "TFmini Plus LiDAR", NULL);
+
+/* ---- battery ---- */
+
+static int cmd_batt(const struct shell *sh, size_t argc, char **argv)
+{
+	bool was_on = sensor_rail_is_on();
+	uint16_t mv = 0;
+	int ret;
+
+	if (!was_on) {
+		ret = sensor_rail_on();
+		if (ret) {
+			shell_error(sh, "rail on failed (%d)", ret);
+			return ret;
+		}
+	}
+	ret = battery_read_mv(&mv);
+	if (!was_on) {
+		(void)sensor_rail_off();
+	}
+	if (ret) {
+		shell_error(sh, "battery read failed (%d)", ret);
+		return ret;
+	}
+	shell_print(sh, "vbat = %u mV (A0 x2%s)", mv, was_on ? "" : ", rail pulsed");
+	return 0;
+}
+SHELL_CMD_REGISTER(batt, NULL, "Battery voltage", cmd_batt);
+
+/* ---- measure / auto ---- */
+
+static int cmd_measure(const struct shell *sh, size_t argc, char **argv)
+{
+	struct measurement m;
+	int ret = measure_once(&m);
+
+	measure_print(&m, shell_out, (void *)sh);
+	return ret;
+}
+SHELL_CMD_REGISTER(measure, NULL, "One full measurement cycle", cmd_measure);
+
+static int cmd_auto(const struct shell *sh, size_t argc, char **argv)
+{
+	if (argc > 1) {
+		app_set_auto_period(strtoul(argv[1], NULL, 0));
+	}
+	uint32_t s = app_get_auto_period();
+
+	if (s) {
+		shell_print(sh, "auto measurement every %u s", s);
+	} else {
+		shell_print(sh, "auto measurement off");
+	}
+	return 0;
+}
+SHELL_CMD_ARG_REGISTER(auto, NULL, "Auto measurement period: auto [s] (0 = off)", cmd_auto, 1, 1);

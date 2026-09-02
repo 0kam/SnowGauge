@@ -1,0 +1,58 @@
+/*
+ * SnowGauge board overlay for Seeed XIAO nRF52840 Sense on PCB v1.2.
+ * Pin map source of truth: pcb/README.md
+ *
+ *   D10 (P1.15) SENSOR_EN  high = sensor rail ON (Q2 -> Q1 high-side switch)
+ *   A0  (P0.02) ADC_NODE   VBAT_SW / 2 (1M + 1M divider, 0 V while rail off)
+ *   D6  (P1.11) UART TX    -> 1k (R7) -> TFmini RX (white)
+ *   D7  (P1.12) UART RX    <- TFmini TX (green)
+ *   D4/D5       I2C        spare header J3
+ */
+
+#include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/adc/nrf-adc.h>
+
+/ {
+	/*
+	 * Console + shell: the board already routes zephyr,console and
+	 * zephyr,shell-uart to USB CDC ACM (board_cdc_acm_uart), so uart0 is free
+	 * for the TFmini.
+	 */
+
+	zephyr,user {
+		sensor-en-gpios = <&xiao_d 10 GPIO_ACTIVE_HIGH>;
+		io-channels = <&adc 0>;
+	};
+
+	aliases {
+		tfmini-uart = &uart0;
+	};
+};
+
+/* TFmini Plus: 115200 8N1, 100 Hz, 9-byte frames (board default pins D6/D7). */
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+};
+
+&adc {
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	/*
+	 * Battery divider on A0. Full scale = 0.6 V * 6 = 3.6 V, which covers
+	 * VBAT_SW/2 up to 7.2 V (fresh L91 x4). The 500k source impedance
+	 * needs the longest SAADC acquisition time (40 us, good to 800k).
+	 */
+	channel@0 {
+		reg = <0>;
+		zephyr,gain = "ADC_GAIN_1_6";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_MICROSECONDS, 40)>;
+		zephyr,input-positive = <NRF_SAADC_AIN0>;
+		zephyr,resolution = <12>;
+		zephyr,oversampling = <4>;
+	};
+};
+

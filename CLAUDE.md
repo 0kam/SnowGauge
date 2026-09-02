@@ -13,6 +13,9 @@ Low-cost, low-power snow depth logger (NIR laser ToF + XIAO nRF52840 Sense). Fie
 - PCB v1.2 ordered at JLCPCB (64×50mm, gerbers = `pcb/SnowGauge_v1.2_gerbers.zip`), ETA ~2026-09-10.
 - Development proceeds on a breadboard meanwhile: `docs/breadboard_guide.html` (same v1.2 topology — FW written against it runs unchanged on the PCB).
 - Two independent design reviews passed (electrical netlist extraction + physical/fab). Known accepted margins: RX/Q2-pad clearances ~0.37mm; ADC reads Vbat/2 ≈3.5V max on fresh cells (within SAADC 3.6V FS).
+- **Firmware step 1 done** (`firmware/`, builds clean): sensor rail + TFmini driver + battery ADC + USB shell. Not yet tested on hardware (no board was connected). See `firmware/README.md` for build/flash/bench commands.
+- Toolchain: nRF Connect SDK **v3.4.0** at `/opt/nordic/ncs/v3.4.0`, installed via `~/.local/bin/nrfutil sdk-manager`. Build must run from the SDK workspace dir: `cd /opt/nordic/ncs/v3.4.0 && nrfutil sdk-manager toolchain launch --ncs-version v3.4.0 -- west build -d <repo>/firmware/build -b xiao_ble/nrf52840/sense <repo>/firmware`.
+- Board note: the xiao_ble board already puts console/shell on USB CDC ACM (`board_cdc_acm_uart`, USB device_next stack); uart0 (D6/D7) is free for the TFmini. MCUboot would overwrite the Adafruit UF2 bootloader → needs an SWD probe (open question for step 4).
 
 ## Firmware decisions (spec §12, closed)
 

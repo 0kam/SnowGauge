@@ -1,0 +1,70 @@
+# SnowGauge firmware
+
+Zephyr / nRF Connect SDK application for the Seeed XIAO nRF52840 Sense on
+SnowGauge PCB v1.2 (or the equivalent breadboard, `docs/breadboard_guide.html`).
+
+- SDK: **nRF Connect SDK v3.4.0** (installed with `nrfutil sdk-manager`)
+- Board target: `xiao_ble/nrf52840/sense`
+- Pin map source of truth: [`pcb/README.md`](../pcb/README.md)
+
+## Status: step 1 — scaffold + TFmini UART test
+
+| Module | File | Purpose |
+|---|---|---|
+| Sensor rail | `src/sensor_rail.c` | D10 = SENSOR_EN. Parks the TFmini UART (pins Hi-Z) *before* cutting the rail (ghost-power countermeasure) |
+| TFmini Plus | `src/tfmini.c` | Interrupt-driven 9-byte frame parser, N-sample burst → median / variance / quality counters, frame-rate command |
+| Battery | `src/battery.c` | A0 via SAADC (gain 1/6, 40 µs acquisition for the 500 kΩ source). Valid only while the rail is on; Vbat = node × 2 |
+| Measure | `src/measure.c` | rail on → Vbat → N frames → Vbat → rail off |
+| Shell | `src/shell_cmds.c` | Bench commands over USB CDC ACM |
+
+Not yet: IMU tilt, LittleFS records, BLE, sleep-current tuning, MCUboot (see the development order in `../CLAUDE.md`).
+
+## Build
+
+One-time: install nrfutil and the SDK (already done on the dev Mac; `~/.local/bin/nrfutil`).
+
+```bash
+nrfutil sdk-manager install v3.4.0
+```
+
+Build inside the SDK toolchain environment. `west` must be started from the SDK workspace (`/opt/nordic/ncs/v3.4.0`), so pass absolute paths:
+
+```bash
+cd /opt/nordic/ncs/v3.4.0 && nrfutil sdk-manager toolchain launch --ncs-version v3.4.0 -- west build -d "$REPO/firmware/build" -b xiao_ble/nrf52840/sense "$REPO/firmware"
+```
+
+Add `-p` after `west build` for a pristine rebuild. Output: `firmware/build/firmware/zephyr/zephyr.uf2` (sysbuild layout).
+
+## Flash (stock Adafruit UF2 bootloader, no debugger needed)
+
+1. Disconnect the battery (**never USB and battery at the same time** — see the silkscreen note).
+2. Connect the XIAO by USB-C and double-tap its reset button. A `XIAO-SENSE` drive appears.
+3. Copy `firmware/build/firmware/zephyr/zephyr.uf2` onto that drive (or `west flash -d "$REPO/firmware/build" -r uf2` from the SDK dir). The board reboots into the new firmware.
+
+The app is linked at 0x27000, after the Adafruit bootloader, so the bootloader is preserved and the board can always be re-flashed the same way.
+
+## Bench test (breadboard STEP 5 / PCB bring-up)
+
+Open the USB serial port (`/dev/cu.usbmodem*`, any baud rate) with e.g. `screen` or the nRF Connect Serial Terminal, then:
+
+```
+rail status           # boots with the rail OFF
+rail on               # SENSOR_EN high; 5V node should read 5 V, TFmini LED on
+tfmini raw 500        # live frames for 0.5 s
+tfmini read 100       # 100-frame burst: median / variance / strength / temperature
+batt                  # battery voltage (pulses the rail if it is off)
+rail off              # UART Hi-Z first, then SENSOR_EN low; 5V node should read 0 V
+measure               # the whole cycle in one command
+auto 30               # repeat every 30 s (auto 0 to stop)
+```
+
+Expected: with the rail off the 5 V node is 0 V and the TFmini draws nothing. If the TFmini stays dimly alive with the rail off, the UART is not parked — check that `rail off` returned 0.
+
+## Shell output fields
+
+`weak` = strength < 100 (Benewake: unreliable), `sat` = strength 65535 (over-exposed), `invalid` = distance sentinel (0 / 65535) with acceptable strength, `cksum_err` = frames dropped by checksum. `var` is the sample variance in cm² over the valid frames.
+
+## Notes / decisions pending
+
+- **MCUboot needs SWD**: the XIAO ships with the Adafruit UF2 bootloader at 0x0. Installing MCUboot (spec §12.1, BLE DFU) overwrites it, which requires an SWD programmer on the pads on the back of the XIAO (J-Link, nRF52840 DK, or a CMSIS-DAP probe). Until then the firmware is flashed as UF2 and BLE DFU is not available.
+- Build reproducibility: the SDK version is pinned here (v3.4.0). A `west.yml` manifest for a self-contained workspace can be added when the build moves to CI.

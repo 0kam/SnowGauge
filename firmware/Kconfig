@@ -1,0 +1,41 @@
+# SnowGauge application options
+
+menu "SnowGauge application"
+
+config SNOWGAUGE_RAIL_SETTLE_MS
+	int "Sensor rail settle time before touching the UART (ms)"
+	default 300
+	help
+	  Delay between driving SENSOR_EN high and resuming the TFmini UART.
+	  Covers LDO start-up, the 470uF OS-CON charge and the TFmini boot.
+
+config SNOWGAUGE_TFMINI_SAMPLES
+	int "Number of TFmini frames per measurement (N)"
+	default 100
+	range 1 512
+	help
+	  Frames collected per measurement cycle; the median, variance and
+	  quality counters are computed over this burst. At the default
+	  100 Hz frame rate 100 frames take about 1 s.
+
+config SNOWGAUGE_TFMINI_CAPTURE_TIMEOUT_MS
+	int "Maximum time to wait for the N frames (ms)"
+	default 3000
+
+config SNOWGAUGE_TFMINI_MIN_STRENGTH
+	int "Minimum TFmini signal strength for a distance to count as valid"
+	default 100
+	help
+	  Benewake documents distances as unreliable below a strength of 100.
+
+config SNOWGAUGE_AUTO_MEASURE_PERIOD_S
+	int "Automatic measurement period at boot (s, 0 = shell only)"
+	default 0
+	help
+	  When non-zero the firmware runs a full measurement cycle every N
+	  seconds without any shell interaction. Can be changed at run time
+	  with the 'auto' shell command.
+
+endmenu
+
+source "Kconfig.zephyr"
