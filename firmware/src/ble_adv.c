@@ -110,13 +110,31 @@ static void on_connected(struct bt_conn *conn, uint8_t err)
 	LOG_INF("BLE connected (err %u)", err);
 }
 
+/*
+ * Restart advertising after a disconnect from the system work queue (not
+ * from the connection callback): stop first so that the host's own
+ * "resume" bookkeeping cannot leave us with adv reported on but not
+ * actually running.
+ */
+static void adv_restart_work_fn(struct k_work *work)
+{
+	ARG_UNUSED(work);
+	if (cur_max_ms == 0) {
+		return;
+	}
+	(void)bt_le_adv_stop();
+	advertising = false;
+	(void)adv_start();
+	LOG_INF("advertising restarted");
+}
+static K_WORK_DELAYABLE_DEFINE(adv_restart_work, adv_restart_work_fn);
+
 static void on_disconnected(struct bt_conn *conn, uint8_t reason)
 {
 	ARG_UNUSED(conn);
 	connected = false;
 	LOG_INF("BLE disconnected (reason 0x%02x)", reason);
-	/* Legacy advertising resumes by itself; be explicit anyway. */
-	(void)adv_start();
+	k_work_schedule(&adv_restart_work, K_MSEC(200));
 }
 
 BT_CONN_CB_DEFINE(conn_cbs) = {
