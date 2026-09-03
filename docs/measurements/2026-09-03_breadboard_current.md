@@ -42,4 +42,5 @@ measurement), PSU 6.00 V, USB disconnected, ⑩ in. Same difference method.
 |---|---|---|
 | Raw, DUT connected (60 s) | −53.9 µA (sd 18) | |
 | Zero, DUT lead c2 pulled (40 s) | −71.7 µA (sd 24) | |
+| Raw, DUT reinserted (60 s) | −53.6 µA (sd 18) | drift check: within 0.3 µA of the first run |
 | **Sleep current, whole system, step 4a** | **18 µA ± 10** | unchanged vs. step 3 (17 µA) → LittleFS/runtime-PM QSPI and the 1 Hz rtc-emul tick cost nothing measurable |
