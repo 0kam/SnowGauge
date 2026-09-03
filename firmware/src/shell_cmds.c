@@ -13,6 +13,10 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/shell/shell.h>
+#include <zephyr/sys/reboot.h>
+#include <zephyr/drivers/gpio.h>
+#include <hal/nrf_gpio.h>
+#include <nrfx.h>
 #include <stdlib.h>
 #include <stdarg.h>
 
@@ -52,7 +56,15 @@ static int cmd_rail_off(const struct shell *sh, size_t argc, char **argv)
 
 static int cmd_rail_status(const struct shell *sh, size_t argc, char **argv)
 {
-	shell_print(sh, "rail is %s", sensor_rail_is_on() ? "ON" : "OFF");
+	const struct gpio_dt_spec en = GPIO_DT_SPEC_GET(DT_PATH(zephyr_user), sensor_en_gpios);
+	uint32_t abs_pin = NRF_GPIO_PIN_MAP((en.port == DEVICE_DT_GET(DT_NODELABEL(gpio1))) ? 1 : 0,
+					    en.pin);
+
+	shell_print(sh, "rail is %s; SENSOR_EN = P%u.%02u dir=%s out=%u",
+		    sensor_rail_is_on() ? "ON" : "OFF",
+		    abs_pin >> 5, abs_pin & 0x1F,
+		    (nrf_gpio_pin_dir_get(abs_pin) == NRF_GPIO_PIN_DIR_OUTPUT) ? "out" : "in",
+		    nrf_gpio_pin_out_read(abs_pin));
 	return 0;
 }
 
@@ -182,6 +194,21 @@ static int cmd_batt(const struct shell *sh, size_t argc, char **argv)
 	return 0;
 }
 SHELL_CMD_REGISTER(batt, NULL, "Battery voltage", cmd_batt);
+
+/* ---- dfu: reboot into the Adafruit bootloader (serial DFU mode) ---- */
+
+#define ADAFRUIT_DFU_MAGIC_SERIAL_ONLY_RESET 0x4E
+
+static int cmd_dfu(const struct shell *sh, size_t argc, char **argv)
+{
+	shell_print(sh, "rebooting into bootloader (serial DFU) ...");
+	(void)sensor_rail_off();
+	k_sleep(K_MSEC(200));
+	NRF_POWER->GPREGRET = ADAFRUIT_DFU_MAGIC_SERIAL_ONLY_RESET;
+	sys_reboot(SYS_REBOOT_COLD);
+	return 0;
+}
+SHELL_CMD_REGISTER(dfu, NULL, "Reboot into the bootloader for serial DFU", cmd_dfu);
 
 /* ---- measure / auto ---- */
 

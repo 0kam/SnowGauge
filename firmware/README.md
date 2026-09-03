@@ -7,7 +7,7 @@ SnowGauge PCB v1.2 (or the equivalent breadboard, `docs/breadboard_guide.html`).
 - Board target: `xiao_ble/nrf52840/sense`
 - Pin map source of truth: [`pcb/README.md`](../pcb/README.md)
 
-## Status: step 1 — scaffold + TFmini UART test
+## Status: step 1 — scaffold + TFmini UART test (verified on the breadboard 2026-09-03)
 
 | Module | File | Purpose |
 |---|---|---|
@@ -35,13 +35,26 @@ cd /opt/nordic/ncs/v3.4.0 && nrfutil sdk-manager toolchain launch --ncs-version 
 
 Add `-p` after `west build` for a pristine rebuild. Output: `firmware/build/firmware/zephyr/zephyr.uf2` (sysbuild layout).
 
-## Flash (stock Adafruit UF2 bootloader, no debugger needed)
+## Flash (stock Adafruit bootloader, no debugger needed)
 
-1. Disconnect the battery (**never USB and battery at the same time** — see the silkscreen note).
-2. Connect the XIAO by USB-C and double-tap its reset button. A `XIAO-SENSE` drive appears.
-3. Copy `firmware/build/firmware/zephyr/zephyr.uf2` onto that drive (or `west flash -d "$REPO/firmware/build" -r uf2` from the SDK dir). The board reboots into the new firmware.
+The app is linked at 0x27000, after the Adafruit bootloader, so the bootloader is preserved and the board can always be re-flashed.
 
-The app is linked at 0x27000, after the Adafruit bootloader, so the bootloader is preserved and the board can always be re-flashed the same way.
+**UF2 (Windows / Linux / older macOS):** disconnect the battery (**never USB and battery at the same time** unless jumper ⑩ is pulled — see the breadboard guide), connect USB-C, double-tap reset, copy `firmware/build/firmware/zephyr/zephyr.uf2` onto the `XIAO-SENSE` drive.
+
+**Serial DFU (needed on macOS 26, which cannot mount the XIAO's UF2 drive):**
+
+```bash
+pip install adafruit-nrfutil
+adafruit-nrfutil dfu genpkg --dev-type 0x0052 --sd-req 0xFFFE --application firmware/build/firmware/zephyr/zephyr.hex snowgauge.zip
+```
+
+Put the board in the bootloader (double-tap reset, or type `dfu` in the firmware shell), then:
+
+```bash
+adafruit-nrfutil dfu serial --package snowgauge.zip -p /dev/cu.usbmodem* -b 115200 --singlebank
+```
+
+`--sd-req 0xFFFE` (any SoftDevice) matters: with `0x00` the bootloader rejects the package and resets mid-transfer.
 
 ## Bench test (breadboard STEP 5 / PCB bring-up)
 
@@ -58,7 +71,7 @@ measure               # the whole cycle in one command
 auto 30               # repeat every 30 s (auto 0 to stop)
 ```
 
-Expected: with the rail off the 5 V node is 0 V and the TFmini draws nothing. If the TFmini stays dimly alive with the rail off, the UART is not parked — check that `rail off` returned 0.
+Expected: with the rail off the 5 V node is 0 V and the TFmini draws nothing. Measured on the breadboard (2026-09-03, 6 V bench supply): `vbat = 5624 mV`, 100 frames / 997 ms, `cksum_err=0`, median 197 cm, strength ~6830, chip temp 65 °C. If the TFmini stays dimly alive with the rail off, the UART is not parked — check that `rail off` returned 0.
 
 ## Shell output fields
 
