@@ -48,7 +48,8 @@ Low-cost, low-power snow depth logger (NIR laser ToF + XIAO nRF52840 Sense). Fie
 - **Schedule** (Zephyr settings, SMP settings group): `sg/sched/start_min`, `end_min` (local minutes-of-day, start > end = spans midnight, start == end = all day), `interval_min`, `tz_min` (UTC offset; the device clock stays UTC). Bench `auto <s>` overrides.
 - **Site info** = `/lfs1/site.json` written by the page via fs upload (lat/lon/alt/accuracy/source/set_at/tz/name + history array). Not per record.
 - **Sync button** sends time + tz + location together (individual actions also available).
-- **Calibration GATT** (custom service): live notify (dist/strength/tilt/vbat), control write (live on/off, ZERO, ERASE+token), status read (d0, theta0, set epoch). ZERO stores `sg/cal/d0_cm`, `theta0_cdeg`, `set_epoch` in settings.
+- **Calibration GATT** (custom service): live notify (dist/strength/tilt/vbat), control write (live on/off, ZERO 0x10, reference-from-probed-depth 0x11+u16 cm, ERASE+token), status read (d0, theta0, set epoch). Reference: `d0 = d + depth/cos(tilt)` stored in `sg/cal/*`.
+- **UI rules (user, 2026-09-03)**: gloves + small screen → big buttons, pickers only (no typed numbers except the optional manual lat/lon), no UI for values the page/device decides (tz auto from phone, d0/θ0 display only), destructive actions = two taps.
 - **CSV export** done in the page: one row per record, header row, site columns repeated per row, `time_utc` + `time_local` ISO 8601, derived `d0_cm, theta0_deg, snow_depth_cm` at the end; raw .bin also saveable. Column list in `docs/record_format.md`.
 - Open: no pairing → anyone nearby can erase/change settings (ERASE has a token; PIN later if needed).
 

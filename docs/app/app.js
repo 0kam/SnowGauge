@@ -26,14 +26,17 @@ const RECORD_SCHEMA = {
 };
 
 /* Settings exposed over SMP settings mgmt (firmware/src/config.h). */
+/* kind: 'hhmm' = 30-min picker, 'choice' = fixed list, 'auto' = set by the page (no UI),
+ * 'display' = read-only text. Big pickers only: nothing is typed on the phone. */
+const INTERVAL_CHOICES = [[0, '自動観測しない'], [30, '30 分'], [60, '1 時間'], [90, '1 時間 30 分'], [120, '2 時間'], [180, '3 時間'], [240, '4 時間'], [360, '6 時間'], [720, '12 時間'], [1440, '24 時間']];
 const SETTINGS_SCHEMA = [
-  { key: 'sg/sched/start_min', type: 'u16', kind: 'hhmm', label: '観測開始（現地時刻）' },
-  { key: 'sg/sched/end_min', type: 'u16', kind: 'hhmm', label: '観測終了（現地時刻）', help: '開始と同じなら終日。開始より前なら夜をまたぐ' },
-  { key: 'sg/sched/interval_min', type: 'u16', kind: 'int', label: '観測間隔（分）', min: 0, max: 1440, help: '0 で自動観測停止' },
-  { key: 'sg/sched/tz_min', type: 'i16', kind: 'int', label: 'UTC オフセット（分）', min: -840, max: 840, help: '日本は 540' },
-  { key: 'sg/cal/d0_cm', type: 'u16', kind: 'int', label: '基準斜距離 d0 (cm)', readonly: true },
-  { key: 'sg/cal/theta0_cdeg', type: 'i16', kind: 'int', label: '基準傾斜 θ0 (0.01°)', readonly: true },
-  { key: 'sg/cal/set_epoch', type: 'u32', kind: 'epoch', label: 'ZERO 取得時刻', readonly: true },
+  { key: 'sg/sched/start_min', type: 'u16', kind: 'hhmm', label: '観測開始' },
+  { key: 'sg/sched/end_min', type: 'u16', kind: 'hhmm', label: '観測終了', help: '開始と同じなら終日。開始より前なら夜をまたぐ（例 17:00 → 05:00）' },
+  { key: 'sg/sched/interval_min', type: 'u16', kind: 'choice', choices: INTERVAL_CHOICES, label: '観測間隔' },
+  { key: 'sg/sched/tz_min', type: 'i16', kind: 'auto', label: 'タイムゾーン' },
+  { key: 'sg/cal/d0_cm', type: 'u16', kind: 'display', label: '基準斜距離 d0', unit: ' cm' },
+  { key: 'sg/cal/theta0_cdeg', type: 'i16', kind: 'display', label: '基準傾斜 θ0', scale: 100, unit: '°' },
+  { key: 'sg/cal/set_epoch', type: 'u32', kind: 'display', label: '基準設定日時', epoch: true },
 ];
 
 /* Calibration GATT (firmware/src/cal_gatt.h) */
@@ -196,23 +199,31 @@ async function manualSite() {
 
 /* ---------- settings ---------- */
 
-function settingValueToText(def, bytes) {
-  const v = def.type === 'u32' ? LE.getU32(bytes) : def.type === 'i16' ? LE.getI16(bytes) : LE.getU16(bytes);
-  if (def.kind === 'hhmm') return hhmm(v);
-  if (def.kind === 'epoch') return v ? isoUTC(v) : '(未設定)';
-  return String(v);
+function settingValue(def, bytes) { return def.type === 'u32' ? LE.getU32(bytes) : def.type === 'i16' ? LE.getI16(bytes) : LE.getU16(bytes); }
+function settingDisplay(def, v) {
+  if (def.epoch) return v ? isoLocal(v, tzMin()).slice(0, 16).replace('T', ' ') : '未設定';
+  if (def.scale) return (v / def.scale).toFixed(2) + (def.unit || '');
+  return (v || v === 0 ? v : '-') + (def.unit || '');
 }
-function settingTextToBytes(def, text) {
-  let v;
-  if (def.kind === 'hhmm') { v = parseHHMM(text); if (v === null) throw new Error(def.label + ': HH:MM で入力'); }
-  else { v = parseInt(text, 10); if (isNaN(v) || (def.min !== undefined && v < def.min) || (def.max !== undefined && v > def.max)) throw new Error(def.label + ': 範囲外'); }
-  return def.type === 'u32' ? LE.u32(v) : def.type === 'i16' ? LE.i16(v) : LE.u16(v);
+function settingBytes(def, v) { return def.type === 'u32' ? LE.u32(v) : def.type === 'i16' ? LE.i16(v) : LE.u16(v); }
+function setSelectValue(sel, v, labelFn) {
+  if (![...sel.options].some(o => +o.value === v)) { const o = document.createElement('option'); o.value = v; o.textContent = labelFn(v); sel.appendChild(o); }
+  sel.value = String(v);
 }
 function renderSettingsForm() {
   const tb = $('settings-body'); tb.innerHTML = '';
   for (const def of SETTINGS_SCHEMA) {
+    if (def.kind === 'auto') continue;
     const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${def.label}<div class="help">${def.help || ''}</div></td><td><input id="set-${def.key}" ${def.readonly ? 'readonly' : ''} class="needs-conn" disabled></td>`;
+    let ctl;
+    if (def.kind === 'hhmm') {
+      ctl = `<select id="set-${def.key}" class="needs-conn big" disabled>` + Array.from({ length: 48 }, (_, i) => `<option value="${i * 30}">${hhmm(i * 30)}</option>`).join('') + '</select>';
+    } else if (def.kind === 'choice') {
+      ctl = `<select id="set-${def.key}" class="needs-conn big" disabled>` + def.choices.map(([v, l]) => `<option value="${v}">${l}</option>`).join('') + '</select>';
+    } else {
+      ctl = `<span id="set-${def.key}" class="value">-</span>`;
+    }
+    tr.innerHTML = `<td>${def.label}<div class="help">${def.help || ''}</div></td><td>${ctl}</td>`;
     tb.appendChild(tr);
   }
 }
@@ -221,15 +232,20 @@ async function loadSettings() {
     try {
       const bytes = await state.smp.settings.read(def.key);
       state.settings[def.key] = bytes;
-      $('set-' + def.key).value = settingValueToText(def, bytes);
-    } catch (e) { $('set-' + def.key).value = '?'; log('設定読込失敗 ' + def.key + ': ' + e.message, 'warn'); }
+      const v = settingValue(def, bytes);
+      if (def.kind === 'hhmm') setSelectValue($('set-' + def.key), v, hhmm);
+      else if (def.kind === 'choice') setSelectValue($('set-' + def.key), v, x => x + ' 分');
+      else if (def.kind === 'display') $('set-' + def.key).textContent = settingDisplay(def, v);
+    } catch (e) { log('設定読込失敗 ' + def.key + ': ' + e.message, 'warn'); }
   }
+  const tz = tzMin(); $('tz-info').textContent = `UTC${tz >= 0 ? '+' : '-'}${hhmm(Math.abs(tz))}（同期時にスマホから自動設定）`;
+  $('cal-ref').textContent = calRef() ? `d0 = ${calRef().d0} cm, θ0 = ${calRef().theta0.toFixed(2)}°` : '未設定（無雪 ZERO か積雪深入力で設定）';
 }
 async function saveSettings() {
   try {
     for (const def of SETTINGS_SCHEMA) {
-      if (def.readonly) continue;
-      const bytes = settingTextToBytes(def, $('set-' + def.key).value);
+      if (def.kind !== 'hhmm' && def.kind !== 'choice') continue;
+      const bytes = settingBytes(def, parseInt($('set-' + def.key).value, 10));
       await state.smp.settings.write(def.key, bytes);
     }
     await state.smp.settings.save();
@@ -382,19 +398,28 @@ async function calStatus() {
   const c = await calConnect(); const dv = await c.status.readValue();
   const d0 = dv.getUint16(0, true), th = dv.getInt16(2, true) / 100, ep = dv.getUint32(4, true), live = dv.getUint8(8), res = dv.getInt8(9);
   $('live-state').textContent = live ? '動作中（センサ通電中、5 分で自動停止）' : '停止';
-  $('cal-ref').textContent = d0 ? `d0 = ${d0} cm, θ0 = ${th.toFixed(2)}°, ${isoUTC(ep)}` : '未設定';
+  $('cal-ref').textContent = d0 ? `d0 = ${d0} cm, θ0 = ${th.toFixed(2)}°` : '未設定（無雪 ZERO か積雪深入力で設定）';
   if (res) log('前回コマンド結果: ' + res, 'warn');
   return { d0, th, live, res };
 }
 async function liveOn() { try { await calCmd([0x01]); await calStatus(); } catch (e) { log('ライブ開始失敗: ' + e.message, 'err'); } }
 async function liveOff() { try { await calCmd([0x00]); await calStatus(); } catch (e) { log('ライブ停止失敗: ' + e.message, 'err'); } }
-async function doZero() {
-  if (!confirm('現在の斜距離と傾斜を無雪基準 (ZERO) として保存します。よろしいですか？')) return;
-  try { await calCmd([0x10]); log('ZERO 実行中（約 3 秒）'); await new Promise(r => setTimeout(r, 4000)); await calStatus(); await loadSettings(); log('ZERO 完了'); }
-  catch (e) { log('ZERO 失敗: ' + e.message, 'err'); }
+/* Reference: ZERO on bare ground (depth 0) or from a probed snow depth. */
+async function setReference(depthCm) {
+  try {
+    await calCmd(depthCm ? [0x11, depthCm & 255, depthCm >> 8] : [0x10]);
+    log(depthCm ? `基準設定中（現在の積雪深 ${depthCm} cm、約 3 秒）` : 'ZERO 実行中（約 3 秒）');
+    await new Promise(r => setTimeout(r, 4000));
+    const st = await calStatus(); await loadSettings();
+    if (st.res) log('基準設定失敗（本体エラー ' + st.res + '）: 測距か傾斜が取れていません', 'err'); else log('基準を保存しました');
+  } catch (e) { log('基準設定失敗: ' + e.message, 'err'); }
+}
+function twoTap(btn, label, action) {
+  if (btn.dataset.armed) { delete btn.dataset.armed; btn.textContent = label; action(); return; }
+  btn.dataset.armed = '1'; btn.textContent = 'もう一度押すと実行';
+  setTimeout(() => { if (btn.dataset.armed) { delete btn.dataset.armed; btn.textContent = label; } }, 5000);
 }
 async function doErase() {
-  if (prompt('全レコードを消去します。取り消せません。続けるには ERASE と入力してください。') !== 'ERASE') return;
   try { await calCmd([0x20, 0x45, 0x52, 0x41, 0x53, 0x45]); await new Promise(r => setTimeout(r, 2000)); await calStatus(); log('全レコードを消去しました', 'warn'); state.records = []; renderData(); }
   catch (e) { log('消去失敗: ' + e.message, 'err'); }
 }
@@ -415,7 +440,10 @@ if (typeof window !== 'undefined') window.addEventListener('load', () => {
   $('btn-csv').onclick = exportCSV;
   $('btn-raw').onclick = exportRaw;
   $('btn-live-on').onclick = liveOn; $('btn-live-off').onclick = liveOff;
-  $('btn-zero').onclick = doZero; $('btn-erase').onclick = doErase;
+  $('btn-zero').onclick = () => twoTap($('btn-zero'), 'ZERO（無雪の地面）', () => setReference(0));
+  $('btn-ref-depth').onclick = () => twoTap($('btn-ref-depth'), '積雪深から基準設定', () => setReference(parseInt($('depth-sel').value, 10)));
+  $('btn-erase').onclick = () => twoTap($('btn-erase'), '全レコード消去', doErase);
+  $('depth-sel').innerHTML = Array.from({ length: 401 }, (_, i) => `<option value="${i}">${i} cm</option>`).join('');
   $('btn-cal-status').onclick = () => calStatus().catch(e => log(e.message, 'err'));
   window.addEventListener('resize', () => state.records.length && drawChart());
   if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});

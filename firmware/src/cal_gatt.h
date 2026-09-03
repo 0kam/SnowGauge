@@ -5,7 +5,10 @@
  *  live    53470002-...  notify, 12 bytes LE every ~500 ms while enabled:
  *                        dist_cm u16 (0xFFFF none), strength u16, tilt_cdeg i16,
  *                        vbat_mv u16, n_valid u8, n_frames u8, var_cm2 u16
- *  control 53470003-...  write: 0x00 live off, 0x01 live on, 0x10 ZERO,
+ *  control 53470003-...  write: 0x00 live off, 0x01 live on,
+ *                        0x10 ZERO (no snow: d0 = measured distance),
+ *                        0x11 + u16 depth_cm: reference from a probed snow depth
+ *                             (d0 = d + depth / cos(tilt)),
  *                        0x20 'E' 'R' 'A' 'S' 'E' erase all records
  *  status  53470004-...  read, 12 bytes LE: d0_cm u16, theta0_cdeg i16,
  *                        set_epoch u32, live u8, last_cmd_result i8, reserved u16
@@ -25,7 +28,10 @@ int cal_gatt_init(void);
 bool cal_live_is_on(void);
 void cal_live_stop(void);
 
-/* Take the ZERO reference from one full measurement (also stores a record). */
-int cal_zero(uint16_t *d0_cm, int16_t *theta0_cdeg);
+/*
+ * Take the reference from one full measurement (also stores a record).
+ * depth_cm = current snow depth measured with a probe (0 = bare ground / ZERO).
+ */
+int cal_zero(uint16_t depth_cm, uint16_t *d0_cm, int16_t *theta0_cdeg);
 
 #endif /* SNOWGAUGE_CAL_GATT_H */

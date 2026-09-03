@@ -552,13 +552,15 @@ static int cmd_cal_zero(const struct shell *sh, size_t argc, char **argv)
 {
 	uint16_t d0;
 	int16_t th;
-	int ret = cal_zero(&d0, &th);
+	uint16_t depth = (argc > 1) ? (uint16_t)strtoul(argv[1], NULL, 0) : 0;
+	int ret = cal_zero(depth, &d0, &th);
 
 	if (ret) {
 		shell_error(sh, "ZERO failed (%d)", ret);
 		return ret;
 	}
-	shell_print(sh, "ZERO stored: d0=%u cm theta0=%d.%02d deg", d0, th / 100, abs(th % 100));
+	shell_print(sh, "reference stored (depth %u cm): d0=%u cm theta0=%d.%02d deg", depth, d0,
+		    th / 100, abs(th % 100));
 	return 0;
 }
 
@@ -580,7 +582,7 @@ static int cmd_cal_live(const struct shell *sh, size_t argc, char **argv)
 }
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_cal,
-	SHELL_CMD(zero, NULL, "Take the ZERO reference (one measurement)", cmd_cal_zero),
+	SHELL_CMD_ARG(zero, NULL, "Take the reference: zero [current_snow_depth_cm]", cmd_cal_zero, 1, 1),
 	SHELL_CMD(clear, NULL, "Clear the ZERO reference", cmd_cal_clear),
 	SHELL_CMD_ARG(live, NULL, "Live mode state: live [off]", cmd_cal_live, 1, 1),
 	SHELL_SUBCMD_SET_END);

@@ -116,7 +116,7 @@ d0_cm, theta0_deg, snow_depth_cm
 - `time_utc` = `YYYY-MM-DDTHH:MM:SSZ`; `time_local` = ISO 8601 with the site
   offset (`+09:00`), offset from the device setting `sg/sched/tz_min`.
 - `flags` = `|`-joined names (see the flag table above).
-- `d0_cm`, `theta0_deg` = ZERO reference stored on the device;
+- `d0_cm`, `theta0_deg` = reference stored on the device, taken either on bare ground (ZERO) or from a probed snow depth at installation (`d0 = d + depth / cos(tilt)`);
   `snow_depth_cm = (d0 - dist_cm) * cos(tilt_deg)` (spec §4.5), empty when
   no reference or no valid distance. Raw `dist_cm` stays, so the depth can be
   recomputed with another reference later.

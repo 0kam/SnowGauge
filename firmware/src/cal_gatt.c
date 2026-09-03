@@ -8,6 +8,7 @@
 #include <zephyr/logging/log.h>
 #include <string.h>
 #include <stdlib.h>
+#include <math.h>
 
 #include "cal_gatt.h"
 #include "app.h"
@@ -31,6 +32,7 @@ static const struct bt_uuid_128 uuid_status = BT_UUID_INIT_128(CAL_UUID(4));
 #define CMD_LIVE_OFF 0x00
 #define CMD_LIVE_ON  0x01
 #define CMD_ZERO     0x10
+#define CMD_REF_DEPTH 0x11
 #define CMD_ERASE    0x20
 
 static bool live_on;
@@ -44,6 +46,7 @@ static K_WORK_DELAYABLE_DEFINE(live_work, live_work_fn);
 static void cmd_work_fn(struct k_work *work);
 static K_WORK_DEFINE(cmd_work, cmd_work_fn);
 static uint8_t pending_cmd;
+static uint16_t pending_depth_cm;
 
 static ssize_t read_status(struct bt_conn *conn, const struct bt_gatt_attr *attr, void *buf,
 			   uint16_t len, uint16_t offset)
@@ -74,6 +77,14 @@ static ssize_t write_ctrl(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 	case CMD_LIVE_ON:
 	case CMD_ZERO:
 		pending_cmd = d[0];
+		pending_depth_cm = 0;
+		break;
+	case CMD_REF_DEPTH:
+		if (len != 3) {
+			return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
+		}
+		pending_cmd = d[0];
+		pending_depth_cm = sys_get_le16(&d[1]);
 		break;
 	case CMD_ERASE:
 		if (len != 6 || memcmp(&d[1], "ERASE", 5) != 0) {
@@ -176,7 +187,7 @@ bool cal_live_is_on(void)
 	return live_on;
 }
 
-int cal_zero(uint16_t *d0_cm, int16_t *theta0_cdeg)
+int cal_zero(uint16_t depth_cm, uint16_t *d0_cm, int16_t *theta0_cdeg)
 {
 	struct measurement m;
 	struct record r;
@@ -194,12 +205,17 @@ int cal_zero(uint16_t *d0_cm, int16_t *theta0_cdeg)
 		goto out;
 	}
 	(void)time_now(&epoch);
-	ret = config_set_cal(r.dist_median_cm, r.tilt_cdeg, epoch);
+	/* Reference slant distance to bare ground: d0 = d + depth / cos(tilt). */
+	float cos_t = cosf((float)r.tilt_cdeg / 100.0f * 3.14159265f / 180.0f);
+	float d0f = (float)r.dist_median_cm + (cos_t > 0.5f ? (float)depth_cm / cos_t : (float)depth_cm);
+	uint16_t d0 = (uint16_t)MIN(d0f + 0.5f, 65535.0f);
+
+	ret = config_set_cal(d0, r.tilt_cdeg, epoch);
 	if (ret == 0) {
-		LOG_INF("ZERO: d0=%u cm theta0=%d.%02d deg", r.dist_median_cm, r.tilt_cdeg / 100,
-			abs(r.tilt_cdeg % 100));
+		LOG_INF("reference: d=%u cm depth=%u cm -> d0=%u cm theta0=%d.%02d deg",
+			r.dist_median_cm, depth_cm, d0, r.tilt_cdeg / 100, abs(r.tilt_cdeg % 100));
 		if (d0_cm) {
-			*d0_cm = r.dist_median_cm;
+			*d0_cm = d0;
 		}
 		if (theta0_cdeg) {
 			*theta0_cdeg = r.tilt_cdeg;
@@ -225,7 +241,8 @@ static void cmd_work_fn(struct k_work *work)
 		cal_live_stop();
 		break;
 	case CMD_ZERO:
-		ret = cal_zero(NULL, NULL);
+	case CMD_REF_DEPTH:
+		ret = cal_zero(pending_depth_cm, NULL, NULL);
 		break;
 	case CMD_ERASE:
 		cal_live_stop();
