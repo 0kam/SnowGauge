@@ -97,3 +97,29 @@ python3 tools/decode_records.py rec_202612.bin rec_202701.bin > records.csv
 
 Bad or torn records are skipped with a message on stderr; the decoder
 re-synchronises on the next magic word.
+
+## CSV export (Web Bluetooth page, `docs/app/`)
+
+One row per record, one header row, UTF-8, no comment lines (`pandas.read_csv`
+ready). Site columns repeat on every row so files from several loggers can be
+concatenated. Missing values are empty.
+
+```
+device_id, site_name, lat, lon, alt_m, tz_offset_min,
+time_utc, time_local, seq, flags,
+dist_cm, dist_var_cm2, strength, n_frames, n_valid, n_out_of_range,
+tilt_deg, pitch_deg, roll_deg, imu_temp_c, lidar_temp_c,
+vbat_start_mv, vbat_end_mv,
+d0_cm, theta0_deg, snow_depth_cm
+```
+
+- `time_utc` = `YYYY-MM-DDTHH:MM:SSZ`; `time_local` = ISO 8601 with the site
+  offset (`+09:00`), offset from the device setting `sg/sched/tz_min`.
+- `flags` = `|`-joined names (see the flag table above).
+- `d0_cm`, `theta0_deg` = ZERO reference stored on the device;
+  `snow_depth_cm = (d0 - dist_cm) * cos(tilt_deg)` (spec §4.5), empty when
+  no reference or no valid distance. Raw `dist_cm` stays, so the depth can be
+  recomputed with another reference later.
+- Site info comes from `/lfs1/site.json` (written by the page: lat, lon,
+  alt_m, accuracy_m, source gps/manual, tz_min, tz_name, set_at, name,
+  device_id, history[]).

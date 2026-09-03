@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SnowGauge 設定・データ回収</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#1976d2">
+<style>
+  body { font-family: system-ui, sans-serif; margin: 0; background: #f4f6f8; color: #222; }
+  header { background: #1976d2; color: #fff; padding: 12px 16px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  header h1 { font-size: 18px; margin: 0; flex: 1; }
+  main { max-width: 900px; margin: 0 auto; padding: 12px; }
+  section { background: #fff; border-radius: 8px; padding: 12px 16px; margin-bottom: 12px; box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+  section h2 { font-size: 16px; margin: 0 0 8px; }
+  button { font-size: 15px; padding: 8px 14px; border: 0; border-radius: 6px; background: #1976d2; color: #fff; margin: 4px 4px 4px 0; }
+  button:disabled { background: #b0bec5; }
+  button.danger { background: #d32f2f; } button.secondary { background: #607d8b; }
+  input { font-size: 15px; padding: 6px; width: 10em; max-width: 100%; }
+  table { border-collapse: collapse; width: 100%; font-size: 14px; }
+  td, th { border-bottom: 1px solid #eee; padding: 4px 6px; text-align: left; vertical-align: top; }
+  .help { color: #777; font-size: 12px; }
+  .ok { color: #2e7d32; } .warn { color: #ef6c00; } .err { color: #c62828; }
+  .warnrow { background: #fff3e0; }
+  #log { font-family: ui-monospace, monospace; font-size: 12px; max-height: 160px; overflow: auto; background: #263238; color: #eceff1; padding: 8px; border-radius: 6px; }
+  #log .err { color: #ff8a80; } #log .warn { color: #ffd180; }
+  .live { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; text-align: center; }
+  .live div { background: #eceff1; border-radius: 6px; padding: 8px; }
+  .live b { display: block; font-size: 28px; }
+  canvas { width: 100%; height: 220px; display: block; }
+  .scroll { overflow-x: auto; }
+  #nosupport { background: #ffebee; color: #b71c1c; padding: 10px; border-radius: 6px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>SnowGauge 設定・データ回収</h1>
+  <span id="conn-state">未接続</span>
+  <button id="btn-connect">接続</button>
+  <button id="btn-disconnect" class="secondary" hidden>切断</button>
+</header>
+<main>
+<div id="nosupport" hidden>このブラウザは Web Bluetooth に対応していません。Android / PC の Chrome を使ってください（iPhone は Bluefy などの対応ブラウザが必要です）。</div>
+
+<section>
+  <h2>1. 同期（時刻・タイムゾーン・位置）</h2>
+  <div>本体時刻: <span id="dev-time">-</span></div>
+  <div>サイト: <span id="site-info">-</span></div>
+  <div style="margin-top:8px">サイト名 <input id="site-name" placeholder="例: 苗場A"></div>
+  <button id="btn-sync" class="needs-conn" disabled>スマホの時刻・位置で同期</button>
+  <button id="btn-time" class="needs-conn secondary" disabled>時刻のみ</button>
+  <details><summary>位置を手動入力</summary>
+    緯度 <input id="m-lat" placeholder="36.123456"> 経度 <input id="m-lon" placeholder="138.123456"> 標高 m <input id="m-alt" placeholder="1200">
+    <button id="btn-site-manual" class="needs-conn secondary" disabled>保存</button>
+  </details>
+</section>
+
+<section>
+  <h2>2. 観測データ</h2>
+  <button id="btn-download" class="needs-conn" disabled>本体からダウンロード</button>
+  <button id="btn-csv" class="secondary" disabled>CSV 保存</button>
+  <button id="btn-raw" class="secondary" disabled>生データ保存</button>
+  <div id="dl-progress" class="help"></div>
+  <canvas id="chart"></canvas>
+  <div id="data-summary" class="help"></div>
+  <div class="scroll"><table><thead><tr><th>現地時刻</th><th>距離 cm</th><th>積雪 cm</th><th>傾斜°</th><th>電池 mV</th><th>有効/総</th><th>要確認</th></tr></thead><tbody id="data-body"></tbody></table></div>
+</section>
+
+<section>
+  <h2>3. 観測スケジュール</h2>
+  <table><tbody id="settings-body"></tbody></table>
+  <button id="btn-settings-save" class="needs-conn" disabled>保存</button>
+  <button id="btn-settings-reload" class="needs-conn secondary" disabled>再読込</button>
+</section>
+
+<section>
+  <h2>4. 設置・キャリブレーション</h2>
+  <div>基準 (ZERO): <span id="cal-ref">-</span>　ライブ: <span id="live-state">停止</span></div>
+  <div class="live" style="margin:8px 0">
+    <div>斜距離 cm<b id="live-dist">---</b></div>
+    <div>積雪 cm<b id="live-depth">---</b></div>
+    <div>傾斜°<b id="live-tilt">---</b></div>
+    <div>信号強度<b id="live-str">---</b></div>
+    <div>電池 mV<b id="live-vbat">---</b></div>
+    <div>有効/総<b id="live-q">---</b></div>
+  </div>
+  <button id="btn-live-on" class="needs-conn" disabled>ライブ開始</button>
+  <button id="btn-live-off" class="needs-conn secondary" disabled>ライブ停止</button>
+  <button id="btn-cal-status" class="needs-conn secondary" disabled>状態更新</button>
+  <button id="btn-zero" class="needs-conn" disabled>ZERO（無雪基準を保存）</button>
+  <button id="btn-erase" class="needs-conn danger" disabled>全レコード消去</button>
+  <div class="help">ライブ表示は本体のセンサを通電し続けます（約 120 mA）。照準の確認が終わったら必ず停止してください。</div>
+</section>
+
+<section>
+  <h2>ログ</h2>
+  <div id="log"></div>
+</section>
+</main>
+<script src="cbor.js"></script>
+<script src="smp.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

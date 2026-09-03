@@ -92,7 +92,7 @@ def iter_records(data: bytes, name: str = "<data>"):
             i += RECORD_SIZE
             continue
         # resync on the next magic word
-        j = data.find(b"SG", i + 1)
+        j = data.find(b"GS", i + 1)  # magic 0x5347 little-endian
         print(f"{name}: bad record at offset {i}, resyncing", file=sys.stderr)
         if j < 0:
             break
