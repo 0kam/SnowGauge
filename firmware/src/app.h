@@ -9,6 +9,7 @@
 #include "record.h"
 
 void app_set_auto_period(uint32_t seconds);
+void app_wake_scheduler(void);
 uint32_t app_get_auto_period(void);
 
 /*

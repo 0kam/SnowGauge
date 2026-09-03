@@ -61,6 +61,16 @@ config SNOWGAUGE_BLE_ADV_INT_MAX_MS
 	default 2000
 	range 20 10240
 
+config SNOWGAUGE_SCHED_DEFAULT_INTERVAL_MIN
+	int "Default measurement interval until configured (min, 0 = off)"
+	default 180
+	help
+	  Spec: 8 measurements/day. Overridden by the stored sg/sched/* settings.
+
+config SNOWGAUGE_SCHED_DEFAULT_TZ_MIN
+	int "Default UTC offset of the site (min)"
+	default 540
+
 endmenu
 
 source "Kconfig.zephyr"

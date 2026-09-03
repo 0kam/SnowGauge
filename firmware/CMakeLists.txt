@@ -18,5 +18,7 @@ target_sources(app PRIVATE
   src/storage.c
   src/ble_adv.c
   src/smp_mgmt.c
+  src/config.c
+  src/cal_gatt.c
   src/shell_cmds.c
 )

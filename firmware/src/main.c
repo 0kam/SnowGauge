@@ -25,11 +25,23 @@
 #include "storage.h"
 #include "timekeeping.h"
 #include "ble_adv.h"
+#include "config.h"
+#include "cal_gatt.h"
 
 LOG_MODULE_REGISTER(main, CONFIG_LOG_DEFAULT_LEVEL);
 
 static K_SEM_DEFINE(period_changed, 0, 1);
 static uint32_t auto_period_s = CONFIG_SNOWGAUGE_AUTO_MEASURE_PERIOD_S;
+
+static void config_changed(void)
+{
+	k_sem_give(&period_changed);
+}
+
+void app_wake_scheduler(void)
+{
+	k_sem_give(&period_changed);
+}
 
 void app_set_auto_period(uint32_t seconds)
 {
@@ -103,7 +115,7 @@ int main(void)
 {
 	int ret;
 
-	LOG_INF("SnowGauge FW (step 4b: BLE status advertising) - board " CONFIG_BOARD_TARGET);
+	LOG_INF("SnowGauge FW (step 4d: schedule + calibration) - board " CONFIG_BOARD_TARGET);
 
 	ret = sensor_rail_init();
 	if (ret) {
@@ -133,9 +145,18 @@ int main(void)
 	if (ret) {
 		LOG_ERR("storage_init: %d", ret);
 	}
+	ret = config_init();
+	if (ret) {
+		LOG_ERR("config_init: %d", ret);
+	}
+	config_set_change_cb(config_changed);
 	ret = ble_adv_init();
 	if (ret) {
 		LOG_ERR("ble_adv_init: %d", ret);
+	}
+	ret = cal_gatt_init();
+	if (ret) {
+		LOG_ERR("cal_gatt_init: %d", ret);
 	}
 	ret = usb_pm_init();
 	if (ret) {
@@ -149,22 +170,40 @@ int main(void)
 	for (;;) {
 		uint32_t period = auto_period_s;
 
-		if (period == 0) {
-			k_sem_take(&period_changed, K_FOREVER);
-			first = true;
-			continue;
-		}
+		if (period != 0) {
+			/* Bench mode: fixed period from the shell / Kconfig. */
+			if (!first && k_sem_take(&period_changed, K_SECONDS(period)) == 0) {
+				first = true;
+				continue;
+			}
+			first = false;
+		} else {
+			/* Field mode: schedule window from the settings, needs the clock. */
+			uint32_t now, next;
 
-		/* Measure right away when automatic mode starts, then every period. */
-		if (!first && k_sem_take(&period_changed, K_SECONDS(period)) == 0) {
-			first = true;
-			continue; /* period changed - re-evaluate */
+			if (time_now(&now) != 0 || (next = config_next_measurement(now)) == 0) {
+				k_sem_take(&period_changed, K_MINUTES(10));
+				first = true;
+				continue;
+			}
+			if (next > now) {
+				uint32_t wait_s = MIN(next - now, 3600U);
+
+				if (k_sem_take(&period_changed, K_SECONDS(wait_s)) == 0 ||
+				    wait_s < next - now) {
+					continue; /* config changed, or re-evaluate hourly */
+				}
+			}
 		}
-		first = false;
 
 		struct measurement m;
 		struct record r;
 
+		if (cal_live_is_on()) {
+			LOG_WRN("scheduled measurement skipped: live mode active");
+			k_sleep(K_SECONDS(60));
+			continue;
+		}
 		led_pulse(50);
 		if (app_measure_and_store(false, &m, &r) == 0) {
 			LOG_INF("record %u stored (%u total)", r.seq, storage_record_count());

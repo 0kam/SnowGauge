@@ -39,6 +39,8 @@
 #include "storage.h"
 #include "timekeeping.h"
 #include "ble_adv.h"
+#include "config.h"
+#include "cal_gatt.h"
 
 static void shell_out(void *ctx, const char *fmt, ...)
 {
@@ -475,3 +477,111 @@ static int cmd_ble(const struct shell *sh, size_t argc, char **argv)
 	return 0;
 }
 SHELL_CMD_ARG_REGISTER(ble, NULL, "BLE: ble [adv <min_ms> [max_ms]]", cmd_ble, 1, 3);
+
+/* ---- cfg: schedule / calibration settings ---- */
+
+static int cmd_cfg_show(const struct shell *sh, size_t argc, char **argv)
+{
+	struct app_config c;
+	uint32_t now = 0, next;
+	char ts[24];
+
+	config_get(&c);
+	shell_print(sh, "schedule: %02u:%02u-%02u:%02u local, every %u min, tz %+d min%s",
+		    c.sched_start_min / 60, c.sched_start_min % 60, c.sched_end_min / 60,
+		    c.sched_end_min % 60, c.sched_interval_min, c.tz_min,
+		    c.sched_interval_min ? "" : " (OFF)");
+	shell_print(sh, "cal: d0=%u cm theta0=%d.%02d deg set_epoch=%u%s", c.cal_d0_cm,
+		    c.cal_theta0_cdeg / 100, abs(c.cal_theta0_cdeg % 100), c.cal_set_epoch,
+		    c.cal_d0_cm ? "" : " (not set)");
+	if (time_now(&now) == 0 && (next = config_next_measurement(now)) != 0) {
+		time_format(next, ts, sizeof(ts));
+		shell_print(sh, "next scheduled measurement: %s (in %u s)", ts, next - now);
+	} else {
+		shell_print(sh, "next scheduled measurement: none (clock unset or scheduler off)");
+	}
+	if (app_get_auto_period()) {
+		shell_print(sh, "bench auto period %u s overrides the schedule", app_get_auto_period());
+	}
+	return 0;
+}
+
+static int parse_hhmm(const char *s, uint16_t *min)
+{
+	unsigned int h, m;
+
+	if (sscanf(s, "%u:%u", &h, &m) != 2 || h > 23 || m > 59) {
+		return -EINVAL;
+	}
+	*min = (uint16_t)(h * 60 + m);
+	return 0;
+}
+
+static int cmd_cfg_sched(const struct shell *sh, size_t argc, char **argv)
+{
+	struct app_config c;
+
+	config_get(&c);
+	if (parse_hhmm(argv[1], &c.sched_start_min) || parse_hhmm(argv[2], &c.sched_end_min)) {
+		shell_error(sh, "usage: cfg sched <HH:MM> <HH:MM> <interval_min> [tz_min]");
+		return -EINVAL;
+	}
+	c.sched_interval_min = (uint16_t)strtoul(argv[3], NULL, 0);
+	if (argc > 4) {
+		c.tz_min = (int16_t)strtol(argv[4], NULL, 0);
+	}
+	int ret = config_set(&c);
+
+	if (ret) {
+		shell_error(sh, "config save failed (%d)", ret);
+		return ret;
+	}
+	return cmd_cfg_show(sh, 1, argv);
+}
+
+SHELL_STATIC_SUBCMD_SET_CREATE(sub_cfg,
+	SHELL_CMD(show, NULL, "Show schedule and calibration", cmd_cfg_show),
+	SHELL_CMD_ARG(sched, NULL, "Set schedule: sched <HH:MM> <HH:MM> <interval_min> [tz_min]",
+		      cmd_cfg_sched, 4, 1),
+	SHELL_SUBCMD_SET_END);
+SHELL_CMD_REGISTER(cfg, &sub_cfg, "Configuration (settings)", NULL);
+
+/* ---- cal ---- */
+
+static int cmd_cal_zero(const struct shell *sh, size_t argc, char **argv)
+{
+	uint16_t d0;
+	int16_t th;
+	int ret = cal_zero(&d0, &th);
+
+	if (ret) {
+		shell_error(sh, "ZERO failed (%d)", ret);
+		return ret;
+	}
+	shell_print(sh, "ZERO stored: d0=%u cm theta0=%d.%02d deg", d0, th / 100, abs(th % 100));
+	return 0;
+}
+
+static int cmd_cal_clear(const struct shell *sh, size_t argc, char **argv)
+{
+	int ret = config_set_cal(0, 0, 0);
+
+	shell_print(sh, ret ? "clear failed (%d)" : "calibration cleared", ret);
+	return ret;
+}
+
+static int cmd_cal_live(const struct shell *sh, size_t argc, char **argv)
+{
+	if (argc > 1 && strcmp(argv[1], "off") == 0) {
+		cal_live_stop();
+	}
+	shell_print(sh, "live mode %s (start it from the BLE page)", cal_live_is_on() ? "on" : "off");
+	return 0;
+}
+
+SHELL_STATIC_SUBCMD_SET_CREATE(sub_cal,
+	SHELL_CMD(zero, NULL, "Take the ZERO reference (one measurement)", cmd_cal_zero),
+	SHELL_CMD(clear, NULL, "Clear the ZERO reference", cmd_cal_clear),
+	SHELL_CMD_ARG(live, NULL, "Live mode state: live [off]", cmd_cal_live, 1, 1),
+	SHELL_SUBCMD_SET_END);
+SHELL_CMD_REGISTER(cal, &sub_cal, "Calibration", NULL);
