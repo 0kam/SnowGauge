@@ -7858,6 +7858,7 @@ footer{margin-top:64px;border-top:1px solid var(--line);padding-top:14px;font-si
 <li>向きがある部品: D1（帯）、C4（長い足が+）、U1/U2/Q1/Q2（1-2-3 の並び、印字面を手前に）。F33 と F50 は印字で読み分け</li>
 <li>TFmini のピーク電流(500mA)はブレッドボードの接触抵抗に厳しいので、<b>電源系のジャンパは短く太いものを</b>。測距が不安定なら C4 の追加や配線短縮を試す</li>
 <li>スリープ電流の最終評価は PCB で行う（ブレッドボードはリークが乗るため参考値）</li>
+<li><b>抵抗の代替値</b>（手持ちで組む場合）: R3 は <b>150Ω〜2.2kΩ</b>（R4 との分圧で Q2 のゲート電圧が 2.7V 以上になること。R3=R4=10k は NG）、R4・R5 は <b>10kΩ</b> 可、R1/R2 は <b>同じ値なら 5k〜1M のどれでも</b>（FW は「読み値 ×2」）、R7 は <b>1k〜5k</b>。分圧は VBAT_SW 側なのでスリープ電流には影響しない</li>
 </ul>
 </section>
 <footer>SnowGauge 設計仕様書 v0.11 / PCB v1.2 トポロジ準拠（分圧は VBAT_SW から・Q3/R6/D3 廃止）。ピン配置の正は pcb/README.md。TSD20 版は U2 を NJU7223F33 に差し替えるだけで同一配線。この HTML は docs/gen_breadboard.py が生成します（手編集しない）。</footer>
