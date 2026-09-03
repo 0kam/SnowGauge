@@ -5,6 +5,7 @@
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gap.h>
 #include <zephyr/drivers/hwinfo.h>
+#include <zephyr/mgmt/mcumgr/transport/smp_bt.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/logging/log.h>
 #include <stdio.h>
@@ -33,6 +34,7 @@ static const struct bt_data ad[] = {
 
 static struct bt_data sd[] = {
 	BT_DATA(BT_DATA_NAME_COMPLETE, name, 0), /* length filled at init */
+	BT_DATA_BYTES(BT_DATA_UUID128_ALL, SMP_BT_SVC_UUID_VAL),
 };
 
 static void build_payload(bool last_failed)
