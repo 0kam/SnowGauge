@@ -7,7 +7,7 @@ SnowGauge PCB v1.2 (or the equivalent breadboard, `docs/breadboard_guide.html`).
 - Board target: `xiao_ble/nrf52840/sense`
 - Pin map source of truth: [`pcb/README.md`](../pcb/README.md)
 
-## Status: step 2 — measurement sequence (verified on the breadboard 2026-09-03)
+## Status: step 3 — low-power (breadboard sleep current 17 µA ±10, 2026-09-03)
 
 | Module | File | Purpose |
 |---|---|---|
@@ -16,9 +16,11 @@ SnowGauge PCB v1.2 (or the equivalent breadboard, `docs/breadboard_guide.html`).
 | Battery | `src/battery.c` | A0 via SAADC (gain 1/6, 40 µs acquisition for the 500 kΩ source). Valid only while the rail is on; Vbat = node × 2 |
 | Tilt | `src/tilt.h`, `src/tilt_lsm6dsl.c` | `TiltSensor` abstraction; LSM6DS3TR-C implementation (accel only, 52 Hz burst, powered down between reads). Deferred init: the board's regulator delay is too short for the chip |
 | Measure | `src/measure.c` | tilt → rail on → Vbat → N frames → Vbat → rail off |
+| Power | `src/power.c` | QSPI flash deep power-down at boot, green LED pulse |
+| USB PM | `src/usb_pm.c` | USB device enabled only while VBUS is present (board default keeps HFXO+USBD on: 1.8 mA) |
 | Shell | `src/shell_cmds.c` | Bench commands over USB CDC ACM |
 
-Not yet: LittleFS records, BLE, sleep-current tuning (see the development order in `../CLAUDE.md`).
+Not yet: LittleFS records, BLE. Sleep-current results: `../docs/measurements/2026-09-03_breadboard_current.md` (see the development order in `../CLAUDE.md`).
 
 ## Build
 

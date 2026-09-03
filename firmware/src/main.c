@@ -11,6 +11,7 @@
 #include <zephyr/sys/printk.h>
 #include <stdarg.h>
 #include <stdio.h>
+#include <stdbool.h>
 
 #include "app.h"
 #include "sensor_rail.h"
@@ -19,6 +20,7 @@
 #include "measure.h"
 #include "tilt.h"
 #include "power.h"
+#include "usb_pm.h"
 
 LOG_MODULE_REGISTER(main, CONFIG_LOG_DEFAULT_LEVEL);
 
@@ -74,20 +76,30 @@ int main(void)
 	if (ret) {
 		LOG_ERR("power_init: %d", ret);
 	}
+	ret = usb_pm_init();
+	if (ret) {
+		LOG_ERR("usb_pm_init: %d", ret);
+	}
 
 	LOG_INF("ready - type 'help' in the USB shell (rail is OFF)");
+
+	bool first = true;
 
 	for (;;) {
 		uint32_t period = auto_period_s;
 
 		if (period == 0) {
 			k_sem_take(&period_changed, K_FOREVER);
+			first = true;
 			continue;
 		}
 
-		if (k_sem_take(&period_changed, K_SECONDS(period)) == 0) {
+		/* Measure right away when automatic mode starts, then every period. */
+		if (!first && k_sem_take(&period_changed, K_SECONDS(period)) == 0) {
+			first = true;
 			continue; /* period changed - re-evaluate */
 		}
+		first = false;
 
 		struct measurement m;
 

@@ -11,6 +11,7 @@ target_sources(app PRIVATE
   src/battery.c
   src/tilt_lsm6dsl.c
   src/power.c
+  src/usb_pm.c
   src/measure.c
   src/shell_cmds.c
 )
