@@ -4,6 +4,7 @@
 
 #include <stdint.h>
 #include "tfmini.h"
+#include "tilt.h"
 
 struct measurement {
 	int64_t uptime_ms;
@@ -11,9 +12,11 @@ struct measurement {
 	uint16_t vbat_mv_end;    /* under sensor load, just before the rail is cut */
 	struct tfmini_stats lidar;
 	int lidar_ret;           /* return value of tfmini_capture() */
+	struct tilt_reading tilt;
+	int tilt_ret;            /* return value of tilt_read() */
 };
 
-/* Rail on -> battery -> N TFmini frames -> battery -> rail off. */
+/* Tilt (IMU) -> rail on -> battery -> N TFmini frames -> battery -> rail off. */
 int measure_once(struct measurement *m);
 
 /* Pretty-print with the shell's printf-like callback (or printk). */

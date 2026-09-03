@@ -56,3 +56,13 @@
 	};
 };
 
+
+/*
+ * The on-board IMU is powered by a GPIO regulator that the board enables
+ * at boot with only a 3 ms start-up delay; the LSM6DS3TR-C needs ~15 ms
+ * before it answers on I2C, so its driver init fails when run from the
+ * init tables. Defer it and let tilt_init() initialise it after a delay.
+ */
+&lsm6ds3tr_c {
+	zephyr,deferred-init;
+};

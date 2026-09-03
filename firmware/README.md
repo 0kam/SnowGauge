@@ -7,17 +7,18 @@ SnowGauge PCB v1.2 (or the equivalent breadboard, `docs/breadboard_guide.html`).
 - Board target: `xiao_ble/nrf52840/sense`
 - Pin map source of truth: [`pcb/README.md`](../pcb/README.md)
 
-## Status: step 1 — scaffold + TFmini UART test (verified on the breadboard 2026-09-03)
+## Status: step 2 — measurement sequence (verified on the breadboard 2026-09-03)
 
 | Module | File | Purpose |
 |---|---|---|
 | Sensor rail | `src/sensor_rail.c` | D10 = SENSOR_EN. Parks the TFmini UART (pins Hi-Z) *before* cutting the rail (ghost-power countermeasure) |
 | TFmini Plus | `src/tfmini.c` | Interrupt-driven 9-byte frame parser, N-sample burst → median / variance / quality counters, frame-rate command |
 | Battery | `src/battery.c` | A0 via SAADC (gain 1/6, 40 µs acquisition for the 500 kΩ source). Valid only while the rail is on; Vbat = node × 2 |
-| Measure | `src/measure.c` | rail on → Vbat → N frames → Vbat → rail off |
+| Tilt | `src/tilt.h`, `src/tilt_lsm6dsl.c` | `TiltSensor` abstraction; LSM6DS3TR-C implementation (accel only, 52 Hz burst, powered down between reads). Deferred init: the board's regulator delay is too short for the chip |
+| Measure | `src/measure.c` | tilt → rail on → Vbat → N frames → Vbat → rail off |
 | Shell | `src/shell_cmds.c` | Bench commands over USB CDC ACM |
 
-Not yet: IMU tilt, LittleFS records, BLE, sleep-current tuning (see the development order in `../CLAUDE.md`).
+Not yet: LittleFS records, BLE, sleep-current tuning (see the development order in `../CLAUDE.md`).
 
 ## Build
 
@@ -68,6 +69,9 @@ tfmini read 100       # 100-frame burst: median / variance / strength / temperat
 batt                  # battery voltage (pulses the rail if it is off)
 rail off              # UART Hi-Z first, then SENSOR_EN low; 5V node should read 0 V
 measure               # the whole cycle in one command
+tilt [n]              # IMU tilt / pitch / roll from n averaged samples
+dfu                   # reboot into the bootloader (then run adafruit-nrfutil dfu serial)
+device list           # Zephyr device states (debug); 'sensor get lsm6ds3tr-c@6a' also works
 auto 30               # repeat every 30 s (auto 0 to stop)
 ```
 

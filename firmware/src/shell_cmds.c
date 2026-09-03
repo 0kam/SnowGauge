@@ -7,6 +7,8 @@
  *   tfmini rate <hz>               set frame rate (volatile until 'tfmini save')
  *   tfmini save                    persist TFmini settings
  *   batt                           battery voltage (turns the rail on briefly if needed)
+ *   tilt [n]                       IMU tilt angle from n averaged samples
+ *   dfu                            reboot into the bootloader (serial DFU)
  *   measure                        one full cycle: rail -> batt -> N frames -> batt -> rail off
  *   auto [s]                       automatic measurement period (0 = off)
  */
@@ -25,6 +27,7 @@
 #include "battery.h"
 #include "measure.h"
 #include "app.h"
+#include "tilt.h"
 
 static void shell_out(void *ctx, const char *fmt, ...)
 {
@@ -194,6 +197,29 @@ static int cmd_batt(const struct shell *sh, size_t argc, char **argv)
 	return 0;
 }
 SHELL_CMD_REGISTER(batt, NULL, "Battery voltage", cmd_batt);
+
+/* ---- tilt ---- */
+
+static int cmd_tilt(const struct shell *sh, size_t argc, char **argv)
+{
+	struct tilt_reading r;
+	uint8_t n = CONFIG_SNOWGAUGE_TILT_SAMPLES;
+	int ret;
+
+	if (argc > 1) {
+		n = (uint8_t)strtoul(argv[1], NULL, 0);
+	}
+	ret = tilt_read(&r, n);
+	if (ret) {
+		shell_error(sh, "tilt read failed (%d)", ret);
+		return ret;
+	}
+	shell_print(sh, "tilt=%.2f deg  pitch=%.2f  roll=%.2f  a=(%d,%d,%d) mg  temp=%.1f C  n=%u",
+		    (double)r.tilt_deg, (double)r.pitch_deg, (double)r.roll_deg,
+		    r.ax_mg, r.ay_mg, r.az_mg, (double)r.temp_c, r.n_samples);
+	return 0;
+}
+SHELL_CMD_ARG_REGISTER(tilt, NULL, "IMU tilt: tilt [n]", cmd_tilt, 1, 1);
 
 /* ---- dfu: reboot into the Adafruit bootloader (serial DFU mode) ---- */
 

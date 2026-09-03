@@ -28,6 +28,11 @@ config SNOWGAUGE_TFMINI_MIN_STRENGTH
 	help
 	  Benewake documents distances as unreliable below a strength of 100.
 
+config SNOWGAUGE_TILT_SAMPLES
+	int "Accelerometer samples averaged per tilt reading"
+	default 16
+	range 1 255
+
 config SNOWGAUGE_AUTO_MEASURE_PERIOD_S
 	int "Automatic measurement period at boot (s, 0 = shell only)"
 	default 0

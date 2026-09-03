@@ -17,6 +17,7 @@
 #include "tfmini.h"
 #include "battery.h"
 #include "measure.h"
+#include "tilt.h"
 
 LOG_MODULE_REGISTER(main, CONFIG_LOG_DEFAULT_LEVEL);
 
@@ -50,7 +51,7 @@ int main(void)
 {
 	int ret;
 
-	LOG_INF("SnowGauge FW (step 1: TFmini UART test) - board " CONFIG_BOARD_TARGET);
+	LOG_INF("SnowGauge FW (step 2: measurement sequence) - board " CONFIG_BOARD_TARGET);
 
 	ret = sensor_rail_init();
 	if (ret) {
@@ -63,6 +64,10 @@ int main(void)
 	ret = battery_init();
 	if (ret) {
 		LOG_ERR("battery_init: %d", ret);
+	}
+	ret = tilt_init();
+	if (ret) {
+		LOG_ERR("tilt_init: %d", ret);
 	}
 
 	LOG_INF("ready - type 'help' in the USB shell (rail is OFF)");

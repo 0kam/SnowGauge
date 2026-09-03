@@ -9,6 +9,7 @@
 #include "sensor_rail.h"
 #include "battery.h"
 #include "tfmini.h"
+#include "tilt.h"
 
 LOG_MODULE_REGISTER(measure, CONFIG_LOG_DEFAULT_LEVEL);
 
@@ -18,6 +19,12 @@ int measure_once(struct measurement *m)
 
 	memset(m, 0, sizeof(*m));
 	m->uptime_ms = k_uptime_get();
+
+	/* IMU first: independent of the rail, keeps the current peaks apart. */
+	m->tilt_ret = tilt_read(&m->tilt, CONFIG_SNOWGAUGE_TILT_SAMPLES);
+	if (m->tilt_ret) {
+		LOG_WRN("tilt read failed (%d)", m->tilt_ret);
+	}
 
 	ret = sensor_rail_on();
 	if (ret) {
@@ -64,5 +71,13 @@ void measure_print(const struct measurement *m,
 	if (s->n_frames > 0) {
 		out(ctx, "strength median=%u  chip temp=%d.%d C",
 		    s->strength_median, s->temp_c_x10 / 10, abs(s->temp_c_x10 % 10));
+	}
+	if (m->tilt_ret == 0) {
+		out(ctx, "tilt=%.2f deg (pitch=%.2f roll=%.2f)  a=(%d,%d,%d) mg  imu temp=%.1f C  n=%u",
+		    (double)m->tilt.tilt_deg, (double)m->tilt.pitch_deg, (double)m->tilt.roll_deg,
+		    m->tilt.ax_mg, m->tilt.ay_mg, m->tilt.az_mg, (double)m->tilt.temp_c,
+		    m->tilt.n_samples);
+	} else if (m->tilt_ret != 0 && m->tilt.n_samples == 0 && m->uptime_ms != 0) {
+		out(ctx, "tilt: read failed (%d)", m->tilt_ret);
 	}
 }
