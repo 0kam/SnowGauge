@@ -41,6 +41,16 @@ Low-cost, low-power snow depth logger (NIR laser ToF + XIAO nRF52840 Sense). Fie
 - picowatt capture: `cd ~/NIES/picowatt/app && uv run picowatt-cli --port /dev/cu.usbmodem214xx --mode single --adcrange 1 --preset very-quiet --seconds N --csv out.csv` (7.6 Sa/s, 2 µA LSB). µA-level absolute values need the difference method described in the measurements doc.
 - MCUboot would overwrite the Adafruit bootloader → needs SWD; decided against for v1 (spec v0.11).
 
+## Step 4d design (agreed 2026-09-03; supersedes the "custom GATT only" idea for settings)
+
+- **Phone/PC UI = one Web Bluetooth page** (`docs/app/` → GitHub Pages, PWA-cached; Android Chrome / desktop Chrome; iPhone needs Bluefy). It speaks **SMP in JS** (os datetime/echo/reset, fs upload/download, settings mgmt). Generic core reusable as the base for other loggers; project-specific parts are the record schema, the settings schema and the calibration panel.
+- **Schedule** (Zephyr settings, SMP settings group): `sg/sched/start_min`, `end_min` (local minutes-of-day, start > end = spans midnight, start == end = all day), `interval_min`, `tz_min` (UTC offset; the device clock stays UTC). Bench `auto <s>` overrides.
+- **Site info** = `/lfs1/site.json` written by the page via fs upload (lat/lon/alt/accuracy/source/set_at/tz/name + history array). Not per record.
+- **Sync button** sends time + tz + location together (individual actions also available).
+- **Calibration GATT** (custom service): live notify (dist/strength/tilt/vbat), control write (live on/off, ZERO, ERASE+token), status read (d0, theta0, set epoch). ZERO stores `sg/cal/d0_cm`, `theta0_cdeg`, `set_epoch` in settings.
+- **CSV export** done in the page: one row per record, header row, site columns repeated per row, `time_utc` + `time_local` ISO 8601, derived `d0_cm, theta0_deg, snow_depth_cm` at the end; raw .bin also saveable. Column list in `docs/record_format.md`.
+- Open: no pairing → anyone nearby can erase/change settings (ERASE has a token; PIN later if needed).
+
 ## Firmware decisions (spec §12, closed)
 
 - **nRF Connect SDK (Zephyr)**, board `xiao_ble/nrf52840/sense`. **Flashing is USB/UF2 only (decided 2026-09-02, no SWD probe): keep the Adafruit bootloader, no MCUboot, BLE DFU deferred to a future revision.**
