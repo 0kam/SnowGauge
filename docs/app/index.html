@@ -5,15 +5,17 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SnowGauge</title>
 <link rel="manifest" href="manifest.webmanifest">
-<meta name="theme-color" content="#1976d2">
+<link rel="icon" href="favicon.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="theme-color" content="#050a1e">
 <style>
-  :root { --blue: #1976d2; --grey: #607d8b; --red: #c62828; }
+  :root { --blue: #1976d2; --navy: #050a1e; --grey: #607d8b; --red: #c62828; }
   * { box-sizing: border-box; }
   body { font-family: system-ui, sans-serif; margin: 0; background: #f4f6f8; color: #222; font-size: 18px; }
-  header { background: var(--blue); color: #fff; padding: 10px 14px; display: flex; align-items: center; gap: 10px; position: sticky; top: 0; z-index: 2; }
-  header h1 { font-size: 20px; margin: 0; flex: 1; white-space: nowrap; }
+  header { background: var(--navy); color: #fff; padding: 8px 14px; display: flex; align-items: center; gap: 10px; position: sticky; top: 0; z-index: 2; }
+  header h1 { margin: 0; flex: 1; line-height: 0; } header h1 img { height: 40px; width: auto; max-width: 100%; }
   header .status { font-size: 13px; white-space: nowrap; max-width: 40vw; overflow: hidden; text-overflow: ellipsis; }
-  header button { margin: 0; width: auto; min-height: 44px; padding: 0 16px; background: #fff; color: var(--blue); }
+  header button { margin: 0; width: auto; min-height: 44px; padding: 0 16px; background: var(--blue); color: #fff; }
   main { max-width: 720px; margin: 0 auto; padding: 10px; }
   section { background: #fff; border-radius: 12px; padding: 14px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,.1); }
   section h2 { font-size: 19px; margin: 0 0 10px; }
@@ -44,7 +46,7 @@
 </head>
 <body>
 <header>
-  <h1>SnowGauge</h1>
+  <h1><img src="logo_dark.png" alt="SnowGauge"></h1>
   <span id="conn-state" class="status">未接続</span>
   <button id="btn-connect">接続</button>
   <button id="btn-disconnect" hidden>切断</button>

@@ -1,3 +1,10 @@
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/assets/logo/logo_dark_800.png">
+    <img src="docs/assets/logo/logo_light_800.png" alt="SnowGauge" width="480">
+  </picture>
+</p>
+
 # SnowGauge
 
 An inexpensive, low-power snow depth logger for remote subalpine sites, designed for multi-point deployment.
