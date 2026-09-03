@@ -33,6 +33,13 @@ config SNOWGAUGE_TILT_SAMPLES
 	default 16
 	range 1 255
 
+config SNOWGAUGE_IMU_POWER_GATE
+	bool "Cut the IMU supply between readings"
+	default y
+	help
+	  Disable the on-board LSM6DS3TR-C regulator (P1.08) while idle instead
+	  of relying on the chip's power-down mode.
+
 config SNOWGAUGE_AUTO_MEASURE_PERIOD_S
 	int "Automatic measurement period at boot (s, 0 = shell only)"
 	default 0

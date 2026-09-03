@@ -18,6 +18,7 @@
 #include "battery.h"
 #include "measure.h"
 #include "tilt.h"
+#include "power.h"
 
 LOG_MODULE_REGISTER(main, CONFIG_LOG_DEFAULT_LEVEL);
 
@@ -69,6 +70,10 @@ int main(void)
 	if (ret) {
 		LOG_ERR("tilt_init: %d", ret);
 	}
+	ret = power_init();
+	if (ret) {
+		LOG_ERR("power_init: %d", ret);
+	}
 
 	LOG_INF("ready - type 'help' in the USB shell (rail is OFF)");
 
@@ -86,6 +91,7 @@ int main(void)
 
 		struct measurement m;
 
+		led_pulse(50);
 		(void)measure_once(&m);
 		measure_print(&m, printk_out, NULL);
 	}

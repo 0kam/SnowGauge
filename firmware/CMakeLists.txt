@@ -10,6 +10,7 @@ target_sources(app PRIVATE
   src/tfmini.c
   src/battery.c
   src/tilt_lsm6dsl.c
+  src/power.c
   src/measure.c
   src/shell_cmds.c
 )

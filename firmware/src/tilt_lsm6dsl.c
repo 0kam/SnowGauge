@@ -9,6 +9,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/sensor.h>
+#include <zephyr/drivers/regulator.h>
 #include <zephyr/logging/log.h>
 #include <errno.h>
 #include <math.h>
@@ -26,6 +27,32 @@ LOG_MODULE_REGISTER(tilt, CONFIG_LOG_DEFAULT_LEVEL);
 #define RAD2DEG 57.2957795f
 
 static const struct device *const imu = DEVICE_DT_GET(IMU_NODE);
+/* GPIO regulator (P1.08) feeding the IMU; enabled at boot by the board. */
+static const struct device *const imu_reg = DEVICE_DT_GET(DT_PATH(lsm6ds3tr_c_en));
+
+/*
+ * With CONFIG_SNOWGAUGE_IMU_POWER_GATE the IMU supply is cut between
+ * readings (0 uA instead of the ~3 uA power-down mode). The chip comes back
+ * with its register defaults, which match what a burst read needs (FS 2 g,
+ * IF_INC on); only the ODR is written before each read.
+ */
+static int imu_supply(bool on)
+{
+	int ret;
+
+	if (!IS_ENABLED(CONFIG_SNOWGAUGE_IMU_POWER_GATE)) {
+		return 0;
+	}
+	ret = on ? regulator_enable(imu_reg) : regulator_disable(imu_reg);
+	if (ret && ret != -EALREADY) {
+		LOG_ERR("IMU supply %s failed (%d)", on ? "on" : "off", ret);
+		return ret;
+	}
+	if (on) {
+		k_sleep(K_MSEC(IMU_BOOT_MS));
+	}
+	return 0;
+}
 
 static int set_odr(int hz)
 {
@@ -50,7 +77,9 @@ int tilt_init(void)
 		LOG_ERR("IMU not ready");
 		return -ENODEV;
 	}
-	return tilt_power_down();
+	ret = tilt_power_down();
+	(void)imu_supply(false);
+	return ret;
 }
 
 int tilt_power_down(void)
@@ -76,9 +105,14 @@ int tilt_read(struct tilt_reading *r, uint8_t n_samples)
 		return -ENODEV;
 	}
 
+	ret = imu_supply(true);
+	if (ret) {
+		return ret;
+	}
 	ret = set_odr(ACCEL_ODR_HZ);
 	if (ret) {
 		LOG_ERR("IMU wake failed (%d)", ret);
+		(void)imu_supply(false);
 		return ret;
 	}
 	k_sleep(K_MSEC(SAMPLE_PERIOD_MS * SETTLE_SAMPLES));
@@ -111,6 +145,7 @@ int tilt_read(struct tilt_reading *r, uint8_t n_samples)
 	}
 
 	(void)tilt_power_down();
+	(void)imu_supply(false);
 
 	if (n == 0) {
 		return -EIO;
