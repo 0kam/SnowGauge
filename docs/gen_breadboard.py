@@ -66,76 +66,75 @@ PARTS = [
     dict(n=8, step=1, kind='two', name='C1 0.1µF', a='e11', b='e12', shape='cap', sub='C1', lab='below'),
     dict(n=8, step=1, kind='two', name='C2 0.1µF', a='d10', b='d12', shape='cap', sub='C2', lab='left'),
     dict(n=8, step=1, kind='two', name='C6 10µF', a='b10', b='b12', shape='cap', sub='C6', lab='right',
-         note='向きなし（旧版の c10↔c12 は U1 の足と同じ穴なので修正）'),
-    # ---- STEP 2: XIAO ----
+         note='向きなし'),
+    # ---- STEP 2: XIAO (USB connector to the LEFT; top row = 5V..D7, bottom row = D0..D6) ----
     dict(n=9, step=2, kind='xiao', name='XIAO nRF52840 Sense', col0=20),
-    dict(n=10, step=2, kind='jmp', name='ジャンパ 橙 (3.3V)', a='a10', b='g22', color='33', lb=15,
-         note='U1 の OUT 列 → XIAO 3V3 ピンの列'),
-    dict(n=11, step=2, kind='jmp', name='ジャンパ 黒', a='g21', b='B-@21', color='gnd', la=15,
-         note='XIAO GND ピンの列 → 下の青レール'),
-    dict(n=12, step=2, kind='jmp', name='ジャンパ 黒 (レール橋渡し)', a='T-@62', b='B-@62',
-         color='gnd', note='上の青レール ↔ 下の青レール'),
-    # ---- STEP 3: switch + 5 V ----
-    dict(n=13, step=3, kind='ic3', name='Q2 2SK4017', holes=['h28', 'h29', 'h30'],
-         pins=['G', 'D', 'S'], lab='right', note='印字面を手前にして左から G / D / S'),
-    dict(n=14, step=3, kind='two', name='R3 10kΩ', a='j23', b='j28', shape='res', lab='above',
-         note='XIAO D10 の列 ↔ Q2 の G 列'),
-    dict(n=15, step=3, kind='two', name='R4 100kΩ', a='i28', b='B-@28', shape='res', lab='left',
-         note='Q2 の G 列 → 下の青レール（プルダウン）'),
-    dict(n=16, step=3, kind='jmp', name='ジャンパ 黒', a='g30', b='B-@30', color='gnd', la=-9,
-         note='Q2 の S 列 → 下の青レール'),
-    dict(n=17, step=3, kind='ic3', name='Q1 2SJ334', holes=['c32', 'c33', 'c34'],
+    dict(n=10, step=2, kind='jmp', name='ジャンパ 橙 (3.3V)', a='a10', b='a22', color='33',
+         note='U1 の OUT 列 → XIAO 3V3 ピン(e22)の列'),
+    dict(n=11, step=2, kind='jmp', name='ジャンパ 黒', a='a21', b='T-@21', color='gnd',
+         note='XIAO GND ピン(e21)の列 → 上の青レール'),
+    # ---- STEP 3: switch + 5 V (all in the upper a-e bank) ----
+    dict(n=12, step=3, kind='ic3', name='Q2 2SK4017', holes=['c28', 'c29', 'c30'],
          pins=['G', 'D', 'S'], lab='left', note='印字面を手前にして左から G / D / S'),
-    dict(n=18, step=3, kind='two', name='R5 100kΩ', a='b32', b='b34', shape='res', lab='left',
+    dict(n=13, step=3, kind='two', name='R3 10kΩ', a='b23', b='b28', shape='res', lab='left',
+         note='XIAO D10 ピン(e23)の列 ↔ Q2 の G 列'),
+    dict(n=14, step=3, kind='two', name='R4 100kΩ', a='a28', b='T-@28', shape='res', lab='left',
+         note='Q2 の G 列 → 上の青レール（プルダウン）'),
+    dict(n=15, step=3, kind='jmp', name='ジャンパ 黒', a='a30', b='T-@30', color='gnd',
+         note='Q2 の S 列 → 上の青レール'),
+    dict(n=16, step=3, kind='ic3', name='Q1 2SJ334', holes=['c32', 'c33', 'c34'],
+         pins=['G', 'D', 'S'], lab='right', note='印字面を手前にして左から G / D / S'),
+    dict(n=17, step=3, kind='two', name='R5 100kΩ', a='b32', b='b34', shape='res', lab='left',
          note='Q1 の G–S 間（プルアップ）'),
-    dict(n=19, step=3, kind='jmp', name='ジャンパ (Q1ゲート)', a='g29', b='a32', color='gate', la=-9,
+    dict(n=18, step=3, kind='jmp', name='ジャンパ (Q1ゲート)', a='a29', b='a32', color='gate',
          note='Q2 の D 列 → Q1 の G 列'),
-    dict(n=20, step=3, kind='jmp', name='ジャンパ 赤', a='a34', b='T+@34', color='vbat',
+    dict(n=19, step=3, kind='jmp', name='ジャンパ 赤', a='a34', b='T+@34', color='vbat',
          note='Q1 の S 列 → 上の赤レール'),
-    dict(n=21, step=3, kind='ic3', name='U2 NJU7223F50', holes=['c38', 'c39', 'c40'],
+    dict(n=20, step=3, kind='ic3', name='U2 NJU7223F50', holes=['c38', 'c39', 'c40'],
          pins=['OUT', 'IN', 'GND'], lab='above', note='TSD20 版はここを F33 に'),
-    dict(n=22, step=3, kind='jmp', name='ジャンパ (VBAT_SW)', a='a33', b='a39', color='vsw',
+    dict(n=21, step=3, kind='jmp', name='ジャンパ (VBAT_SW)', a='a33', b='a39', color='vsw',
          note='Q1 の D 列 → U2 の IN 列'),
-    dict(n=23, step=3, kind='jmp', name='ジャンパ 黒', a='a40', b='T-@40', color='gnd',
+    dict(n=22, step=3, kind='jmp', name='ジャンパ 黒', a='a40', b='T-@40', color='gnd',
          note='U2 の GND 列 → 上の青レール'),
-    dict(n=24, step=3, kind='two', name='C3 0.1µF', a='e39', b='e40', shape='cap', lab='below'),
-    dict(n=25, step=3, kind='two', name='C4 OS-CON 470µF', a='b42', b='b44', shape='ecap', lab='right',
+    dict(n=23, step=3, kind='two', name='C3 0.1µF', a='e39', b='e40', shape='cap', lab='below'),
+    dict(n=24, step=3, kind='two', name='C4 OS-CON 470µF', a='b42', b='b44', shape='ecap', lab='right',
          sub='C4', note='極性注意: 長い足(+) を b42、− を b44'),
-    dict(n=25, step=3, kind='two', name='C5 0.1µF', a='c42', b='c44', shape='cap', sub='C5', lab='below'),
-    dict(n=26, step=3, kind='jmp', name='ジャンパ (5V)', a='a38', b='a42', color='5v',
+    dict(n=24, step=3, kind='two', name='C5 0.1µF', a='c42', b='c44', shape='cap', sub='C5', lab='below'),
+    dict(n=25, step=3, kind='jmp', name='ジャンパ (5V)', a='a38', b='a42', color='5v',
          note='U2 の OUT 列 → 5V ノード'),
-    dict(n=27, step=3, kind='jmp', name='ジャンパ 黒', a='a44', b='T-@44', color='gnd',
+    dict(n=26, step=3, kind='jmp', name='ジャンパ 黒', a='a44', b='T-@44', color='gnd',
          note='C4 の − 列 → 上の青レール'),
     # ---- STEP 4: battery divider ----
-    dict(n=28, step=4, kind='two', name='R1 1MΩ', a='e33', b='e36', shape='res', lab='below',
-         note='Q1 の D 列(VBAT_SW) ↔ 36 列（旧版の c33 は Q1 の足と同じ穴なので修正）'),
-    dict(n=29, step=4, kind='two', name='R2 1MΩ', a='b36', b='b41', shape='res', lab='above'),
-    dict(n=30, step=4, kind='jmp', name='ジャンパ 黒', a='a41', b='T-@41', color='gnd'),
-    dict(n=31, step=4, kind='jmp', name='ジャンパ 紫 (電圧測定)', a='a36', b='a20', color='adc',
-         note='分圧の中点 → XIAO A0(D0) の列'),
+    dict(n=27, step=4, kind='two', name='R1 1MΩ', a='e33', b='e36', shape='res', lab='left', hl='below',
+         note='Q1 の D 列(VBAT_SW) ↔ 36 列'),
+    dict(n=28, step=4, kind='two', name='R2 1MΩ', a='b36', b='b41', shape='res', lab='above'),
+    dict(n=29, step=4, kind='jmp', name='ジャンパ 黒', a='a41', b='T-@41', color='gnd'),
+    dict(n=30, step=4, kind='jmp', name='ジャンパ 紫 (電圧測定)', a='a36', b='g20', color='adc', lb=15,
+         note='分圧の中点 → XIAO A0(D0) ピン(f20)の列（溝をまたぐ）'),
     # ---- STEP 5: TFmini ----
-    dict(n=32, step=5, kind='two', name='R7 1kΩ', a='a26', b='a31', shape='res', lab='above',
-         note='XIAO D6(TX) の列 ↔ 31 列'),
-    dict(n=33, step=5, kind='ext', name='TFmini 白 (RX)', a='c31', color='tx',
-         label='TFmini 白(RX)', anchor='end'),
-    dict(n=34, step=5, kind='ext', name='TFmini 緑 (TX)', a='h26', color='rx',
-         label='TFmini 緑(TX)', note='XIAO D7(RX) の列'),
-    dict(n=35, step=5, kind='ext', name='TFmini 赤 (+5V)', a='e42', color='5v',
+    dict(n=31, step=5, kind='two', name='R7 1kΩ', a='g26', b='g31', shape='res', lab='below',
+         note='XIAO D6(TX) ピン(f26)の列 ↔ 31 列'),
+    dict(n=32, step=5, kind='ext', name='TFmini 白 (RX)', a='h31', color='tx',
+         label='TFmini 白(RX)', note='R7 の先'),
+    dict(n=33, step=5, kind='ext', name='TFmini 緑 (TX)', a='a26', color='rx',
+         label='TFmini 緑(TX)', note='XIAO D7(RX) ピン(e26)の列'),
+    dict(n=34, step=5, kind='ext', name='TFmini 赤 (+5V)', a='e42', color='5v',
          label='TFmini 赤(+5V)', note='5V ノード'),
-    dict(n=36, step=5, kind='ext', name='TFmini 黒 (GND)', a='T-@50', color='gnd',
+    dict(n=35, step=5, kind='ext', name='TFmini 黒 (GND)', a='T-@50', color='gnd',
          label='TFmini 黒(GND)'),
 ]
 
-XIAO_TOP = ['D0/A0', 'D1', 'D2', 'D3', 'D4', 'D5', 'D6']       # row e, cols 20..26
-XIAO_BOT = ['5V', 'GND', '3V3', 'D10', 'D9', 'D8', 'D7']       # row f, cols 20..26
+# XIAO with its USB connector pointing LEFT (component side up):
+XIAO_TOP = ['5V', 'GND', '3V3', 'D10', 'D9', 'D8', 'D7/RX']    # row e, cols 20..26
+XIAO_BOT = ['D0/A0', 'D1', 'D2', 'D3', 'D4', 'D5', 'D6/TX']    # row f, cols 20..26
 
 STEPS = {
     1: ('電源部', ['赤レール−青レール間: <span class="kbd">電池電圧 −0.2〜0.35V</span>',
                   'c10（U1 の OUT）−青レール間: <span class="kbd">3.25〜3.35V</span>']),
     2: ('XIAO', ['XIAO の 3V3 ピン(f22)−GND ピン(f21) 間 = <span class="kbd">3.3V</span>（SnowGauge FW は LED を使わないので LED は点きません）']),
     3: ('スイッチと 5V 系', ['なにもしない時: e42−GND 間 = <span class="kbd">0V</span>',
-                       'ジャンパ線で j28（Q2 の G）を 3.3V（c10）に触れさせる: e42 = <span class="kbd">4.9〜5.1V</span>、離すと 0V に戻る',
-                       '同じくその時 c33（Q1 の D = VBAT_SW）= <span class="kbd">電池電圧</span>、a32（Q1 の G）= <span class="kbd">0V 近く</span>']),
+                       'ジャンパ線で a28（Q2 の G）を 3.3V（c10）に触れさせる: e42 = <span class="kbd">4.9〜5.1V</span>、離すと 0V に戻る',
+                       '同じくその時 a33（Q1 の D = VBAT_SW）= <span class="kbd">電池電圧</span>、a32（Q1 の G）= <span class="kbd">0V 近く</span>']),
     4: ('電池電圧の見張り（スイッチ済みレールから分圧）',
         ['スイッチ ON 中（上の確認と同時に）: a36−GND 間 = <span class="kbd">電池電圧のほぼ半分</span>、OFF 中は <span class="kbd">0V</span>']),
     5: ('TFmini Plus', ['テスト FW で: <span class="kbd">rail on</span> → <span class="kbd">tfmini raw 500</span> で距離フレーム受信、<span class="kbd">rail off</span> → e42 = 0V',
@@ -243,6 +242,8 @@ def draw_two(p, dim):
         o.append(name_text(min(x1, x2) - 14, my + 4, label, 'end')); holes_above = True
     else:  # right
         o.append(name_text(max(x1, x2) + 14, my + 4, label, 'start')); holes_above = True
+    if p.get('hl') and holes_above is not None:
+        holes_above = (p['hl'] == 'above')
     o.append('</g>')
     for i, (x, y, h) in enumerate(((x1, y1, p['a']), (x2, y2, p['b']))):
         nm = hole_name(h) if '@' not in h else 'レール'
@@ -429,7 +430,7 @@ def table_rows(step):
             c0 = p['col0']
             a = f'e{c0}〜e{c0+6}: ' + ' '.join(XIAO_TOP)
             b = f'f{c0}〜f{c0+6}: ' + ' '.join(XIAO_BOT)
-            rows.append((num, esc(p['name']), a, b, '列 20〜26 に溝をまたいで挿す。USB コネクタが左（列 20 側）'))
+            rows.append((num, esc(p['name']), a, b, '列 20〜26 に溝をまたいで挿す。<b>USB コネクタが左（列 20 側）</b>。部品面を上にして見ると上列が 5V…D7、下列が D0…D6'))
     out = ['<div class="tablebox"><table>',
            '<tr><th style="width:46px">番号</th><th style="width:170px">部品/線</th><th>端 A（穴）</th><th>端 B（穴）</th><th>備考</th></tr>']
     for num, name, a, b, note in rows:
@@ -507,7 +508,7 @@ def build_html():
 <p class="sub">列番号（1〜63）×行（a〜e / f〜j）で穴を指定します。<b>同じ列の a〜e、f〜j はそれぞれ内部でつながっています</b>（中央の溝をまたぐと別グループ）。上下の赤・青の長いレールは横一列すべてつながっています。</p>
 <ul>
 <li>上の<b style="color:#D62828">赤レール = VBAT</b>（ダイオード通過後の電池+）／ 上の<b style="color:#2B5FA8">青レール = GND</b></li>
-<li>下の青レールも GND（⑫のブリッジ線で上とつなぐ）。下の赤レールは使いません</li>
+<li>下の赤・青レールは使いません（すべて上のレールに戻します）</li>
 <li>例: <span class="kbd">c10</span> = 10 列目の c 行。部品の両端は図中の●の脇に穴名を書いてあります。レールへ行く線は同じ列のレール穴に挿してあれば十分です（レール上の位置は自由）</li>
 </ul>
 </section>''')
@@ -524,7 +525,7 @@ def build_html():
         h.append(table_rows(k))
         h.append('<ul class="check">' + ''.join(f'<li>{c}</li>' for c in checks) + '</ul>')
         if k == 2:
-            h.append('<div class="warn"><b>最重要:</b> パソコンと USB でつなぐ時は<b>必ず電池を抜く</b>。USB を挿したまま電池（や安定化電源）でセンサ側を動かしたい時は、<b>⑩（橙、a10→g22）だけ抜けば両立できます</b>（XIAO は USB 給電、センサレールと分圧は電池給電。GND は共通のまま）。向きを間違えて挿すと壊れるので、⑨は挿す前に指差し確認。</div>')
+            h.append('<div class="warn"><b>最重要:</b> パソコンと USB でつなぐ時は<b>必ず電池を抜く</b>。USB を挿したまま電池（や安定化電源）でセンサ側を動かしたい時は、<b>⑩（橙、a10→a22）だけ抜けば両立できます</b>（XIAO は USB 給電、センサレールと分圧は電池給電。GND は共通のまま）。向きを間違えて挿すと壊れるので、⑨は挿す前に指差し確認。</div>')
         if k == 4:
             h.append('<p style="font-size:13.5px;margin-top:10px">FW メモ: 電池電圧はセンサレール ON 中に A0 を読む（読み値 ×2）。旧設計の D3・Q3・R6 は廃止。</p>')
         if k == 5:
