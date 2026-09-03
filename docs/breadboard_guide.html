@@ -3791,7 +3791,7 @@ footer{margin-top:64px;border-top:1px solid var(--line);padding-top:14px;font-si
 <tr><td class="n">⑪</td><td><i class="chip" style="background:#3A4148"></i>ジャンパ 黒</td><td class="h">g21</td><td class="h">下の青レール(GND)</td><td class="note">XIAO GND ピンの列 → 下の青レール</td></tr>
 <tr><td class="n">⑫</td><td><i class="chip" style="background:#3A4148"></i>ジャンパ 黒 (レール橋渡し)</td><td class="h">上の青レール(GND)</td><td class="h">下の青レール(GND)</td><td class="note">上の青レール ↔ 下の青レール</td></tr>
 </table></div>
-<ul class="check"><li>電池だけで XIAO の LED が点灯する</li></ul>
+<ul class="check"><li>XIAO の 3V3 ピン(f22)−GND ピン(f21) 間 = <span class="kbd">3.3V</span>（SnowGauge FW は LED を使わないので LED は点きません）</li></ul>
 <div class="warn"><b>最重要:</b> パソコンと USB でつなぐ時は<b>必ず電池を抜く</b>。USB を挿したまま電池（や安定化電源）でセンサ側を動かしたい時は、<b>⑩（橙、a10→g22）だけ抜けば両立できます</b>（XIAO は USB 給電、センサレールと分圧は電池給電。GND は共通のまま）。向きを間違えて挿すと壊れるので、⑨は挿す前に指差し確認。</div>
 </div>
 <div class="step">
