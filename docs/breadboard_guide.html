@@ -5109,7 +5109,7 @@ footer{margin-top:64px;border-top:1px solid var(--line);padding-top:14px;font-si
 <tr><td class="n">㉕</td><td><i class="chip" style="background:#C2185B"></i>ジャンパ (5V)</td><td class="h">a38</td><td class="h">a42</td><td class="note">U2 の OUT 列 → 5V ノード</td></tr>
 <tr><td class="n">㉖</td><td><i class="chip" style="background:#3A4148"></i>ジャンパ 黒</td><td class="h">a44</td><td class="h">上の青レール(GND)</td><td class="note">C4 の − 列 → 上の青レール</td></tr>
 </table></div>
-<ul class="check"><li>なにもしない時: e42−GND 間 = <span class="kbd">0V</span></li><li>ジャンパ線で a28（Q2 の G）を 3.3V（c10）に触れさせる: e42 = <span class="kbd">4.9〜5.1V</span>、離すと 0V に戻る</li><li>同じくその時 a33（Q1 の D = VBAT_SW）= <span class="kbd">電池電圧</span>、a32（Q1 の G）= <span class="kbd">0V 近く</span></li></ul>
+<ul class="check"><li>なにもしない時: e42−GND 間 = <span class="kbd">0V</span></li><li>ジャンパ線で a28（Q2 の G）を 3.3V（c10）に触れさせる: e42 = <span class="kbd">4.9〜5.1V</span>、離すと 0V に戻る</li><li>a28 を c10 に触れさせている間: a32（Q1 の G）= <span class="kbd">0V 近く</span>、a33（Q1 の D = VBAT_SW）= <span class="kbd">電池電圧</span>。離している時は逆に a32 ≈ 電池電圧、a33 = 0V</li></ul>
 </div>
 <div class="step">
 <h3><span class="sno">STEP 4</span>電池電圧の見張り（スイッチ済みレールから分圧）</h3>
