@@ -7,7 +7,7 @@ SnowGauge PCB v1.2 (or the equivalent breadboard, `docs/breadboard_guide.html`).
 - Board target: `xiao_ble/nrf52840/sense`
 - Pin map source of truth: [`pcb/README.md`](../pcb/README.md)
 
-## Status: step 4a — record storage (LittleFS + internal mirror + clock)
+## Status: step 4b — record storage + BLE status advertising (26 µA sleep incl. adv)
 
 | Module | File | Purpose |
 |---|---|---|
@@ -21,9 +21,10 @@ SnowGauge PCB v1.2 (or the equivalent breadboard, `docs/breadboard_guide.html`).
 | Record | `src/record.c` | 40-byte record v1 encode/decode with CRC-16 (`docs/record_format.md`) |
 | Storage | `src/storage.c` | LittleFS on the QSPI (`/lfs/rec_YYYYMM.bin`) + raw append-only mirror in internal flash; restores clock/seq at boot |
 | Clock | `src/timekeeping.c` | Emulated RTC behind the `rtc` alias; UNSET / ESTIMATED / SYNCED state |
-| Shell | `src/shell_cmds.c` | Bench commands over USB CDC ACM (`rec`, `time`, ...) |
+| BLE adv | `src/ble_adv.c` | Connectable advertising 1–2 s, name `SG-XXXX`, Manufacturer Data with Vbat / record count / last distance / flags (layout in `ble_adv.h`) |
+| Shell | `src/shell_cmds.c` | Bench commands over USB CDC ACM (`rec`, `time`, `ble`, ...) |
 
-Not yet: BLE (advertising, SMP, calibration GATT). Sleep-current results: `../docs/measurements/2026-09-03_breadboard_current.md` (see the development order in `../CLAUDE.md`).
+Not yet: SMP/mcumgr (file download, datetime), calibration GATT. Sleep-current results: `../docs/measurements/2026-09-03_breadboard_current.md` (see the development order in `../CLAUDE.md`).
 
 ## Build
 

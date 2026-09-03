@@ -44,3 +44,20 @@ measurement), PSU 6.00 V, USB disconnected, ⑩ in. Same difference method.
 | Zero, DUT lead c2 pulled (40 s) | −71.7 µA (sd 24) | |
 | Raw, DUT reinserted (60 s) | −53.6 µA (sd 18) | drift check: within 0.3 µA of the first run |
 | **Sleep current, whole system, step 4a** | **18 µA ± 10** | unchanged vs. step 3 (17 µA) → LittleFS/runtime-PM QSPI and the 1 Hz rtc-emul tick cost nothing measurable |
+
+## FW step 4b: BLE status advertising, 2026-09-03 afternoon
+
+Firmware `ea2bde3`: connectable advertising, interval 1000–2000 ms (SoftDevice
+Controller picks within the window), 31-byte ADV + scan response with the name.
+PSU 6.00 V, USB disconnected, ⑩ in, shell-only build.
+
+| Item | Value | Note |
+|---|---|---|
+| Raw, DUT connected (60 s) | −44.9 µA (sd 42) | 10 s blocks −42…−48 µA; larger sd = advertising bursts |
+| Zero, DUT lead c2 pulled (40 s) | −70.5 µA (sd 21) | zero drift vs. the 4a run: 1.2 µA |
+| **Sleep + advertising, whole system** | **26 µA ± 10** | |
+| **BLE advertising increment (1–2 s)** | **≈ +8 µA** | vs. 18 µA without BLE |
+
+Running total ≈ 26 µA + 3.5 µA measurements ≈ **30 µA average**, against the spec
+§7.1 budget of 50 µA typ / 90 µA worst. The advertising interval stays a knob
+(`ble adv <ms>`; 2 s fixed would roughly halve the +8 µA).
