@@ -11,14 +11,15 @@
   * { box-sizing: border-box; }
   body { font-family: system-ui, sans-serif; margin: 0; background: #f4f6f8; color: #222; font-size: 18px; }
   header { background: var(--blue); color: #fff; padding: 10px 14px; display: flex; align-items: center; gap: 10px; position: sticky; top: 0; z-index: 2; }
-  header h1 { font-size: 20px; margin: 0; flex: 1; }
-  header button { margin: 0; min-height: 44px; padding: 0 16px; background: #fff; color: var(--blue); }
+  header h1 { font-size: 20px; margin: 0; flex: 1; white-space: nowrap; }
+  header .status { font-size: 13px; white-space: nowrap; max-width: 40vw; overflow: hidden; text-overflow: ellipsis; }
+  header button { margin: 0; width: auto; min-height: 44px; padding: 0 16px; background: #fff; color: var(--blue); }
   main { max-width: 720px; margin: 0 auto; padding: 10px; }
   section { background: #fff; border-radius: 12px; padding: 14px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,.1); }
   section h2 { font-size: 19px; margin: 0 0 10px; }
   button { font-size: 19px; font-weight: 600; min-height: 56px; width: 100%; padding: 10px 14px; border: 0; border-radius: 10px; background: var(--blue); color: #fff; margin: 6px 0; }
-  button:disabled { background: #b0bec5; color: #eceff1; }
   button.danger { background: var(--red); } button.secondary { background: var(--grey); }
+  button:disabled, button.secondary:disabled, button.danger:disabled { background: #cfd8dc; color: #90a4ae; }
   .row { display: flex; gap: 8px; } .row > * { flex: 1; }
   input, select { font-size: 19px; min-height: 52px; padding: 8px 10px; width: 100%; border: 1px solid #b0bec5; border-radius: 8px; background: #fff; }
   select.big { font-weight: 600; }
@@ -93,7 +94,7 @@
   <div class="row"><button id="btn-live-on" class="needs-conn" disabled>ライブ開始</button><button id="btn-live-off" class="needs-conn secondary" disabled>ライブ停止</button></div>
   <div class="help">ライブ表示中はセンサに通電し続けます（約 120 mA、5 分で自動停止）。照準を確認したら停止してください。</div>
   <button id="btn-zero" class="needs-conn" disabled>ZERO（無雪の地面）</button>
-  <div class="row"><select id="depth-sel" class="needs-conn big" disabled></select><button id="btn-ref-depth" class="needs-conn" disabled>積雪深から基準設定</button></div>
+  <div class="row"><select id="depth-sel" class="needs-conn big" disabled></select><button id="btn-ref-depth" class="needs-conn" disabled>積雪深で基準設定</button></div>
   <div class="help">雪がある状態で設置したときは、プローブで測った現在の積雪深を選んで基準を作ります。</div>
   <button id="btn-cal-status" class="needs-conn secondary" disabled>状態更新</button>
   <button id="btn-erase" class="needs-conn danger" disabled>全レコード消去</button>

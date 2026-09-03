@@ -441,7 +441,7 @@ if (typeof window !== 'undefined') window.addEventListener('load', () => {
   $('btn-raw').onclick = exportRaw;
   $('btn-live-on').onclick = liveOn; $('btn-live-off').onclick = liveOff;
   $('btn-zero').onclick = () => twoTap($('btn-zero'), 'ZERO（無雪の地面）', () => setReference(0));
-  $('btn-ref-depth').onclick = () => twoTap($('btn-ref-depth'), '積雪深から基準設定', () => setReference(parseInt($('depth-sel').value, 10)));
+  $('btn-ref-depth').onclick = () => twoTap($('btn-ref-depth'), '積雪深で基準設定', () => setReference(parseInt($('depth-sel').value, 10)));
   $('btn-erase').onclick = () => twoTap($('btn-erase'), '全レコード消去', doErase);
   $('depth-sel').innerHTML = Array.from({ length: 401 }, (_, i) => `<option value="${i}">${i} cm</option>`).join('');
   $('btn-cal-status').onclick = () => calStatus().catch(e => log(e.message, 'err'));
