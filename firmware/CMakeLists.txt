@@ -16,5 +16,6 @@ target_sources(app PRIVATE
   src/record.c
   src/timekeeping.c
   src/storage.c
+  src/ble_adv.c
   src/shell_cmds.c
 )

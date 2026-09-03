@@ -24,6 +24,7 @@
 #include "record.h"
 #include "storage.h"
 #include "timekeeping.h"
+#include "ble_adv.h"
 
 LOG_MODULE_REGISTER(main, CONFIG_LOG_DEFAULT_LEVEL);
 
@@ -56,6 +57,7 @@ int app_measure_and_store(bool manual, struct measurement *m_out, struct record 
 	}
 	if (ret) {
 		LOG_ERR("measurement failed (%d) - not stored", ret);
+		(void)ble_adv_update(true);
 		return ret;
 	}
 
@@ -81,6 +83,7 @@ int app_measure_and_store(bool manual, struct measurement *m_out, struct record 
 	if (r_out) {
 		*r_out = r;
 	}
+	(void)ble_adv_update(ret != 0);
 	return ret;
 }
 
@@ -100,7 +103,7 @@ int main(void)
 {
 	int ret;
 
-	LOG_INF("SnowGauge FW (step 4a: record storage) - board " CONFIG_BOARD_TARGET);
+	LOG_INF("SnowGauge FW (step 4b: BLE status advertising) - board " CONFIG_BOARD_TARGET);
 
 	ret = sensor_rail_init();
 	if (ret) {
@@ -129,6 +132,10 @@ int main(void)
 	ret = storage_init();
 	if (ret) {
 		LOG_ERR("storage_init: %d", ret);
+	}
+	ret = ble_adv_init();
+	if (ret) {
+		LOG_ERR("ble_adv_init: %d", ret);
 	}
 	ret = usb_pm_init();
 	if (ret) {

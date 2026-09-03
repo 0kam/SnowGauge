@@ -15,6 +15,7 @@
  *   rec count|ls|dump [n]|hex [n]|erase ERASE   record storage
  *   reboot                         warm reset into the application
  *   time [set <epoch>]             wall clock (UTC epoch seconds)
+ *   ble [adv <min_ms> <max_ms>]    advertising status / interval (max 0 = stop)
  */
 
 #include <zephyr/kernel.h>
@@ -37,6 +38,7 @@
 #include "record.h"
 #include "storage.h"
 #include "timekeeping.h"
+#include "ble_adv.h"
 
 static void shell_out(void *ctx, const char *fmt, ...)
 {
@@ -442,3 +444,34 @@ static int cmd_time(const struct shell *sh, size_t argc, char **argv)
 	return 0;
 }
 SHELL_CMD_ARG_REGISTER(time, NULL, "Wall clock: time [set <epoch>]", cmd_time, 1, 2);
+
+/* ---- ble ---- */
+
+static int cmd_ble(const struct shell *sh, size_t argc, char **argv)
+{
+	if (argc >= 2 && strcmp(argv[1], "adv") == 0) {
+		uint32_t min_ms = 0, max_ms = 0;
+
+		if (argc == 3) {
+			min_ms = max_ms = strtoul(argv[2], NULL, 0);
+		} else if (argc == 4) {
+			min_ms = strtoul(argv[2], NULL, 0);
+			max_ms = strtoul(argv[3], NULL, 0);
+		} else {
+			shell_error(sh, "usage: ble adv <ms> | ble adv <min_ms> <max_ms> | ble adv 0");
+			return -EINVAL;
+		}
+		int ret = ble_adv_set_interval(min_ms, max_ms);
+
+		if (ret) {
+			shell_error(sh, "adv interval failed (%d)", ret);
+			return ret;
+		}
+	} else if (argc != 1) {
+		shell_error(sh, "usage: ble [adv ...]");
+		return -EINVAL;
+	}
+	ble_adv_status(shell_out, (void *)sh);
+	return 0;
+}
+SHELL_CMD_ARG_REGISTER(ble, NULL, "BLE: ble [adv <min_ms> [max_ms]]", cmd_ble, 1, 3);

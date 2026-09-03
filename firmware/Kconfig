@@ -48,6 +48,19 @@ config SNOWGAUGE_AUTO_MEASURE_PERIOD_S
 	  seconds without any shell interaction. Can be changed at run time
 	  with the 'auto' shell command.
 
+config SNOWGAUGE_BLE_ADV_INT_MIN_MS
+	int "BLE advertising interval, minimum (ms)"
+	default 1000
+	range 20 10240
+	help
+	  Spec section 12.2: 1-2 s. The interval is the main BLE power knob;
+	  can be changed at run time with the 'ble adv' shell command.
+
+config SNOWGAUGE_BLE_ADV_INT_MAX_MS
+	int "BLE advertising interval, maximum (ms)"
+	default 2000
+	range 20 10240
+
 endmenu
 
 source "Kconfig.zephyr"
