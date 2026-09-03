@@ -2,7 +2,7 @@
  * mcumgr / SMP over BLE (spec section 12.2, layer 1).
  *
  * Standard groups only, usable from the nRF Connect Device Manager app:
- *   fs mgmt : download the record files (/lfs/rec_YYYYMM.bin)
+ *   fs mgmt : download the record files (/lfs1/rec_YYYYMM.bin)
  *   os mgmt : echo (liveness), datetime get/set (clock sync), reset
  *
  * The datetime commands talk to the `rtc` alias (rtc-emul). The hooks below

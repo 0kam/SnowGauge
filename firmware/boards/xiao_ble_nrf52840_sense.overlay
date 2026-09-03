@@ -95,7 +95,7 @@
 
 		lfs1: lfs1 {
 			compatible = "zephyr,fstab,littlefs";
-			mount-point = "/lfs";
+			mount-point = "/lfs1";
 			partition = <&lfs1_part>;
 			read-size = <16>;
 			prog-size = <16>;

@@ -19,7 +19,7 @@ SnowGauge PCB v1.2 (or the equivalent breadboard, `docs/breadboard_guide.html`).
 | Power | `src/power.c` | Green LED pulse; checks that the QSPI flash runs under runtime PM (deep power-down between accesses) |
 | USB PM | `src/usb_pm.c` | USB device enabled only while VBUS is present (board default keeps HFXO+USBD on: 1.8 mA) |
 | Record | `src/record.c` | 40-byte record v1 encode/decode with CRC-16 (`docs/record_format.md`) |
-| Storage | `src/storage.c` | LittleFS on the QSPI (`/lfs/rec_YYYYMM.bin`) + raw append-only mirror in internal flash; restores clock/seq at boot |
+| Storage | `src/storage.c` | LittleFS on the QSPI (`/lfs1/rec_YYYYMM.bin`) + raw append-only mirror in internal flash; restores clock/seq at boot |
 | Clock | `src/timekeeping.c` | Emulated RTC behind the `rtc` alias; UNSET / ESTIMATED / SYNCED state |
 | BLE adv | `src/ble_adv.c` | Connectable advertising 1–2 s, name `SG-XXXX`, Manufacturer Data with Vbat / record count / last distance / flags (layout in `ble_adv.h`) |
 | Shell | `src/shell_cmds.c` | Bench commands over USB CDC ACM (`rec`, `time`, `ble`, ...) |

@@ -14,7 +14,7 @@
 
 LOG_MODULE_REGISTER(storage, CONFIG_LOG_DEFAULT_LEVEL);
 
-#define LFS_MOUNT_POINT "/lfs"
+#define LFS_MOUNT_POINT "/lfs1"
 #define REC_PREFIX      "rec_"
 #define REC_SUFFIX      ".bin"
 #define REC_NOTIME_NAME LFS_MOUNT_POINT "/" REC_PREFIX "notime" REC_SUFFIX

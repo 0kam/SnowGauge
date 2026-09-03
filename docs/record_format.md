@@ -46,9 +46,9 @@ Snow depth is *not* stored; it is computed offline from the ZERO reference
 
 ## Where records live
 
-1. **Primary: LittleFS on the 2 MB QSPI flash**, mounted at `/lfs`.
+1. **Primary: LittleFS on the 2 MB QSPI flash**, mounted at `/lfs1` (the path nRF Connect Device Manager hard-codes).
    One file per month, records appended back to back:
-   `/lfs/rec_YYYYMM.bin` (UTC month), or `/lfs/rec_notime.bin` while the
+   `/lfs1/rec_YYYYMM.bin` (UTC month), or `/lfs1/rec_notime.bin` while the
    clock is unset. These files are what the BLE file download (mcumgr fs,
    step 4c) fetches. 8 records/day = ~10 kB per month.
 2. **Mirror: internal flash partition `mirror_partition`** (0x9F000–0xEC000,
@@ -82,7 +82,7 @@ record and marks records TIME_ESTIMATED until the next external sync.
 ```
 measure              one cycle, stored (flag MANUAL); prints the record as CSV
 rec count            record count, next seq, file system / mirror state, newest record
-rec ls               files on /lfs with sizes
+rec ls               files on /lfs1 with sizes
 rec dump [n]         newest n records from the mirror as CSV (0 = all)
 rec erase ERASE      delete all record files + erase the mirror
 time                 show the clock and its state

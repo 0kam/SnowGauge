@@ -2,7 +2,7 @@
  * Record storage (spec section 4.3 step 4 / 12.1).
  *
  *  primary : LittleFS on the 2 MB QSPI flash (P25Q16H), one file per month
- *            "/lfs/rec_YYYYMM.bin" (or "/lfs/rec_notime.bin" while the
+ *            "/lfs1/rec_YYYYMM.bin" (or "/lfs1/rec_notime.bin" while the
  *            clock is unset), records appended back to back. These files
  *            are what mcumgr fs download fetches over BLE.
  *  mirror  : raw append-only slots in the internal flash partition
