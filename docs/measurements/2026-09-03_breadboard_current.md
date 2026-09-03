@@ -31,3 +31,15 @@ every 60 s, N=100 TFmini frames.
 Budget check (spec §7.1 assumed 50 µA typ / 90 µA worst sleep + 15–35 µA measurements):
 measured ≈ 17 + 3.5 ≈ **21 µA** before BLE advertising. BLE adv (1–2 s interval) is
 expected to add ~10–20 µA. Final numbers to be re-measured on PCB v1.2.
+
+## Re-measurement with FW step 4a (record storage), 2026-09-03 afternoon
+
+Firmware `1dccdfa` (LittleFS mounted on the QSPI, QSPI under runtime PM / deep
+power-down, rtc-emul 1 Hz work item, mirror partition), shell-only build (no auto
+measurement), PSU 6.00 V, USB disconnected, ⑩ in. Same difference method.
+
+| Item | Value | Note |
+|---|---|---|
+| Raw, DUT connected (60 s) | −53.9 µA (sd 18) | |
+| Zero, DUT lead c2 pulled (40 s) | −71.7 µA (sd 24) | |
+| **Sleep current, whole system, step 4a** | **18 µA ± 10** | unchanged vs. step 3 (17 µA) → LittleFS/runtime-PM QSPI and the 1 Hz rtc-emul tick cost nothing measurable |
