@@ -1,1 +1,1 @@
-{ "version": "0.0.1", "configurations": [ { "name": "snowgauge-app", "runtimeExecutable": "python3", "runtimeArgs": ["-m", "http.server", "8765", "--directory", "docs/app"], "port": 8765 } ] }
+{ "version": "0.0.1", "configurations": [ { "name": "snowgauge-app", "runtimeExecutable": "python3", "runtimeArgs": ["-m", "http.server", "8787", "--directory", "docs/app"], "port": 8787 } ] }

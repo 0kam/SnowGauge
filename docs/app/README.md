@@ -8,8 +8,8 @@ Talks SMP (mcumgr) over Web Bluetooth plus the small calibration GATT service.
   no Web Bluetooth; use a Web-Bluetooth browser app (e.g. Bluefy).
 - Must be served over HTTPS (GitHub Pages) or from `localhost`. Installs as a
   PWA and caches itself for offline use in the field.
-- Local test: `python3 -m http.server 8765 --directory docs/app` then open
-  http://localhost:8765/ in Chrome.
+- Local test: `python3 -m http.server 8787 --directory docs/app` then open
+  http://localhost:8787/ in Chrome.
 
 Files: `cbor.js` (CBOR), `smp.js` (generic SMP client: os / fs / settings
 groups), `app.js` (SnowGauge specifics: record schema, settings schema,
