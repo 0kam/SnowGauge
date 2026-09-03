@@ -12,7 +12,8 @@
  *   measure                        one full cycle: rail -> batt -> N frames -> batt -> rail off,
  *                                  stored as a record (flag MANUAL)
  *   auto [s]                       automatic measurement period (0 = off)
- *   rec count|ls|dump [n]|erase ERASE   record storage
+ *   rec count|ls|dump [n]|hex [n]|erase ERASE   record storage
+ *   reboot                         warm reset into the application
  *   time [set <epoch>]             wall clock (UTC epoch seconds)
  */
 
@@ -23,6 +24,7 @@
 #include <hal/nrf_gpio.h>
 #include <nrfx.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
 
@@ -243,6 +245,16 @@ static int cmd_dfu(const struct shell *sh, size_t argc, char **argv)
 }
 SHELL_CMD_REGISTER(dfu, NULL, "Reboot into the bootloader for serial DFU", cmd_dfu);
 
+static int cmd_reboot(const struct shell *sh, size_t argc, char **argv)
+{
+	shell_print(sh, "rebooting ...");
+	(void)sensor_rail_off();
+	k_sleep(K_MSEC(100));
+	sys_reboot(SYS_REBOOT_WARM);
+	return 0;
+}
+SHELL_CMD_REGISTER(reboot, NULL, "Warm reset into the application", cmd_reboot);
+
 /* ---- measure / auto ---- */
 
 static int cmd_measure(const struct shell *sh, size_t argc, char **argv)
@@ -333,6 +345,34 @@ static int cmd_rec_dump(const struct shell *sh, size_t argc, char **argv)
 	return 0;
 }
 
+static int cmd_rec_hex(const struct shell *sh, size_t argc, char **argv)
+{
+	uint32_t n = 1;
+	uint32_t total = storage_mirror_count();
+	struct record r;
+	uint8_t buf[RECORD_SIZE];
+	char line[2 * RECORD_SIZE + 1];
+
+	if (argc > 1) {
+		n = strtoul(argv[1], NULL, 0);
+	}
+	if (n == 0 || n > total) {
+		n = total;
+	}
+	for (uint32_t i = total - n; i < total; i++) {
+		if (storage_mirror_read(i, &r) != 0) {
+			shell_print(sh, "# slot %u: bad", i);
+			continue;
+		}
+		record_encode(&r, buf);
+		for (int b = 0; b < RECORD_SIZE; b++) {
+			snprintf(&line[2 * b], 3, "%02x", buf[b]);
+		}
+		shell_print(sh, "%s", line);
+	}
+	return 0;
+}
+
 static int cmd_rec_erase(const struct shell *sh, size_t argc, char **argv)
 {
 	int ret;
@@ -351,6 +391,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_rec,
 	SHELL_CMD(ls, NULL, "List record files on LittleFS", cmd_rec_ls),
 	SHELL_CMD_ARG(dump, NULL, "Print the newest n records (CSV): dump [n=10, 0=all]",
 		      cmd_rec_dump, 1, 1),
+	SHELL_CMD_ARG(hex, NULL, "Newest n records as raw hex (for tools/decode_records.py --hex)",
+		      cmd_rec_hex, 1, 1),
 	SHELL_CMD_ARG(erase, NULL, "Delete all records: erase ERASE", cmd_rec_erase, 1, 1),
 	SHELL_SUBCMD_SET_END);
 SHELL_CMD_REGISTER(rec, &sub_rec, "Record storage", NULL);
@@ -374,7 +416,11 @@ static int cmd_time(const struct shell *sh, size_t argc, char **argv)
 	uint32_t epoch = 0;
 	char ts[24];
 
-	if (argc > 2 && strcmp(argv[1], "set") == 0) {
+	if (argc == 2 || (argc > 2 && strcmp(argv[1], "set") != 0)) {
+		shell_error(sh, "usage: time [set <epoch>]");
+		return -EINVAL;
+	}
+	if (argc > 2) {
 		epoch = strtoul(argv[2], NULL, 0);
 		if (epoch < 1700000000U) {
 			shell_error(sh, "epoch looks wrong (want UTC seconds, e.g. 1780000000)");

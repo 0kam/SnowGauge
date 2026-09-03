@@ -25,7 +25,7 @@ Source of truth: `firmware/src/record.h` (layout), `firmware/src/storage.h`
 | 32 | 2 | lidar_temp | 0.1 °C, signed; TFmini *chip* temperature (50–75 °C is normal) |
 | 34 | 2 | vbat_start_mv | battery right after the sensor rail settled |
 | 36 | 2 | vbat_end_mv | battery under sensor load, just before the rail is cut |
-| 38 | 2 | crc16 | CRC-16/CCITT-FALSE (poly 0x1021, init 0xFFFF) over bytes 0–37 |
+| 38 | 2 | crc16 | Zephyr `crc16_ccitt()`: reflected CCITT (poly 0x8408, i.e. 0x1021 bit-reversed), init 0xFFFF, no final XOR, over bytes 0–37 |
 
 Flags (bit set = true):
 

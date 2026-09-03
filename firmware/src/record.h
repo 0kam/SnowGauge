@@ -24,7 +24,7 @@
  *   32   2  lidar_temp (0.1 degC, signed; TFmini chip temperature)
  *   34   2  vbat_start_mv (right after the rail settled)
  *   36   2  vbat_end_mv (under sensor load, before the rail is cut)
- *   38   2  crc16 (CRC-16/CCITT-FALSE over bytes 0..37)
+ *   38   2  crc16 (Zephyr crc16_ccitt: reflected CCITT poly 0x8408, init 0xFFFF, over bytes 0..37)
  */
 #ifndef SNOWGAUGE_RECORD_H
 #define SNOWGAUGE_RECORD_H

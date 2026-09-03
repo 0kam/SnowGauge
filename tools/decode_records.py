@@ -36,12 +36,12 @@ HEADER = [
 
 
 def crc16_ccitt(data: bytes, seed: int = 0xFFFF) -> int:
+    """Zephyr crc16_ccitt(): reflected CCITT (poly 0x8408 = 0x1021 reversed), init 0xFFFF."""
     crc = seed
     for b in data:
-        crc ^= b << 8
+        crc ^= b
         for _ in range(8):
-            crc = ((crc << 1) ^ 0x1021) if crc & 0x8000 else (crc << 1)
-            crc &= 0xFFFF
+            crc = (crc >> 1) ^ 0x8408 if crc & 1 else crc >> 1
     return crc
 
 

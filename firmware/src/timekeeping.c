@@ -3,7 +3,6 @@
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/rtc.h>
-#include <zephyr/sys/timeutil.h>
 #include <zephyr/logging/log.h>
 #include <stdio.h>
 #include <time.h>
@@ -14,6 +13,16 @@ LOG_MODULE_REGISTER(timekeeping, CONFIG_LOG_DEFAULT_LEVEL);
 
 static const struct device *const rtc = DEVICE_DT_GET(DT_ALIAS(rtc));
 static enum time_state state = TIME_UNSET;
+
+/*
+ * The clock itself is base_epoch + elapsed k_uptime: k_uptime reads the
+ * RTC1 counter (32.768 kHz crystal), whereas rtc-emul re-arms a 1 s work
+ * item from inside its handler and gains ~2.6 s/day. rtc-emul is still
+ * set on every time_set() so that mcumgr's datetime command (step 4c)
+ * has a device to talk to.
+ */
+static uint32_t base_epoch;
+static int64_t base_uptime_ms;
 
 int time_init(void)
 {
@@ -26,17 +35,10 @@ int time_init(void)
 
 int time_now(uint32_t *epoch)
 {
-	struct rtc_time t;
-	int ret;
-
 	if (state == TIME_UNSET) {
 		return -ENODATA;
 	}
-	ret = rtc_get_time(rtc, &t);
-	if (ret) {
-		return ret;
-	}
-	*epoch = (uint32_t)timeutil_timegm(rtc_time_to_tm(&t));
+	*epoch = base_epoch + (uint32_t)((k_uptime_get() - base_uptime_ms) / 1000);
 	return 0;
 }
 
@@ -46,6 +48,11 @@ int time_set(uint32_t epoch, bool synced)
 	struct rtc_time t = { 0 };
 	time_t tt = epoch;
 	int ret;
+
+	/* Never let a restore estimate overwrite an externally synced clock. */
+	if (!synced && state == TIME_SYNCED) {
+		return -EALREADY;
+	}
 
 	gmtime_r(&tt, &tm);
 	t.tm_sec = tm.tm_sec;
@@ -59,14 +66,13 @@ int time_set(uint32_t epoch, bool synced)
 	t.tm_isdst = -1;
 	t.tm_nsec = 0;
 
+	base_uptime_ms = k_uptime_get();
+	base_epoch = epoch;
+	state = synced ? TIME_SYNCED : TIME_ESTIMATED;
+
 	ret = rtc_set_time(rtc, &t);
 	if (ret) {
-		LOG_ERR("rtc_set_time: %d", ret);
-		return ret;
-	}
-	/* Never downgrade a synced clock to "estimated". */
-	if (synced || state != TIME_SYNCED) {
-		state = synced ? TIME_SYNCED : TIME_ESTIMATED;
+		LOG_WRN("rtc_set_time: %d", ret);
 	}
 	return 0;
 }

@@ -6,6 +6,7 @@
 #include <string.h>
 #include <math.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 #include "record.h"
 
@@ -121,16 +122,28 @@ void record_print_header(void (*out)(void *ctx, const char *fmt, ...), void *ctx
 		 "tilt_deg,pitch_deg,roll_deg,imu_temp_c,lidar_temp_c,vbat_start_mv,vbat_end_mv");
 }
 
+/* Signed fixed-point to text ("-0.50"), INT16_MIN -> "" (missing). */
+static const char *fixp(int16_t v, int scale, char *buf, size_t len)
+{
+	if (v == INT16_MIN) {
+		buf[0] = '\0';
+	} else if (scale == 100) {
+		snprintf(buf, len, "%s%d.%02d", v < 0 ? "-" : "", abs(v) / 100, abs(v) % 100);
+	} else {
+		snprintf(buf, len, "%s%d.%d", v < 0 ? "-" : "", abs(v) / 10, abs(v) % 10);
+	}
+	return buf;
+}
+
 void record_print(const struct record *r,
 		  void (*out)(void *ctx, const char *fmt, ...), void *ctx)
 {
-	out(ctx, "%u,%u,0x%02x,%u,%u,%u,%u,%u,%u,%d.%02d,%d.%02d,%d.%02d,%d.%d,%d.%d,%u,%u",
+	char t[12], p[12], ro[12], it[12], lt[12];
+
+	out(ctx, "%u,%u,0x%02x,%u,%u,%u,%u,%u,%u,%s,%s,%s,%s,%s,%u,%u",
 	    r->seq, r->epoch, r->flags, r->dist_median_cm, r->dist_var_cm2, r->strength,
 	    r->n_frames, r->n_valid, r->n_out_of_range,
-	    r->tilt_cdeg / 100, abs(r->tilt_cdeg % 100),
-	    r->pitch_cdeg / 100, abs(r->pitch_cdeg % 100),
-	    r->roll_cdeg / 100, abs(r->roll_cdeg % 100),
-	    r->imu_temp_dc / 10, abs(r->imu_temp_dc % 10),
-	    r->lidar_temp_dc / 10, abs(r->lidar_temp_dc % 10),
-	    r->vbat_start_mv, r->vbat_end_mv);
+	    fixp(r->tilt_cdeg, 100, t, sizeof(t)), fixp(r->pitch_cdeg, 100, p, sizeof(p)),
+	    fixp(r->roll_cdeg, 100, ro, sizeof(ro)), fixp(r->imu_temp_dc, 10, it, sizeof(it)),
+	    fixp(r->lidar_temp_dc, 10, lt, sizeof(lt)), r->vbat_start_mv, r->vbat_end_mv);
 }

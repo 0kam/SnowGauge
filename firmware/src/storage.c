@@ -29,6 +29,7 @@ static uint32_t mirror_write_idx;  /* first blank slot */
 static uint32_t mirror_valid;      /* valid records found at boot + appended */
 
 static bool fs_mounted;
+static bool mirror_full_warned;
 static uint32_t record_count;
 static uint32_t next_seq;
 static K_MUTEX_DEFINE(lock);
@@ -238,7 +239,12 @@ int storage_append(const struct record *r)
 		ret_fs = lfs_append(r, buf);
 	}
 	ret_mirror = mirror_append(buf);
-	if (ret_mirror) {
+	if (ret_mirror == -ENOSPC) {
+		if (!mirror_full_warned) {
+			LOG_WRN("mirror partition full - records go to LittleFS only");
+			mirror_full_warned = true;
+		}
+	} else if (ret_mirror) {
 		LOG_WRN("mirror append: %d", ret_mirror);
 	}
 	if (ret_fs == 0 || ret_mirror == 0) {
@@ -249,7 +255,8 @@ int storage_append(const struct record *r)
 	}
 	k_mutex_unlock(&lock);
 
-	return ret_fs ? ret_fs : ret_mirror;
+	/* Primary result when the file system is up; the mirror is best effort. */
+	return fs_mounted ? ret_fs : ret_mirror;
 }
 
 uint32_t storage_record_count(void)
@@ -359,12 +366,15 @@ int storage_erase_all(void)
 			(void)fs_closedir(&dir);
 		}
 	}
-	ret = flash_area_erase(mirror, 0, mirror->fa_size);
-	if (ret) {
-		LOG_ERR("mirror erase: %d", ret);
+	int ret_erase = flash_area_erase(mirror, 0, mirror->fa_size);
+
+	if (ret_erase) {
+		LOG_ERR("mirror erase: %d", ret_erase);
+		ret = ret ? ret : ret_erase;
 	}
 	mirror_write_idx = 0;
 	mirror_valid = 0;
+	mirror_full_warned = false;
 	record_count = 0;
 	next_seq = 0;
 out:
