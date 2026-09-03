@@ -9,8 +9,11 @@
  *   batt                           battery voltage (turns the rail on briefly if needed)
  *   tilt [n]                       IMU tilt angle from n averaged samples
  *   dfu                            reboot into the bootloader (serial DFU)
- *   measure                        one full cycle: rail -> batt -> N frames -> batt -> rail off
+ *   measure                        one full cycle: rail -> batt -> N frames -> batt -> rail off,
+ *                                  stored as a record (flag MANUAL)
  *   auto [s]                       automatic measurement period (0 = off)
+ *   rec count|ls|dump [n]|erase ERASE   record storage
+ *   time [set <epoch>]             wall clock (UTC epoch seconds)
  */
 
 #include <zephyr/kernel.h>
@@ -21,6 +24,7 @@
 #include <nrfx.h>
 #include <stdlib.h>
 #include <stdarg.h>
+#include <string.h>
 
 #include "sensor_rail.h"
 #include "tfmini.h"
@@ -28,6 +32,9 @@
 #include "measure.h"
 #include "app.h"
 #include "tilt.h"
+#include "record.h"
+#include "storage.h"
+#include "timekeeping.h"
 
 static void shell_out(void *ctx, const char *fmt, ...)
 {
@@ -241,12 +248,20 @@ SHELL_CMD_REGISTER(dfu, NULL, "Reboot into the bootloader for serial DFU", cmd_d
 static int cmd_measure(const struct shell *sh, size_t argc, char **argv)
 {
 	struct measurement m;
-	int ret = measure_once(&m);
+	struct record r;
+	int ret = app_measure_and_store(true, &m, &r);
 
 	measure_print(&m, shell_out, (void *)sh);
+	if (ret == 0) {
+		shell_print(sh, "stored as record %u (%u total)", r.seq, storage_record_count());
+		record_print_header(shell_out, (void *)sh);
+		record_print(&r, shell_out, (void *)sh);
+	} else {
+		shell_error(sh, "not stored (%d)", ret);
+	}
 	return ret;
 }
-SHELL_CMD_REGISTER(measure, NULL, "One full measurement cycle", cmd_measure);
+SHELL_CMD_REGISTER(measure, NULL, "One full measurement cycle, stored as a record", cmd_measure);
 
 static int cmd_auto(const struct shell *sh, size_t argc, char **argv)
 {
@@ -263,3 +278,121 @@ static int cmd_auto(const struct shell *sh, size_t argc, char **argv)
 	return 0;
 }
 SHELL_CMD_ARG_REGISTER(auto, NULL, "Auto measurement period: auto [s] (0 = off)", cmd_auto, 1, 1);
+
+/* ---- rec: record storage ---- */
+
+static int cmd_rec_count(const struct shell *sh, size_t argc, char **argv)
+{
+	struct record last;
+	char ts[24];
+
+	shell_print(sh, "records=%u  next seq=%u  fs=%s  mirror=%u/%u slots",
+		    storage_record_count(), storage_next_seq(),
+		    storage_fs_ok() ? "mounted" : "NOT mounted",
+		    storage_mirror_count(), storage_mirror_capacity());
+	if (storage_last_record(&last) == 0) {
+		time_format(last.epoch, ts, sizeof(ts));
+		shell_print(sh, "last: seq=%u %s dist=%u cm vbat=%u mV flags=0x%02x",
+			    last.seq, ts, last.dist_median_cm, last.vbat_end_mv, last.flags);
+	}
+	return 0;
+}
+
+static int cmd_rec_ls(const struct shell *sh, size_t argc, char **argv)
+{
+	int ret = storage_list_files(shell_out, (void *)sh);
+
+	if (ret) {
+		shell_error(sh, "list failed (%d)", ret);
+	}
+	return ret;
+}
+
+static int cmd_rec_dump(const struct shell *sh, size_t argc, char **argv)
+{
+	uint32_t n = 10;
+	uint32_t total = storage_mirror_count();
+	struct record r;
+
+	if (argc > 1) {
+		n = strtoul(argv[1], NULL, 0);
+	}
+	if (n == 0 || n > total) {
+		n = total;
+	}
+	record_print_header(shell_out, (void *)sh);
+	for (uint32_t i = total - n; i < total; i++) {
+		int ret = storage_mirror_read(i, &r);
+
+		if (ret == 0) {
+			record_print(&r, shell_out, (void *)sh);
+		} else {
+			shell_print(sh, "# slot %u: bad (%d)", i, ret);
+		}
+	}
+	return 0;
+}
+
+static int cmd_rec_erase(const struct shell *sh, size_t argc, char **argv)
+{
+	int ret;
+
+	if (argc < 2 || strcmp(argv[1], "ERASE") != 0) {
+		shell_error(sh, "refusing: type 'rec erase ERASE' to delete all records");
+		return -EINVAL;
+	}
+	ret = storage_erase_all();
+	shell_print(sh, ret ? "erase failed (%d)" : "all records erased", ret);
+	return ret;
+}
+
+SHELL_STATIC_SUBCMD_SET_CREATE(sub_rec,
+	SHELL_CMD(count, NULL, "Record count and storage state", cmd_rec_count),
+	SHELL_CMD(ls, NULL, "List record files on LittleFS", cmd_rec_ls),
+	SHELL_CMD_ARG(dump, NULL, "Print the newest n records (CSV): dump [n=10, 0=all]",
+		      cmd_rec_dump, 1, 1),
+	SHELL_CMD_ARG(erase, NULL, "Delete all records: erase ERASE", cmd_rec_erase, 1, 1),
+	SHELL_SUBCMD_SET_END);
+SHELL_CMD_REGISTER(rec, &sub_rec, "Record storage", NULL);
+
+/* ---- time ---- */
+
+static const char *time_state_str(enum time_state s)
+{
+	switch (s) {
+	case TIME_SYNCED:
+		return "synced";
+	case TIME_ESTIMATED:
+		return "estimated (restored from last record)";
+	default:
+		return "unset";
+	}
+}
+
+static int cmd_time(const struct shell *sh, size_t argc, char **argv)
+{
+	uint32_t epoch = 0;
+	char ts[24];
+
+	if (argc > 2 && strcmp(argv[1], "set") == 0) {
+		epoch = strtoul(argv[2], NULL, 0);
+		if (epoch < 1700000000U) {
+			shell_error(sh, "epoch looks wrong (want UTC seconds, e.g. 1780000000)");
+			return -EINVAL;
+		}
+		int ret = time_set(epoch, true);
+
+		if (ret) {
+			shell_error(sh, "time set failed (%d)", ret);
+			return ret;
+		}
+	}
+	if (time_now(&epoch) == 0) {
+		time_format(epoch, ts, sizeof(ts));
+		shell_print(sh, "%s (%u) - %s", ts, epoch, time_state_str(time_get_state()));
+	} else {
+		shell_print(sh, "time unset - 'time set <epoch>' (UTC seconds)");
+	}
+	return 0;
+}
+SHELL_CMD_ARG_REGISTER(time, NULL, "Wall clock: time [set <epoch>]", cmd_time, 1, 2);

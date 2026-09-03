@@ -21,6 +21,9 @@
 #include "tilt.h"
 #include "power.h"
 #include "usb_pm.h"
+#include "record.h"
+#include "storage.h"
+#include "timekeeping.h"
 
 LOG_MODULE_REGISTER(main, CONFIG_LOG_DEFAULT_LEVEL);
 
@@ -36,6 +39,49 @@ void app_set_auto_period(uint32_t seconds)
 uint32_t app_get_auto_period(void)
 {
 	return auto_period_s;
+}
+
+static bool first_record_after_boot = true;
+
+int app_measure_and_store(bool manual, struct measurement *m_out, struct record *r_out)
+{
+	struct measurement m;
+	struct record r;
+	uint32_t epoch = 0;
+	int ret;
+
+	ret = measure_once(&m);
+	if (m_out) {
+		*m_out = m;
+	}
+	if (ret) {
+		LOG_ERR("measurement failed (%d) - not stored", ret);
+		return ret;
+	}
+
+	record_from_measurement(&r, &m);
+	if (time_now(&epoch) == 0) {
+		r.epoch = epoch;
+		r.flags |= (time_get_state() == TIME_SYNCED) ? RECORD_FLAG_TIME_SYNCED
+							     : RECORD_FLAG_TIME_ESTIMATED;
+	}
+	if (manual) {
+		r.flags |= RECORD_FLAG_MANUAL;
+	}
+	if (first_record_after_boot) {
+		r.flags |= RECORD_FLAG_FIRST_AFTER_BOOT;
+		first_record_after_boot = false;
+	}
+	r.seq = storage_next_seq();
+
+	ret = storage_append(&r);
+	if (ret) {
+		LOG_ERR("record %u not stored (%d)", r.seq, ret);
+	}
+	if (r_out) {
+		*r_out = r;
+	}
+	return ret;
 }
 
 static void printk_out(void *ctx, const char *fmt, ...)
@@ -54,7 +100,7 @@ int main(void)
 {
 	int ret;
 
-	LOG_INF("SnowGauge FW (step 2: measurement sequence) - board " CONFIG_BOARD_TARGET);
+	LOG_INF("SnowGauge FW (step 4a: record storage) - board " CONFIG_BOARD_TARGET);
 
 	ret = sensor_rail_init();
 	if (ret) {
@@ -75,6 +121,14 @@ int main(void)
 	ret = power_init();
 	if (ret) {
 		LOG_ERR("power_init: %d", ret);
+	}
+	ret = time_init();
+	if (ret) {
+		LOG_ERR("time_init: %d", ret);
+	}
+	ret = storage_init();
+	if (ret) {
+		LOG_ERR("storage_init: %d", ret);
 	}
 	ret = usb_pm_init();
 	if (ret) {
@@ -102,9 +156,12 @@ int main(void)
 		first = false;
 
 		struct measurement m;
+		struct record r;
 
 		led_pulse(50);
-		(void)measure_once(&m);
+		if (app_measure_and_store(false, &m, &r) == 0) {
+			LOG_INF("record %u stored (%u total)", r.seq, storage_record_count());
+		}
 		measure_print(&m, printk_out, NULL);
 	}
 	return 0;

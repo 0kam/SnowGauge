@@ -4,6 +4,7 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
 #include <zephyr/logging/log.h>
 
 #include "power.h"
@@ -15,7 +16,7 @@ static const struct gpio_dt_spec led_green = GPIO_DT_SPEC_GET(DT_ALIAS(led1), gp
 
 int power_init(void)
 {
-	int ret;
+	enum pm_device_state st = PM_DEVICE_STATE_ACTIVE;
 
 	/* LED off (active low): drive the pin inactive. */
 	if (gpio_is_ready_dt(&led_green)) {
@@ -24,20 +25,21 @@ int power_init(void)
 
 	/*
 	 * The 2 MB QSPI flash (P25Q16H) draws tens of uA in standby; deep
-	 * power-down brings it to ~1 uA. The driver exits DPD by itself on the
-	 * next access (spec section 7.3). Records are not stored yet, so it
-	 * sleeps from boot.
+	 * power-down brings it to ~1 uA. The driver handles this itself through
+	 * runtime PM (zephyr,pm-device-runtime-auto in the overlay): it suspends
+	 * CONFIG_NORDIC_QSPI_NOR_ACTIVE_DWELL_MS after the last access. Just
+	 * report the state here (spec section 7.3).
 	 */
 	if (!device_is_ready(qspi_flash)) {
-		LOG_WRN("QSPI flash not ready - cannot enter deep power-down");
+		LOG_WRN("QSPI flash not ready");
 		return -ENODEV;
 	}
-	ret = pm_device_action_run(qspi_flash, PM_DEVICE_ACTION_SUSPEND);
-	if (ret && ret != -EALREADY) {
-		LOG_ERR("QSPI flash suspend failed (%d)", ret);
-		return ret;
+	if (!pm_device_runtime_is_enabled(qspi_flash)) {
+		LOG_ERR("QSPI flash runtime PM is not enabled - it will not power down");
+		return -EINVAL;
 	}
-	LOG_INF("QSPI flash in deep power-down");
+	(void)pm_device_state_get(qspi_flash, &st);
+	LOG_INF("QSPI flash runtime PM on (state now %s)", pm_device_state_str(st));
 	return 0;
 }
 

@@ -66,3 +66,76 @@
 &lsm6ds3tr_c {
 	zephyr,deferred-init;
 };
+
+/*
+ * Record storage (step 4a).
+ *
+ * QSPI (2 MB P25Q16H): one LittleFS partition over the whole chip. The
+ * driver uses runtime PM so the chip sits in deep power-down between
+ * accesses (~1 uA) without any help from the application.
+ */
+&p25q16h {
+	zephyr,pm-device-runtime-auto;
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		lfs1_part: partition@0 {
+			label = "lfs";
+			reg = <0x00000000 0x00200000>;
+		};
+	};
+};
+
+/ {
+	fstab {
+		compatible = "zephyr,fstab";
+
+		lfs1: lfs1 {
+			compatible = "zephyr,fstab,littlefs";
+			mount-point = "/lfs";
+			partition = <&lfs1_part>;
+			read-size = <16>;
+			prog-size = <16>;
+			cache-size = <64>;
+			lookahead-size = <32>;
+			block-cycles = <512>;
+		};
+	};
+
+	/* Emulated calendar clock behind the `rtc` alias (timekeeping.c, mcumgr datetime). */
+	rtc_emul: rtc-emul {
+		compatible = "zephyr,rtc-emul";
+		status = "okay";
+	};
+
+	aliases {
+		rtc = &rtc_emul;
+	};
+};
+
+/*
+ * Internal flash (1 MB). The board's UF2 layout gives the application
+ * 788 kB; SnowGauge needs < 480 kB even with BLE, so the tail of that
+ * region becomes the record mirror (308 kB = 7,884 records of 40 B).
+ *
+ *   0x00000  156 kB  Adafruit bootloader + SoftDevice area (untouched)
+ *   0x27000  480 kB  Application (this image)
+ *   0x9F000  308 kB  mirror_partition (raw append-only records)
+ *   0xEC000   32 kB  storage_partition (settings, future calibration data)
+ *   0xF4000   48 kB  bootloader UF2 area (untouched)
+ */
+&code_partition {
+	reg = <0x00027000 0x00078000>;
+};
+
+&flash0 {
+	partitions {
+		mirror_partition: partition@9f000 {
+			label = "mirror";
+			reg = <0x0009f000 0x0004d000>;
+		};
+	};
+};
