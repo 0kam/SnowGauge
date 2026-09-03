@@ -136,7 +136,7 @@ STEPS = {
                        'ジャンパ線で a28（Q2 の G）を 3.3V（c10）に触れさせる: e42 = <span class="kbd">4.9〜5.1V</span>、離すと 0V に戻る',
                        'a28 を c10 に触れさせている間: a32（Q1 の G）= <span class="kbd">0V 近く</span>、a33（Q1 の D = VBAT_SW）= <span class="kbd">電池電圧</span>。離している時は逆に a32 ≈ 電池電圧、a33 = 0V']),
     4: ('電池電圧の見張り（スイッチ済みレールから分圧）',
-        ['スイッチ ON 中（上の確認と同時に）: a36−GND 間 = <span class="kbd">電池電圧のほぼ半分</span>、OFF 中は <span class="kbd">0V</span>']),
+        ['STEP 3 と同じく a28 を c10 に触れさせている間: a36−GND 間 = <span class="kbd">電池電圧のほぼ半分</span>。離している時は <span class="kbd">0V</span>']),
     5: ('TFmini Plus', ['テスト FW で: <span class="kbd">rail on</span> → <span class="kbd">tfmini raw 500</span> で距離フレーム受信、<span class="kbd">rail off</span> → e42 = 0V',
                         'µA 電流計を電池と直列に: スリープ <span class="kbd">90µA 以下</span>（ブレッドボードは接触・リークで数 µA 上振れすることあり）']),
 }
