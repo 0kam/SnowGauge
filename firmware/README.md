@@ -7,7 +7,7 @@ SnowGauge PCB v1.2 (or the equivalent breadboard, `docs/breadboard_guide.html`).
 - Board target: `xiao_ble/nrf52840/sense`
 - Pin map source of truth: [`pcb/README.md`](../pcb/README.md)
 
-## Status: step 4b — record storage + BLE status advertising (26 µA sleep incl. adv)
+## Status: step 4c — records + BLE advertising + SMP/mcumgr (26 µA sleep incl. adv)
 
 | Module | File | Purpose |
 |---|---|---|
@@ -22,9 +22,10 @@ SnowGauge PCB v1.2 (or the equivalent breadboard, `docs/breadboard_guide.html`).
 | Storage | `src/storage.c` | LittleFS on the QSPI (`/lfs1/rec_YYYYMM.bin`) + raw append-only mirror in internal flash; restores clock/seq at boot |
 | Clock | `src/timekeeping.c` | Emulated RTC behind the `rtc` alias; UNSET / ESTIMATED / SYNCED state |
 | BLE adv | `src/ble_adv.c` | Connectable advertising 1–2 s, name `SG-XXXX`, Manufacturer Data with Vbat / record count / last distance / flags (layout in `ble_adv.h`) |
+| SMP | `src/smp_mgmt.c` | mcumgr over BLE and over the USB shell: fs download (`/lfs1/rec_*.bin`), os echo/datetime/reset; datetime hooks sync the app clock |
 | Shell | `src/shell_cmds.c` | Bench commands over USB CDC ACM (`rec`, `time`, `ble`, ...) |
 
-Not yet: SMP/mcumgr (file download, datetime), calibration GATT. Sleep-current results: `../docs/measurements/2026-09-03_breadboard_current.md` (see the development order in `../CLAUDE.md`).
+Not yet: calibration GATT (live stream / ZERO / ERASE), TSD20 variant. Phone: nRF Connect Device Manager (Files tab → `/lfs1/` + `rec_YYYYMM.bin`). Bench SMP from the Mac: `tools/smp_datetime.py` (pip install smpclient). Sleep-current results: `../docs/measurements/2026-09-03_breadboard_current.md` (see the development order in `../CLAUDE.md`).
 
 ## Build
 
