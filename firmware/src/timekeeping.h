@@ -28,8 +28,18 @@ int time_init(void);
 /* Current UTC epoch seconds. Returns -ENODATA while TIME_UNSET. */
 int time_now(uint32_t *epoch);
 
-/* Set the clock. synced = true for an external source, false for a restore. */
+/*
+ * Set the clock. synced = true for an external source, false for a restore.
+ * -EINVAL if epoch is outside TIME_EPOCH_MIN..TIME_EPOCH_MAX, -EALREADY if a
+ * restore would overwrite a synced clock.
+ */
 int time_set(uint32_t epoch, bool synced);
+
+#define TIME_EPOCH_MIN 1767225600U /* 2026-01-01T00:00:00Z: earlier is a wrong phone clock */
+#define TIME_EPOCH_MAX 4102444800U /* 2100-01-01 */
+
+/* Copy the current time into the rtc alias device (for mcumgr datetime get). */
+int time_refresh_rtc(void);
 
 enum time_state time_get_state(void);
 

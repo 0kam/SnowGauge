@@ -49,6 +49,7 @@ static const struct key_map *find_key(const char *name)
 static bool validate(void)
 {
 	return cfg.sched_start_min < 1440 && cfg.sched_end_min < 1440 &&
+	       cfg.sched_interval_min <= 1440 &&
 	       cfg.tz_min >= -14 * 60 && cfg.tz_min <= 14 * 60;
 }
 
@@ -69,9 +70,14 @@ static int sg_set(const char *name, size_t len, settings_read_cb read_cb, void *
 		return -EIO;
 	}
 	k_mutex_lock(&lock, K_FOREVER);
+	struct app_config saved = cfg;
+
 	memcpy(k->ptr, tmp, len);
 	if (!validate()) {
-		LOG_WRN("setting %s: value out of range, ignored", name);
+		cfg = saved;
+		k_mutex_unlock(&lock);
+		LOG_WRN("setting %s: value out of range, rejected", name);
+		return -EINVAL;
 	}
 	k_mutex_unlock(&lock);
 	if (change_cb) {

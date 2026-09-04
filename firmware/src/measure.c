@@ -13,12 +13,15 @@
 
 LOG_MODULE_REGISTER(measure, CONFIG_LOG_DEFAULT_LEVEL);
 
+K_MUTEX_DEFINE(sensor_lock);
+
 int measure_once(struct measurement *m)
 {
 	int ret;
 
 	memset(m, 0, sizeof(*m));
 	m->uptime_ms = k_uptime_get();
+	k_mutex_lock(&sensor_lock, K_FOREVER);
 
 	/* IMU first: independent of the rail, keeps the current peaks apart. */
 	m->tilt_ret = tilt_read(&m->tilt, CONFIG_SNOWGAUGE_TILT_SAMPLES);
@@ -29,14 +32,26 @@ int measure_once(struct measurement *m)
 	ret = sensor_rail_on();
 	if (ret) {
 		LOG_ERR("rail on failed (%d)", ret);
+		k_mutex_unlock(&sensor_lock);
 		return ret;
 	}
 
 	(void)battery_read_mv(&m->vbat_mv_start);
 
-	m->lidar_ret = tfmini_capture(CONFIG_SNOWGAUGE_TFMINI_SAMPLES,
-				      K_MSEC(CONFIG_SNOWGAUGE_TFMINI_CAPTURE_TIMEOUT_MS),
-				      &m->lidar);
+	if (m->vbat_mv_start != 0 && m->vbat_mv_start < CONFIG_SNOWGAUGE_VBAT_MIN_MV) {
+		/*
+		 * Battery too low for the 5 V rail: do not run the 120 mA
+		 * capture (brown-out -> reset -> measure -> brown-out loop).
+		 * The record still carries Vbat so the decline is visible.
+		 */
+		LOG_WRN("vbat %u mV below %u mV - TFmini capture skipped", m->vbat_mv_start,
+			CONFIG_SNOWGAUGE_VBAT_MIN_MV);
+		m->lidar_ret = -ENOTSUP;
+	} else {
+		m->lidar_ret = tfmini_capture(CONFIG_SNOWGAUGE_TFMINI_SAMPLES,
+					      K_MSEC(CONFIG_SNOWGAUGE_TFMINI_CAPTURE_TIMEOUT_MS),
+					      &m->lidar);
+	}
 
 	(void)battery_read_mv(&m->vbat_mv_end);
 
@@ -45,8 +60,9 @@ int measure_once(struct measurement *m)
 		LOG_ERR("rail off failed (%d)", ret);
 	}
 
+	k_mutex_unlock(&sensor_lock);
 	if (m->lidar_ret <= 0) {
-		LOG_WRN("no TFmini frames received");
+		LOG_WRN("no TFmini frames received (%d)", m->lidar_ret);
 	}
 	return ret;
 }

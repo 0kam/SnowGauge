@@ -27,6 +27,7 @@ class SMPClient {
     this.rx = new Uint8Array(0);
     this.writeChunk = 20;     // safe for any ATT MTU; raise after mcumgrParams() if desired
     this.timeoutMs = 5000;
+    this._queue = Promise.resolve(); // requests are strictly serialized (one SMP frame in flight)
     this.os = new OSGroup(this);
     this.fs = new FSGroup(this);
     this.settings = new SettingsGroup(this);
@@ -54,7 +55,8 @@ class SMPClient {
     merged.set(this.rx); merged.set(chunk, this.rx.length);
     this.rx = merged;
     while (this.rx.length >= 8) {
-      const len = (this.rx[2] << 8) | this.rx[3];
+      const op = this.rx[0] & 7, len = (this.rx[2] << 8) | this.rx[3];
+      if ((op !== 1 && op !== 3) || len > 4096) { this.log('SMP: bad header, dropping buffer'); this.rx = new Uint8Array(0); break; }
       if (this.rx.length < 8 + len) break;
       const frame = this.rx.slice(0, 8 + len);
       this.rx = this.rx.slice(8 + len);
@@ -72,7 +74,14 @@ class SMPClient {
     }
   }
 
-  async request(op, group, id, payload = {}, timeoutMs = this.timeoutMs) {
+  request(op, group, id, payload = {}, timeoutMs = this.timeoutMs) {
+    const run = () => this._request(op, group, id, payload, timeoutMs);
+    const p = this._queue.then(run, run);
+    this._queue = p.catch(() => {});
+    return p;
+  }
+
+  async _request(op, group, id, payload, timeoutMs) {
     if (!this.chr) throw new Error('not connected');
     const body = CBOR.encode(payload);
     const seq = this.seq = (this.seq + 1) & 0xff;
@@ -81,7 +90,7 @@ class SMPClient {
     frame[4] = group >> 8; frame[5] = group & 255; frame[6] = seq; frame[7] = id;
     frame.set(body, 8);
     const promise = new Promise((resolve, reject) => {
-      const timer = setTimeout(() => { this.pending.delete(seq); reject(new Error(`SMP timeout (group ${group} id ${id})`)); }, timeoutMs);
+      const timer = setTimeout(() => { this.pending.delete(seq); this.rx = new Uint8Array(0); reject(new Error(`SMP timeout (group ${group} id ${id})`)); }, timeoutMs);
       this.pending.set(seq, { resolve, reject, timer });
     });
     for (let off = 0; off < frame.length; off += this.writeChunk) {

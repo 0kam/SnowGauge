@@ -21,6 +21,9 @@
 #include <zephyr/logging/log.h>
 
 #include "timekeeping.h"
+#include "cal_gatt.h"
+#include <zephyr/mgmt/mcumgr/grp/fs_mgmt/fs_mgmt_callbacks.h>
+#include <string.h>
 
 LOG_MODULE_REGISTER(smp_mgmt, CONFIG_LOG_DEFAULT_LEVEL);
 
@@ -38,21 +41,47 @@ static enum mgmt_cb_return datetime_cb(uint32_t event, enum mgmt_cb_return prev_
 		uint32_t epoch = (uint32_t)timeutil_timegm(rtc_time_to_tm(t));
 		char ts[24];
 
-		(void)time_set(epoch, true);
+		int ret = time_set(epoch, true);
+
 		time_format(epoch, ts, sizeof(ts));
+		if (ret) {
+			LOG_WRN("clock set over SMP rejected (%s): %d", ts, ret);
+			*rc = MGMT_ERR_EINVAL;
+			return MGMT_CB_ERROR_RC;
+		}
 		LOG_INF("clock set over SMP: %s", ts);
 	} else if (event == MGMT_EVT_OP_OS_MGMT_DATETIME_GET) {
-		uint32_t epoch;
+		/* Copy the accurate clock into rtc-emul right before it is read. */
+		(void)time_refresh_rtc();
+	}
+	return MGMT_CB_OK;
+}
 
-		/* Re-seed rtc-emul from the accurate clock right before it is read. */
-		if (time_now(&epoch) == 0) {
-			enum time_state st = time_get_state();
+/* A read of a record file over SMP unlocks the BLE ERASE command. */
+static enum mgmt_cb_return fs_access_cb(uint32_t event, enum mgmt_cb_return prev_status,
+					int32_t *rc, uint16_t *group, bool *abort_more,
+					void *data, size_t data_size)
+{
+	ARG_UNUSED(prev_status);
+	ARG_UNUSED(rc);
+	ARG_UNUSED(group);
+	ARG_UNUSED(abort_more);
+	if (event == MGMT_EVT_OP_FS_MGMT_FILE_ACCESS &&
+	    data_size == sizeof(struct fs_mgmt_file_access)) {
+		const struct fs_mgmt_file_access *a = data;
 
-			(void)time_set(epoch, st == TIME_SYNCED);
+		if (a->access == FS_MGMT_FILE_ACCESS_READ && a->filename != NULL &&
+		    strstr(a->filename, "/rec_") != NULL) {
+			cal_note_records_downloaded();
 		}
 	}
 	return MGMT_CB_OK;
 }
+
+static struct mgmt_callback fs_hook = {
+	.callback = fs_access_cb,
+	.event_id = MGMT_EVT_OP_FS_MGMT_FILE_ACCESS,
+};
 
 static struct mgmt_callback datetime_hook = {
 	.callback = datetime_cb,
@@ -62,6 +91,7 @@ static struct mgmt_callback datetime_hook = {
 static int smp_mgmt_init(void)
 {
 	mgmt_callback_register(&datetime_hook);
+	mgmt_callback_register(&fs_hook);
 	return 0;
 }
 

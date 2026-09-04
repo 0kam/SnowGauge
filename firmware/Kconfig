@@ -61,6 +61,23 @@ config SNOWGAUGE_BLE_ADV_INT_MAX_MS
 	default 2000
 	range 20 10240
 
+config SNOWGAUGE_VBAT_MIN_MV
+	int "Minimum battery voltage for a TFmini capture (mV)"
+	default 4600
+	help
+	  Below this the 5 V sensor LDO is out of regulation and the 120 mA
+	  burst can brown out the board; the measurement then records only
+	  Vbat, tilt and temperature.
+
+config SNOWGAUGE_BOOT_HOLDOFF_MIN
+	int "Delay of the first scheduled measurement after a reset (min)"
+	default 10
+	help
+	  A reset restores the clock from the last record, which would make the
+	  scheduler fire immediately (and again after every brown-out reset).
+	  The first scheduled measurement is held off by this many minutes,
+	  multiplied by the number of resets within the last hold-off window.
+
 config SNOWGAUGE_SCHED_DEFAULT_INTERVAL_MIN
 	int "Default measurement interval until configured (min, 0 = off)"
 	default 180

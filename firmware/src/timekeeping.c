@@ -53,6 +53,10 @@ int time_set(uint32_t epoch, bool synced)
 	if (!synced && state == TIME_SYNCED) {
 		return -EALREADY;
 	}
+	if (epoch < TIME_EPOCH_MIN || epoch > TIME_EPOCH_MAX) {
+		LOG_WRN("rejecting implausible epoch %u", epoch);
+		return -EINVAL;
+	}
 
 	gmtime_r(&tt, &tm);
 	t.tm_sec = tm.tm_sec;
@@ -75,6 +79,34 @@ int time_set(uint32_t epoch, bool synced)
 		LOG_WRN("rtc_set_time: %d", ret);
 	}
 	return 0;
+}
+
+static int rtc_write(uint32_t epoch)
+{
+	struct tm tm;
+	struct rtc_time t = { 0 };
+	time_t tt = epoch;
+
+	gmtime_r(&tt, &tm);
+	t.tm_sec = tm.tm_sec;
+	t.tm_min = tm.tm_min;
+	t.tm_hour = tm.tm_hour;
+	t.tm_mday = tm.tm_mday;
+	t.tm_mon = tm.tm_mon;
+	t.tm_year = tm.tm_year;
+	t.tm_wday = tm.tm_wday;
+	t.tm_yday = tm.tm_yday;
+	t.tm_isdst = -1;
+	t.tm_nsec = 0;
+	return rtc_set_time(rtc, &t);
+}
+
+int time_refresh_rtc(void)
+{
+	uint32_t now;
+	int ret = time_now(&now);
+
+	return ret ? ret : rtc_write(now);
 }
 
 enum time_state time_get_state(void)

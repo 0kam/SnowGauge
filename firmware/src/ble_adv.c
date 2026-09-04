@@ -212,6 +212,11 @@ int ble_adv_set_interval(uint32_t min_ms, uint32_t max_ms)
 	return adv_start();
 }
 
+bool ble_adv_is_connected(void)
+{
+	return connected;
+}
+
 void ble_adv_status(void (*out)(void *ctx, const char *fmt, ...), void *ctx)
 {
 	char hex[2 * sizeof(mfg) + 1];

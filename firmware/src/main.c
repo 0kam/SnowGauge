@@ -7,6 +7,7 @@
  */
 
 #include <zephyr/kernel.h>
+#include <nrfx.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/printk.h>
 #include <stdarg.h>
@@ -55,6 +56,35 @@ uint32_t app_get_auto_period(void)
 }
 
 static bool first_record_after_boot = true;
+
+/*
+ * Reset-loop protection. GPREGRET2 survives soft resets and brown-outs (not
+ * a power cycle): count boots, clear the counter once the firmware has run
+ * for one hold-off window, and stretch the first scheduled measurement by
+ * the count. A brown-out during the 120 mA burst therefore cannot make the
+ * device measure again immediately after every reset.
+ */
+static uint32_t boot_count;
+static int64_t holdoff_until_ms;
+
+static void boot_counter_clear(struct k_work *work)
+{
+	ARG_UNUSED(work);
+	NRF_POWER->GPREGRET2 = 0;
+}
+static K_WORK_DELAYABLE_DEFINE(boot_counter_work, boot_counter_clear);
+
+static void boot_holdoff_init(void)
+{
+	boot_count = NRF_POWER->GPREGRET2 + 1;
+	NRF_POWER->GPREGRET2 = MIN(boot_count, 255);
+	holdoff_until_ms = (int64_t)CONFIG_SNOWGAUGE_BOOT_HOLDOFF_MIN * 60 * 1000 * MIN(boot_count, 12);
+	k_work_schedule(&boot_counter_work, K_MINUTES(CONFIG_SNOWGAUGE_BOOT_HOLDOFF_MIN));
+	if (boot_count > 1) {
+		LOG_WRN("boot #%u within the hold-off window - first measurement in %lld min",
+			boot_count, holdoff_until_ms / 60000);
+	}
+}
 
 int app_measure_and_store(bool manual, struct measurement *m_out, struct record *r_out)
 {
@@ -116,6 +146,7 @@ int main(void)
 	int ret;
 
 	LOG_INF("SnowGauge FW (step 4d: schedule + calibration) - board " CONFIG_BOARD_TARGET);
+	boot_holdoff_init();
 
 	ret = sensor_rail_init();
 	if (ret) {
@@ -186,6 +217,15 @@ int main(void)
 			if (c.sched_interval_min == 0) {
 				k_sem_take(&period_changed, K_MINUTES(10));
 				first = true;
+				continue;
+			}
+			/* Hold-off after a reset (see boot_holdoff_init). */
+			int64_t left_ms = holdoff_until_ms - k_uptime_get();
+
+			if (left_ms > 0) {
+				if (k_sem_take(&period_changed, K_MSEC(MIN(left_ms, 3600000))) == 0) {
+					first = true;
+				}
 				continue;
 			}
 			if (time_now(&now) != 0) {

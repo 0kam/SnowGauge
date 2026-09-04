@@ -42,6 +42,9 @@ int ble_adv_update(bool last_measurement_failed);
 /* Restart advertising with a new interval window (ms). 0 = stop. */
 int ble_adv_set_interval(uint32_t min_ms, uint32_t max_ms);
 
+/* True while a central is connected. */
+bool ble_adv_is_connected(void);
+
 /* Status for the shell. */
 void ble_adv_status(void (*out)(void *ctx, const char *fmt, ...), void *ctx);
 

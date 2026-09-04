@@ -20,6 +20,7 @@
 #include "storage.h"
 #include "timekeeping.h"
 #include "ble_adv.h"
+#include "measure.h"
 
 LOG_MODULE_REGISTER(cal_gatt, CONFIG_LOG_DEFAULT_LEVEL);
 
@@ -38,8 +39,19 @@ static const struct bt_uuid_128 uuid_status = BT_UUID_INIT_128(CAL_UUID(4));
 static bool live_on;
 static bool live_notify_enabled;
 static int8_t last_result;
+static bool cmd_busy;
+static uint8_t cmd_seq;
+static uint32_t live_gen;          /* bumped by cal_live_stop() */
+static bool records_downloaded;    /* fs mgmt read of rec_*.bin since boot */
 static int64_t live_started_ms;
 static uint8_t live_buf[12];
+
+/*
+ * Own work queue: ZERO (seconds) and ERASE (flash erase, seconds) must not
+ * block the system work queue, which the BLE host and SMP transport use.
+ */
+K_THREAD_STACK_DEFINE(cal_wq_stack, 2048);
+static struct k_work_q cal_wq;
 
 static void live_work_fn(struct k_work *work);
 static K_WORK_DELAYABLE_DEFINE(live_work, live_work_fn);
@@ -60,7 +72,8 @@ static ssize_t read_status(struct bt_conn *conn, const struct bt_gatt_attr *attr
 	sys_put_le32(c.cal_set_epoch, &st[4]);
 	st[8] = live_on ? 1 : 0;
 	st[9] = (uint8_t)last_result;
-	st[10] = st[11] = 0;
+	st[10] = cmd_busy ? 1 : 0;
+	st[11] = cmd_seq;
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, st, sizeof(st));
 }
 
@@ -71,6 +84,9 @@ static ssize_t write_ctrl(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 
 	if (offset != 0 || len < 1) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
+	}
+	if (cmd_busy) {
+		return BT_GATT_ERR(BT_ATT_ERR_PROCEDURE_IN_PROGRESS);
 	}
 	switch (d[0]) {
 	case CMD_LIVE_OFF:
@@ -91,12 +107,20 @@ static ssize_t write_ctrl(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			last_result = -EACCES;
 			return BT_GATT_ERR(BT_ATT_ERR_AUTHORIZATION);
 		}
+		if (!records_downloaded && storage_record_count() > 0) {
+			LOG_WRN("ERASE refused: records not downloaded since boot");
+			last_result = -EACCES;
+			return BT_GATT_ERR(BT_ATT_ERR_AUTHORIZATION);
+		}
 		pending_cmd = d[0];
 		break;
 	default:
 		return BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
 	}
-	k_work_submit(&cmd_work);
+	cmd_busy = true;
+	cmd_seq++;
+	last_result = 0;
+	k_work_submit_to_queue(&cal_wq, &cmd_work);
 	return len;
 }
 
@@ -135,9 +159,19 @@ static void live_work_fn(struct k_work *work)
 		cal_live_stop();
 		return;
 	}
+	/* A scheduled measurement owns the sensors: skip this sample. */
+	if (k_mutex_lock(&sensor_lock, K_MSEC(50)) != 0) {
+		k_work_schedule_for_queue(&cal_wq, &live_work, K_MSEC(200));
+		return;
+	}
+	if (!sensor_rail_is_on()) {
+		(void)sensor_rail_on(); /* a measurement cut the rail meanwhile */
+		k_sleep(K_MSEC(CONFIG_SNOWGAUGE_RAIL_SETTLE_MS));
+	}
 	n = tfmini_capture(10, K_MSEC(400), &s);
 	(void)tilt_read(&t, 4);
 	(void)battery_read_mv(&vbat);
+	k_mutex_unlock(&sensor_lock);
 
 	sys_put_le16((n > 0 && s.n_valid > 0) ? s.dist_median_cm : 0xFFFF, &live_buf[0]);
 	sys_put_le16(n > 0 ? s.strength_median : 0, &live_buf[2]);
@@ -150,7 +184,7 @@ static void live_work_fn(struct k_work *work)
 	if (live_notify_enabled) {
 		(void)bt_gatt_notify(NULL, LIVE_ATTR, live_buf, sizeof(live_buf));
 	}
-	k_work_schedule(&live_work, K_MSEC(100));
+	k_work_schedule_for_queue(&cal_wq, &live_work, K_MSEC(100));
 }
 
 static int live_start(void)
@@ -166,7 +200,7 @@ static int live_start(void)
 	}
 	live_on = true;
 	live_started_ms = k_uptime_get();
-	k_work_schedule(&live_work, K_MSEC(200));
+	k_work_schedule_for_queue(&cal_wq, &live_work, K_MSEC(200));
 	LOG_INF("live mode on");
 	return 0;
 }
@@ -177,8 +211,11 @@ void cal_live_stop(void)
 		return;
 	}
 	live_on = false;
+	live_gen++;
 	k_work_cancel_delayable(&live_work);
+	k_mutex_lock(&sensor_lock, K_FOREVER); /* not while a capture is running */
 	(void)sensor_rail_off();
+	k_mutex_unlock(&sensor_lock);
 	LOG_INF("live mode off");
 }
 
@@ -192,10 +229,12 @@ int cal_zero(uint16_t depth_cm, uint16_t *d0_cm, int16_t *theta0_cdeg)
 	struct measurement m;
 	struct record r;
 	bool was_live = live_on;
+	uint32_t gen;
 	uint32_t epoch = 0;
 	int ret;
 
 	cal_live_stop();
+	gen = live_gen;
 	ret = app_measure_and_store(true, &m, &r);
 	if (ret) {
 		goto out;
@@ -222,7 +261,9 @@ int cal_zero(uint16_t depth_cm, uint16_t *d0_cm, int16_t *theta0_cdeg)
 		}
 	}
 out:
-	if (was_live) {
+	/* Resume the live view only if it was on, nobody stopped it meanwhile
+	 * (disconnect bumps live_gen) and the phone is still connected. */
+	if (was_live && gen == live_gen && ble_adv_is_connected()) {
 		(void)live_start();
 	}
 	return ret;
@@ -254,9 +295,18 @@ static void cmd_work_fn(struct k_work *work)
 		ret = -EINVAL;
 	}
 	last_result = (int8_t)CLAMP(ret, -127, 127);
+	cmd_busy = false;
+}
+
+void cal_note_records_downloaded(void)
+{
+	records_downloaded = true;
 }
 
 int cal_gatt_init(void)
 {
-	return 0; /* static service; nothing to do */
+	k_work_queue_start(&cal_wq, cal_wq_stack, K_THREAD_STACK_SIZEOF(cal_wq_stack),
+			   K_PRIO_PREEMPT(10), NULL);
+	k_thread_name_set(&cal_wq.thread, "cal_wq");
+	return 0;
 }

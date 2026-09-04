@@ -5,6 +5,8 @@
  */
 'use strict';
 
+const APP_VERSION = '2026-09-04b';
+
 /* ---------- project schemas ---------- */
 
 const DEVICE_NAME_PREFIX = 'SG-';
@@ -102,20 +104,30 @@ function toast(msg, cls = '') {
   const t = $('toast'); t.textContent = msg; t.className = 'show ' + cls;
   clearTimeout(toast._timer); toast._timer = setTimeout(() => { t.className = ''; }, 2500);
 }
+let busyDepth = 0;
+function setAllEnabled(on) { document.querySelectorAll('button.needs-conn, select.needs-conn').forEach(el => { if (el.dataset.keep !== '1') el.disabled = !on; }); }
 function busy(btn, fn) {
   return async () => {
-    if (btn.disabled) return;
-    const label = btn.textContent; btn.disabled = true; btn.textContent = '処理中…';
+    if (btn.disabled || busyDepth) return;
+    busyDepth++;
+    const label = btn.textContent; setAllEnabled(false); btn.textContent = '処理中…';
     try { const r = await fn(); if (r !== false) toast('完了'); }
     catch (e) { log(e.message, 'err'); toast('失敗: ' + e.message, 'err'); }
-    finally { btn.textContent = label; btn.disabled = !state.smp || !state.smp.connected ? btn.classList.contains('needs-conn') : false; }
+    finally { busyDepth--; btn.textContent = label; setAllEnabled(!!(state.smp && state.smp.connected)); $('btn-csv').disabled = $('btn-raw').disabled = state.records.length === 0; updateEraseButton(); }
   };
+}
+function updateEraseButton() {
+  const ok = state.downloadedThisSession || state.records.length === 0;
+  const b = $('btn-erase');
+  b.disabled = !(state.smp && state.smp.connected) || !state.downloadedThisSession;
+  $('erase-help').textContent = state.downloadedThisSession ? '' : '消去はこのセッションでデータをダウンロードした後に有効になります。';
+  return ok;
 }
 function csvEscape(v) { if (v === null || v === undefined) return ''; const s = String(v); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; }
 
 /* ---------- state ---------- */
 
-const state = { device: null, smp: null, cal: null, site: null, settings: {}, records: [], rawFiles: {}, deviceId: '', timeOk: false };
+const state = { device: null, smp: null, cal: null, site: null, settings: {}, records: [], rawFiles: {}, deviceId: '', timeOk: false, downloadedThisSession: false };
 
 /* ---------- connection ---------- */
 
@@ -140,7 +152,8 @@ function setConnected(on) {
   $('btn-connect').hidden = on; $('btn-disconnect').hidden = !on;
   $('conn-state').textContent = on ? '接続中: ' + state.deviceId : '未接続';
   document.querySelectorAll('.needs-conn').forEach(el => el.disabled = !on);
-  if (!on) { state.cal = null; $('live-state').textContent = '停止'; }
+  if (!on) { state.cal = null; state.downloadedThisSession = false; $('live-state').textContent = '停止'; }
+  updateEraseButton();
 }
 async function refreshStatus() {
   try {
@@ -312,6 +325,7 @@ async function downloadAll() {
     }
     state.records.sort((a, b) => (a.epoch - b.epoch) || (a.seq - b.seq));
     $('dl-progress').textContent = `合計 ${state.records.length} 件`;
+    state.downloadedThisSession = true;
     renderData();
   }
 }
@@ -419,31 +433,51 @@ async function calConnect() {
 async function calCmd(bytes) { const c = await calConnect(); await c.ctrl.writeValue(new Uint8Array(bytes)); }
 async function calStatus() {
   const c = await calConnect(); const dv = await c.status.readValue();
-  const d0 = dv.getUint16(0, true), th = dv.getInt16(2, true) / 100, ep = dv.getUint32(4, true), live = dv.getUint8(8), res = dv.getInt8(9);
+  const d0 = dv.getUint16(0, true), th = dv.getInt16(2, true) / 100, ep = dv.getUint32(4, true), live = dv.getUint8(8), res = dv.getInt8(9), busyFlag = dv.getUint8(10), seq = dv.getUint8(11);
   $('live-state').textContent = live ? '動作中（センサ通電中、5 分で自動停止）' : '停止';
   $('cal-ref').textContent = d0 ? `d0 = ${d0} cm, θ0 = ${th.toFixed(2)}°` : '未設定（無雪 ZERO か積雪深入力で設定）';
-  if (res) log('前回コマンド結果: ' + res, 'warn');
-  return { d0, th, live, res };
+  return { d0, th, live, res, busy: busyFlag, seq };
 }
-async function liveOn() { await calCmd([0x01]); await calStatus(); }
-async function liveOff() { await calCmd([0x00]); await calStatus(); }
+/* Send a control command and wait for the device to finish it (busy flag + seq). */
+async function calRun(bytes, timeoutMs = 15000) {
+  const before = await calStatus();
+  if (before.busy) throw new Error('本体が前のコマンドを処理中です');
+  await calCmd(bytes);
+  const want = (before.seq + 1) & 0xff, end = Date.now() + timeoutMs;
+  let st;
+  do { await new Promise(r => setTimeout(r, 500)); st = await calStatus(); }
+  while ((st.busy || st.seq !== want) && Date.now() < end);
+  if (st.busy || st.seq !== want) throw new Error('本体の応答がありません（タイムアウト）');
+  if (st.res) {
+    const msg = { '-13': 'ダウンロード前の消去は拒否されました', '-61': '測距か傾斜が取れていません', '-5': '本体 I/O エラー' }[String(st.res)] || ('本体エラー ' + st.res);
+    throw new Error(msg);
+  }
+  return st;
+}
+async function liveOn() { await calRun([0x01], 5000); }
+async function liveOff() { await calRun([0x00], 5000); }
 /* Reference: ZERO on bare ground (depth 0) or from a probed snow depth. */
 async function setReference(depthCm) {
-  await calCmd(depthCm ? [0x11, depthCm & 255, depthCm >> 8] : [0x10]);
   log(depthCm ? `基準設定中（現在の積雪深 ${depthCm} cm、約 3 秒）` : 'ZERO 実行中（約 3 秒）');
-  await new Promise(r => setTimeout(r, 4000));
-  const st = await calStatus(); await loadSettings();
-  if (st.res) throw new Error('本体エラー ' + st.res + '（測距か傾斜が取れていません）');
+  await calRun(depthCm ? [0x11, depthCm & 255, depthCm >> 8] : [0x10]);
+  await loadSettings();
   log('基準を保存しました');
 }
+/* Two taps at least 1.5 s apart (glove bounce / impatient re-taps do not count), within 6 s. */
 function twoTap(btn, label, action) {
-  if (btn.dataset.armed) { delete btn.dataset.armed; btn.textContent = label; action(); return; }
-  btn.dataset.armed = '1'; btn.textContent = 'もう一度押すと実行';
-  setTimeout(() => { if (btn.dataset.armed) { delete btn.dataset.armed; btn.textContent = label; } }, 5000);
+  const now = Date.now();
+  if (btn.dataset.armed) {
+    if (now - +btn.dataset.armed < 1500) return;
+    delete btn.dataset.armed; btn.textContent = label; action(); return;
+  }
+  btn.dataset.armed = String(now); btn.textContent = '確認: 1.5 秒後にもう一度押すと実行';
+  toast('もう一度押すと実行します（1.5 秒後から有効）');
+  setTimeout(() => { if (btn.dataset.armed === String(now)) { delete btn.dataset.armed; btn.textContent = label; } }, 6000);
 }
 async function doErase() {
-  await calCmd([0x20, 0x45, 0x52, 0x41, 0x53, 0x45]); await new Promise(r => setTimeout(r, 2000)); await calStatus();
-  log('全レコードを消去しました', 'warn'); state.records = []; renderData();
+  if (!state.downloadedThisSession && state.records.length === 0) throw new Error('先にデータをダウンロードしてください');
+  await calRun([0x20, 0x45, 0x52, 0x41, 0x53, 0x45], 30000);
+  log('全レコードを消去しました', 'warn'); state.records = []; state.rawFiles = {}; renderData();
 }
 
 /* ---------- init ---------- */
@@ -472,6 +506,14 @@ if (typeof window !== 'undefined') window.addEventListener('load', () => {
   $('btn-erase').onclick = () => twoTap($('btn-erase'), '全レコード消去', busy($('btn-erase'), doErase));
   $('depth-sel').innerHTML = Array.from({ length: 401 }, (_, i) => `<option value="${i}">${i} cm</option>`).join('');
   window.addEventListener('resize', () => state.records.length && drawChart());
-  if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
+  $('app-version').textContent = 'アプリ版 ' + APP_VERSION;
+  if ('serviceWorker' in navigator && location.protocol === 'https:') {
+    navigator.serviceWorker.register('sw.js').then(reg => {
+      reg.addEventListener('updatefound', () => {
+        const w = reg.installing;
+        w && w.addEventListener('statechange', () => { if (w.state === 'installed' && navigator.serviceWorker.controller) toast('新しい版を取得しました。次回起動時に切り替わります'); });
+      });
+    }).catch(() => {});
+  }
 });
 if (typeof module !== 'undefined') module.exports = { decodeRecords, crc16ccitt, isoLocal, RECORD_SCHEMA, CSV_COLUMNS };

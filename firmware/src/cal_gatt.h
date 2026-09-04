@@ -11,7 +11,14 @@
  *                             (d0 = d + depth / cos(tilt)),
  *                        0x20 'E' 'R' 'A' 'S' 'E' erase all records
  *  status  53470004-...  read, 12 bytes LE: d0_cm u16, theta0_cdeg i16,
- *                        set_epoch u32, live u8, last_cmd_result i8, reserved u16
+ *                        set_epoch u32, live u8, last_cmd_result i8,
+ *                        busy u8 (a command is running), cmd_seq u8
+ *                        (incremented per accepted command; poll until busy
+ *                        == 0 and cmd_seq matches, then read last_cmd_result)
+ *
+ * Writes while busy are rejected (ATT "procedure already in progress").
+ * ERASE is refused (-EACCES) unless the record files were downloaded since
+ * boot (fs mgmt read of rec_*.bin) or there are no records.
  *
  * Live mode keeps the sensor rail on and burns ~120 mA: the phone page
  * turns it off, and it also times out after CAL_LIVE_TIMEOUT_S.
@@ -27,6 +34,9 @@
 int cal_gatt_init(void);
 bool cal_live_is_on(void);
 void cal_live_stop(void);
+
+/* fs mgmt hook: a record file was read since boot (unlocks ERASE). */
+void cal_note_records_downloaded(void);
 
 /*
  * Take the reference from one full measurement (also stores a record).
