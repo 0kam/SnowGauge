@@ -20,6 +20,7 @@
 | [../firmware/README.md](../firmware/README.md) | ビルド、書き込み、ベンチ用シェルコマンド |
 | [record_format.md](record_format.md) | 40 バイトレコード、フラッシュ配置、CSV 列定義 |
 | [app/README.md](app/README.md) | Web Bluetooth ページの構成と他ロガーへの流用 |
+| [tsd20_protocol.md](tsd20_protocol.md) | TSD20（廉価版センサ）の UART 仕様とファームウェア変種の計画 |
 | [measurements/](measurements/) | 実測記録（`YYYY-MM-DD_topic.md`） |
 | [archive/](archive/) | 旧版（v1.2 以前の回路。使わないこと） |
 | [../CLAUDE.md](../CLAUDE.md) | AI エージェント向けの作業引き継ぎ（現状・決定事項・次の一手） |

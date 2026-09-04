@@ -62,6 +62,10 @@ Low-cost, low-power snow depth logger (NIR laser ToF + XIAO nRF52840 Sense). Fie
 - **CSV export** done in the page: one row per record, header row, site columns repeated per row, `time_utc` + `time_local` ISO 8601, derived `d0_cm, theta0_deg, snow_depth_cm` at the end; raw .bin also saveable. Column list in `docs/record_format.md`.
 - Open: no pairing → anyone nearby can erase/change settings (ERASE has a token; PIN later if needed).
 
+## Step 5 plan (TSD20 variant) — protocol read from the manual 2026-09-04
+
+See `docs/tsd20_protocol.md`. Essentials: 3.3 V rail (U2 = F33), UART **460800** 8N1, 4-byte frames `5C distL distH CK` in **mm**, `CK = ~(distL+distH)`, out-of-range = **50000**, 200 Hz default (set 100 Hz with `5A 0B 02 63 00 CK`), **no strength/temperature field**, start-ranging command after the rail settles. Plan: `SNOWGAUGE_SENSOR` Kconfig choice + `overlay-tsd20.conf`, `lidar.h` abstraction over `tfmini.c`/`tsd20.c`, record flag bit 6 = TSD20, BLE name prefix `ST-`, second release asset. Hardware for the bench: a TSD20 (秋月 131304), U2 swapped to NJU7223F33 on the breadboard (same wiring), sensor pins 2/3/4/6 = 3.3 V / TX→D7 / RX←D6 / GND.
+
 ## Firmware decisions (spec §12, closed)
 
 - **nRF Connect SDK (Zephyr)**, board `xiao_ble/nrf52840/sense`. **Flashing is USB/UF2 only (decided 2026-09-02, no SWD probe): keep the Adafruit bootloader, no MCUboot, BLE DFU deferred to a future revision.**
