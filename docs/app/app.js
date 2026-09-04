@@ -5,7 +5,7 @@
  */
 'use strict';
 
-const APP_VERSION = '2026-09-04c';
+const APP_VERSION = '2026-09-05a';
 
 /* ---------- project schemas ---------- */
 
@@ -150,7 +150,7 @@ async function connect() {
 }
 function setConnected(on) {
   $('btn-connect').hidden = on; $('btn-disconnect').hidden = !on;
-  $('conn-state').textContent = on ? '接続中: ' + state.deviceId : '未接続';
+  $('conn-state').textContent = on ? state.deviceId : '未接続';
   document.querySelectorAll('.needs-conn').forEach(el => el.disabled = !on);
   if (!on) { state.cal = null; state.downloadedThisSession = false; $('live-state').textContent = '停止'; }
   updateEraseButton();
@@ -353,15 +353,19 @@ function renderData() {
   const iv = state.settings['sg/sched/interval_min'] ? LE.getU16(state.settings['sg/sched/interval_min']) : 0;
   const tb = $('data-body'); tb.innerHTML = '';
   let prev = null, nWarn = 0;
-  const rows = state.records.slice(-500);
-  for (const r of rows) {
-    const q = qualityFlags(r, iv, prev); if (q.length) nWarn++;
+  const limit = state.showAll ? 5000 : 30;
+  const rows = [];
+  for (const r of state.records) { const q = qualityFlags(r, iv, prev); if (q.length) nWarn++; rows.push([r, q]); prev = r; }
+  for (const [r, q] of rows.slice(-limit)) {
     const d = derived(r);
     const tr = document.createElement('tr'); if (q.length) tr.className = 'warnrow';
-    tr.innerHTML = `<td>${isoLocal(r.epoch, tz) || '(時刻なし) #' + r.seq}</td><td>${r.dist_cm ?? '-'}</td><td>${d.depth ?? '-'}</td><td>${r.tilt_deg ?? '-'}</td><td>${r.vbat_end_mv ?? '-'}</td><td>${r.n_valid}/${r.n_frames}</td><td>${q.join(' ')}</td>`;
-    tb.appendChild(tr); prev = r;
+    const t = r.epoch ? isoLocal(r.epoch, tz).slice(5, 16).replace('T', ' ') : '(時刻なし) #' + r.seq;
+    tr.innerHTML = `<td>${t}</td><td>${r.dist_cm ?? '-'}</td><td>${d.depth ?? '-'}</td><td>${r.tilt_deg ?? '-'}</td><td>${r.vbat_end_mv ?? '-'}</td><td>${r.n_valid}/${r.n_frames}</td>`;
+    tb.appendChild(tr);
+    if (q.length) { const tq = document.createElement('tr'); tq.className = 'warnrow flagrow'; tq.innerHTML = `<td colspan="6">要確認: ${q.join('、')}</td>`; tb.appendChild(tq); }
   }
-  $('data-summary').textContent = `${state.records.length} 件（表示は最新 ${rows.length} 件）、要確認 ${nWarn} 件`;
+  $('data-summary').textContent = `${state.records.length} 件、要確認 ${nWarn} 件（一覧は新しい ${Math.min(limit, rows.length)} 件、現地時刻 月-日 時:分）`;
+  $('btn-showall').hidden = state.records.length <= 30; $('btn-showall').textContent = state.showAll ? '新しい 30 件だけ表示' : 'すべて表示';
   drawChart();
   $('btn-csv').disabled = $('btn-raw').disabled = state.records.length === 0;
 }
@@ -483,6 +487,52 @@ async function doErase() {
   log('全レコードを消去しました', 'warn'); state.records = []; state.rawFiles = {}; renderData();
 }
 
+
+/* ---------- demo mode (?demo=1): sample data without a device, for docs/training ---------- */
+
+function demoRecords(days = 12) {
+  const out = []; const t0 = Math.floor(Date.now() / 1000 / 86400) * 86400 - days * 86400 + 8 * 3600;
+  let seq = 0;
+  for (let d = 0; d < days; d++) {
+    for (let k = 0; k < 8; k++) {
+      const epoch = t0 + d * 86400 + k * 10800;
+      if (d === 5 && k === 3) continue; // a gap
+      const depth = Math.max(0, 12 + d * 3.2 + Math.sin(k) * 1.5);
+      const dist = Math.round(232 - depth / Math.cos(2.2 * Math.PI / 180));
+      const bad = (d === 8 && k === 6);
+      out.push({ flags_raw: 0x0d, flags: ['time_synced', 'lidar_ok', 'tilt_ok'], epoch, seq: seq++, dist_cm: bad ? null : dist,
+        dist_var_cm2: bad ? null : (d === 3 && k === 2 ? 6 : 0), strength: bad ? 40 : 4800 + k * 30, n_frames: 100, n_valid: bad ? 0 : 97,
+        n_out_of_range: bad ? 100 : 3, tilt_deg: 2.2, pitch_deg: -2.0, roll_deg: 0.8, imu_temp_c: -3.5 + k, lidar_temp_c: 20 + k,
+        vbat_start_mv: 5900 - d * 8, vbat_end_mv: 5850 - d * 8 });
+    }
+  }
+  return out;
+}
+function enterDemo() {
+  state.deviceId = 'SG-DEMO';
+  state.settings = { 'sg/sched/start_min': LE.u16(17 * 60), 'sg/sched/end_min': LE.u16(5 * 60), 'sg/sched/interval_min': LE.u16(180),
+    'sg/sched/tz_min': LE.i16(540), 'sg/cal/d0_cm': LE.u16(232), 'sg/cal/theta0_cdeg': LE.i16(220), 'sg/cal/set_epoch': LE.u32(Math.floor(Date.now() / 1000) - 12 * 86400) };
+  state.site = { name: 'デモ観測点', lat: 36.8612, lon: 138.7830, alt_m: 1250, accuracy_m: 6, source: 'gps', tz_min: 540, set_at: new Date().toISOString() };
+  state.records = demoRecords(); state.downloadedThisSession = true; state.timeOk = true;
+  $('conn-state').textContent = 'SG-DEMO'; $('btn-connect').hidden = true; $('btn-disconnect').hidden = false;
+  document.querySelectorAll('.needs-conn').forEach(el => el.disabled = false);
+  $('dev-time').textContent = new Date().toISOString().slice(0, 19) + 'Z（スマホとの差 +1 秒）'; $('dev-time').className = 'ok';
+  renderSite();
+  for (const def of SETTINGS_SCHEMA) {
+    const v = settingValue(def, state.settings[def.key]);
+    if (def.kind === 'hhmm') setSelectValue($('set-' + def.key), v, hhmm);
+    else if (def.kind === 'choice') setSelectValue($('set-' + def.key), v, x => x + ' 分');
+    else if (def.kind === 'display') $('set-' + def.key).textContent = settingDisplay(def, v);
+  }
+  $('tz-info').textContent = 'UTC+09:00（同期時にスマホから自動設定）';
+  $('cal-ref').textContent = 'd0 = 232 cm, θ0 = 2.20°'; $('live-state').textContent = '動作中（センサ通電中、5 分で自動停止）';
+  $('live-dist').textContent = 198; $('live-vert').textContent = 198; $('live-depth').textContent = '34.0'; $('live-tilt').textContent = '2.21';
+  $('live-str').textContent = 4870; $('live-vbat').textContent = 5812; $('live-q').textContent = '10/10, var 0';
+  $('dl-progress').textContent = '合計 ' + state.records.length + ' 件（デモデータ）';
+  renderData(); updateEraseButton();
+  log('デモ表示モード: 本体には接続していません。?demo=1 を外すと通常動作に戻ります', 'warn');
+}
+
 /* ---------- init ---------- */
 
 if (typeof window !== 'undefined') window.addEventListener('load', () => {
@@ -500,6 +550,7 @@ if (typeof window !== 'undefined') window.addEventListener('load', () => {
   $('btn-settings-save').onclick = busy($('btn-settings-save'), saveSettings);
   $('btn-settings-reload').onclick = busy($('btn-settings-reload'), loadSettings);
   $('btn-download').onclick = busy($('btn-download'), downloadAll);
+  $('btn-showall').onclick = () => { state.showAll = !state.showAll; renderData(); };
   $('btn-csv').onclick = () => { exportCSV(); toast('CSV をもう一度保存しました'); };
   $('btn-raw').onclick = () => { exportRaw(); toast('生データを保存しました'); };
   $('btn-live-on').onclick = busy($('btn-live-on'), liveOn); $('btn-live-off').onclick = busy($('btn-live-off'), liveOff);
@@ -510,6 +561,7 @@ if (typeof window !== 'undefined') window.addEventListener('load', () => {
   $('depth-sel').innerHTML = Array.from({ length: 401 }, (_, i) => `<option value="${i}">${i} cm</option>`).join('');
   window.addEventListener('resize', () => state.records.length && drawChart());
   $('app-version').textContent = 'アプリ版 ' + APP_VERSION;
+  if (new URLSearchParams(location.search).get('demo')) { setTimeout(enterDemo, 50); }
   if ('serviceWorker' in navigator && location.protocol === 'https:') {
     navigator.serviceWorker.register('sw.js').then(reg => {
       reg.addEventListener('updatefound', () => {

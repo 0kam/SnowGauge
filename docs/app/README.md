@@ -24,3 +24,5 @@ calibration panel, CSV), `index.html`, `sw.js` + `manifest.webmanifest` (PWA).
 
 Reusing for another logger: keep `cbor.js` / `smp.js`, replace the two schemas
 and the calibration panel in `app.js`.
+
+Demo mode: append `?demo=1` to the URL to populate the page with sample data without a device (used for the README screenshots and for training).

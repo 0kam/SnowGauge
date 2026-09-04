@@ -25,6 +25,17 @@
 
 文書一覧と「どこを直すとき何を更新するか」は [docs/README.md](docs/README.md) にあります。
 
+## 現地アプリ
+
+スマホの Chrome で https://0kam.github.io/SnowGauge/app/ を開き「ホーム画面に追加」すると、圏外でも起動するアプリになります（[使い方](docs/04_app.md)）。本体なしで画面を試すには [デモ表示](https://0kam.github.io/SnowGauge/app/?demo=1)。
+
+<p align="center">
+  <img src="docs/assets/screenshots/app_1_sync.png" width="220" alt="同期">
+  <img src="docs/assets/screenshots/app_2_data.png" width="220" alt="観測データ">
+  <img src="docs/assets/screenshots/app_3_schedule.png" width="220" alt="観測スケジュール">
+  <img src="docs/assets/screenshots/app_4_calibration.png" width="220" alt="設置・基準設定">
+</p>
+
 ## 主な仕様
 
 - 測距: TFmini Plus（近赤外 ToF）。安価な代替として TSD20 版を A/B 比較予定

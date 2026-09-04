@@ -11,10 +11,10 @@
 <style>
   :root { --blue: #1976d2; --navy: #00031d; --grey: #607d8b; --red: #c62828; }
   * { box-sizing: border-box; }
-  body { font-family: system-ui, sans-serif; margin: 0; background: #f4f6f8; color: #222; font-size: 18px; }
+  body { font-family: system-ui, sans-serif; margin: 0; background: #f4f6f8; color: #222; font-size: 18px; overflow-x: hidden; }
   header { background: var(--navy); color: #fff; padding: 8px 14px; display: flex; align-items: center; gap: 10px; position: sticky; top: 0; z-index: 2; }
   header h1 { margin: 0; flex: 1; line-height: 0; } header h1 img { height: 44px; width: auto; max-width: 100%; }
-  header .status { font-size: 13px; white-space: nowrap; max-width: 40vw; overflow: hidden; text-overflow: ellipsis; }
+  header .status { font-size: 15px; white-space: nowrap; max-width: 40vw; overflow: hidden; text-overflow: ellipsis; }
   header button { margin: 0; width: auto; min-height: 44px; padding: 0 16px; background: var(--blue); color: #fff; }
   main { max-width: 720px; margin: 0 auto; padding: 10px; }
   section { background: #fff; border-radius: 12px; padding: 14px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,.1); }
@@ -30,14 +30,17 @@
   td:first-child { width: 40%; }
   .help { color: #777; font-size: 13px; }
   .value { font-weight: 600; }
-  .status { font-size: 16px; line-height: 1.5; }
+  .status { font-size: 16px; line-height: 1.5; overflow-wrap: anywhere; }
   .ok { color: #2e7d32; } .warn { color: #ef6c00; } .err { color: #c62828; }
   .warnrow { background: #fff3e0; }
+  .flagrow td { color: #e65100; font-size: 14px; padding-top: 0; }
+  .scroll td, .scroll th { white-space: nowrap; }
   #log { font-family: ui-monospace, monospace; font-size: 12px; max-height: 140px; overflow: auto; background: #263238; color: #eceff1; padding: 8px; border-radius: 8px; }
   #log .err { color: #ff8a80; } #log .warn { color: #ffd180; }
   .live { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; text-align: center; margin: 8px 0; }
-  .live div { background: #eceff1; border-radius: 10px; padding: 8px 4px; font-size: 14px; }
-  .live b { display: block; font-size: 32px; }
+  .live div { background: #eceff1; border-radius: 10px; padding: 8px 4px; font-size: 14px; min-width: 0; overflow-wrap: anywhere; }
+  .live b { display: block; font-size: 30px; }
+  .live b.small { font-size: 18px; line-height: 30px; }
   canvas { width: 100%; height: 220px; display: block; }
   .scroll { overflow-x: auto; font-size: 15px; }
   #nosupport { background: #ffebee; color: #b71c1c; padding: 10px; border-radius: 8px; }
@@ -77,7 +80,8 @@
   </details>
   <canvas id="chart"></canvas>
   <div id="data-summary" class="help"></div>
-  <div class="scroll"><table><thead><tr><th>現地時刻</th><th>距離</th><th>積雪</th><th>傾斜</th><th>電池</th><th>有効</th><th>要確認</th></tr></thead><tbody id="data-body"></tbody></table></div>
+  <button id="btn-showall" class="secondary" hidden data-keep="1">すべて表示</button>
+  <div class="scroll"><table><thead><tr><th>現地時刻</th><th>距離</th><th>積雪</th><th>傾斜</th><th>電池</th><th>有効</th></tr></thead><tbody id="data-body"></tbody></table></div>
 </section>
 
 <section>
@@ -96,7 +100,7 @@
     <div>傾斜 °<b id="live-tilt">---</b></div>
     <div>信号強度<b id="live-str">---</b></div>
     <div>電池 mV<b id="live-vbat">---</b></div>
-    <div>有効/総<b id="live-q">---</b></div>
+    <div>有効/総<b id="live-q" class="small">---</b></div>
   </div>
   <div class="row"><button id="btn-live-on" class="needs-conn" disabled>ライブ開始</button><button id="btn-live-off" class="needs-conn secondary" disabled>ライブ停止</button></div>
   <div class="help">ライブ表示中はセンサに通電し続けます（約 120 mA、5 分で自動停止）。照準を確認したら停止してください。</div>
