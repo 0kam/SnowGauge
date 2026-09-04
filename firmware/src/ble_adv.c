@@ -15,6 +15,7 @@
 #include "storage.h"
 #include "timekeeping.h"
 #include "record.h"
+#include "cal_gatt.h"
 
 LOG_MODULE_REGISTER(ble_adv, CONFIG_LOG_DEFAULT_LEVEL);
 
@@ -134,6 +135,8 @@ static void on_disconnected(struct bt_conn *conn, uint8_t reason)
 	ARG_UNUSED(conn);
 	connected = false;
 	LOG_INF("BLE disconnected (reason 0x%02x)", reason);
+	/* The phone went away: never leave the sensor rail on for the live view. */
+	cal_live_stop();
 	k_work_schedule(&adv_restart_work, K_MSEC(200));
 }
 
