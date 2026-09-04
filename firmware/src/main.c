@@ -180,13 +180,31 @@ int main(void)
 		} else {
 			/* Field mode: schedule window from the settings, needs the clock. */
 			uint32_t now, next;
+			struct app_config c;
 
-			if (time_now(&now) != 0 || (next = config_next_measurement(now)) == 0) {
+			config_get(&c);
+			if (c.sched_interval_min == 0) {
 				k_sem_take(&period_changed, K_MINUTES(10));
 				first = true;
 				continue;
 			}
-			if (next > now) {
+			if (time_now(&now) != 0) {
+				/*
+				 * Clock never set (sync forgotten at installation): still
+				 * measure every interval from boot so nothing is lost; the
+				 * records land in rec_notime.bin, ordered by seq.
+				 */
+				if (!first && k_sem_take(&period_changed, K_MINUTES(c.sched_interval_min)) == 0) {
+					first = true;
+					continue;
+				}
+				first = false;
+				LOG_WRN("clock unset - measuring on the interval from boot");
+			} else if ((next = config_next_measurement(now)) == 0) {
+				k_sem_take(&period_changed, K_MINUTES(10));
+				first = true;
+				continue;
+			} else if (next > now) {
 				uint32_t wait_s = MIN(next - now, 3600U);
 
 				if (k_sem_take(&period_changed, K_SECONDS(wait_s)) == 0 ||

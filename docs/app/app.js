@@ -115,7 +115,7 @@ function csvEscape(v) { if (v === null || v === undefined) return ''; const s = 
 
 /* ---------- state ---------- */
 
-const state = { device: null, smp: null, cal: null, site: null, settings: {}, records: [], rawFiles: {}, deviceId: '' };
+const state = { device: null, smp: null, cal: null, site: null, settings: {}, records: [], rawFiles: {}, deviceId: '', timeOk: false };
 
 /* ---------- connection ---------- */
 
@@ -146,9 +146,10 @@ async function refreshStatus() {
   try {
     const dt = await state.smp.os.getDateTime();
     const dev = new Date(dt + 'Z'), diff = Math.round((dev - Date.now()) / 1000);
+    state.timeOk = Math.abs(diff) <= 60;
     $('dev-time').textContent = `${dt}Z（スマホとの差 ${diff >= 0 ? '+' : ''}${diff} 秒）`;
-    $('dev-time').className = Math.abs(diff) > 60 ? 'warn' : 'ok';
-  } catch (e) { $('dev-time').textContent = '時刻未設定または取得失敗 (' + e.message + ')'; $('dev-time').className = 'warn'; }
+    $('dev-time').className = state.timeOk ? 'ok' : 'warn';
+  } catch (e) { state.timeOk = false; $('dev-time').textContent = '時刻未設定または取得失敗 (' + e.message + ')'; $('dev-time').className = 'warn'; }
   await loadSettings();
   await loadSite();
 }
@@ -406,6 +407,7 @@ async function calConnect() {
     const dv = ev.target.value;
     const dist = dv.getUint16(0, true), str = dv.getUint16(2, true), tilt = dv.getInt16(4, true) / 100, vbat = dv.getUint16(6, true), nv = dv.getUint8(8), nf = dv.getUint8(9), v = dv.getUint16(10, true);
     $('live-dist').textContent = dist === 0xffff ? '---' : dist;
+    $('live-vert').textContent = dist === 0xffff ? '---' : (dist * Math.cos(tilt * Math.PI / 180)).toFixed(0);
     $('live-tilt').textContent = tilt.toFixed(2); $('live-str').textContent = str; $('live-vbat').textContent = vbat; $('live-q').textContent = `${nv}/${nf}, var ${v}`;
     const c = calRef();
     $('live-depth').textContent = (c && dist !== 0xffff) ? ((c.d0 - dist) * Math.cos(tilt * Math.PI / 180)).toFixed(1) : '---';
@@ -450,7 +452,11 @@ if (typeof window !== 'undefined') window.addEventListener('load', () => {
   renderSettingsForm();
   if (!navigator.bluetooth) { $('nosupport').hidden = false; $('btn-connect').disabled = true; }
   $('btn-connect').onclick = connect;
-  $('btn-disconnect').onclick = () => state.smp && state.smp.disconnect();
+  $('btn-disconnect').onclick = () => {
+    if (!state.smp) return;
+    if (!state.timeOk) { twoTap($('btn-disconnect'), '切断', () => state.smp.disconnect()); toast('時刻が未同期です。同期せずに切断するならもう一度押してください', 'err'); return; }
+    state.smp.disconnect();
+  };
   $('btn-sync').onclick = busy($('btn-sync'), syncAll);
   $('btn-time').onclick = busy($('btn-time'), async () => { await syncTime(); await refreshStatus(); });
   $('btn-site-manual').onclick = busy($('btn-site-manual'), manualSite);
