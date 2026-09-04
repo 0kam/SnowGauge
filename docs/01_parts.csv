@@ -8,22 +8,22 @@
 共通,D1,逆接保護ショットキー,1N5819 (40V/1A),1,https://akizukidenshi.com/catalog/g/g117244/,¥100/10本入り。帯（カソード）側がVBAT
 共通,"C1,C2,C3,C5",セラミックコンデンサ（パスコン）,0.1µF X7R 50V,4,https://akizukidenshi.com/catalog/g/g113582/,¥100/10個入り
 共通,C4,バルクコンデンサ（5Vレール）,OS-CON SEPC 470µF/16V,1,https://akizukidenshi.com/catalog/g/g108292/,~¥200。極性あり（長い足が+）。PCBはφ10mm・5mmピッチ
-共通,C6,セラミックコンデンサ（3.3Vレール）,10µF 積層セラミック（極性なし）,1,要選定,PCBは5mmリードピッチ品（2.5mmは足を広げる）
+共通,C6,セラミックコンデンサ（3.3Vレール）,10µF 積層セラミック（極性なし）,1,https://akizukidenshi.com/catalog/g/g102216/,PCBは5mmリードピッチ品（2.5mmは足を広げる）
 共通,"R1,R2",電池電圧の分圧,1MΩ 1/4W カーボン,2,https://akizukidenshi.com/catalog/g/g125105/,¥120/100本入り。代替: 同じ値なら5kΩ〜1MΩ
 共通,R3,Q2ゲート直列,10kΩ 1/4W,1,https://akizukidenshi.com/catalog/g/g125103/,¥120/100本入り。代替: 150Ω〜2.2kΩ（R3=R4=10kはNG）
-共通,"R4,R5",Q2プルダウン / Q1 G-Sプルアップ,100kΩ 1/4W,2,要選定（秋月 カーボン抵抗1/4W 100kΩ）,R4・R5の2本（R6廃止）。代替: 10kΩ可
+共通,"R4,R5",Q2プルダウン / Q1 G-Sプルアップ,100kΩ 1/4W,2,https://akizukidenshi.com/catalog/g/g125104/,R4・R5の2本（R6廃止）。代替: 10kΩ可
 共通,R7,UART TX直列（保護）,1kΩ 1/4W,1,https://akizukidenshi.com/catalog/g/g125102/,¥120/100本入り。代替: 1k〜5kΩ
-共通,BT,電池,Energizer L91（単3リチウム）,4,要選定,開放7.2V→終止4.0V。低温特性で最良
-共通,-,電池ボックス,単3×4 直列 リード線付き,1,要選定,PCBでは赤→J1「+」、黒→J1「−」
+共通,BT,電池,単3リチウム（Energizer L91=LAA4PKJP / Panasonic FR6HJ/4B など）,4,家電量販店・通販,開放7.2V→終止4.0V。低温特性で最良
+共通,-,電池ボックス,単3×4 直列 スナップ式 + スナップ,各1,https://akizukidenshi.com/catalog/g/g101972/ https://akizukidenshi.com/catalog/g/g102662/,PCBでは赤→J1「+」、黒→J1「−」
 PCB v1.2,-,プリント基板,SnowGauge PCB v1.2 (64x50mm 2層),1,JLCPCB（pcb/SnowGauge_v1.2_gerbers.zip）,最小5枚。02_assembly.md §B参照
-PCB v1.2,"J1,J2",ネジ端子台 2P,5.08mmピッチ 連結型 (TB111-2 / MKDS-1.5系),3,要選定（秋月 TB111系）,J1=電池。J2=2個を連結して4極（TFmini）
-PCB v1.2,A1ソケット,ピンソケット 1x7 2.54mm 低背,メス 1x7,2,要選定,基板穴0.89mm。0.64mm角ピン品は避ける
-PCB v1.2,J3,ピンヘッダ 1x4 2.54mm,オス 1x4,1,要選定,予備I2C。省略可
-PCB v1.2,H1-H4,M3ネジ・スペーサ,M3（穴φ3.2）,4,要選定,四隅 穴中心間57x43mm
-ブレッドボード,-,ブレッドボード,830穴,1,要選定,breadboard_guide.htmlはこのサイズ前提
-ブレッドボード,-,ジャンパワイヤ,単線ジャンパ各色 + オス-オス数本,1セット,要選定,電源系は短く太いもの
-ブレッドボード,-,電源,安定化電源 6.0V 電流制限1A以上 または 電池ボックス+L91x4,1,要選定,スリープ電流測定は電池と直列のµA電流計
-ブレッドボード,-,TFmini接続補助,ピンヘッダ付きジャンパ または 圧着ピン,適量,要選定,TFminiの線は細く抜けやすい
-ブレッドボード,-,テスター,DC電圧 0.01V単位,1,要選定,各STEPの確認に必須
+PCB v1.2,"J1,J2",ネジ端子台 2P,5.08mmピッチ 連結型 (TB111-2 / MKDS-1.5系),3,https://akizukidenshi.com/catalog/g/g102333/,J1=電池。J2=2個を連結して4極（TFmini）
+PCB v1.2,A1ソケット,ピンソケット 1x7 2.54mm 低背,メス 1x7,2,https://akizukidenshi.com/catalog/g/g104285/,基板穴0.89mm。0.64mm角ピン品は避ける
+PCB v1.2,J3,ピンヘッダ 1x4 2.54mm,オス 1x4,1,https://akizukidenshi.com/catalog/g/g100167/,予備I2C。省略可
+PCB v1.2,H1-H4,M3ネジ・スペーサ,M3（穴φ3.2）,4,一般的なもの,四隅 穴中心間57x43mm
+ブレッドボード,-,ブレッドボード,830穴,1,一般的なもの,breadboard_guide.htmlはこのサイズ前提
+ブレッドボード,-,ジャンパワイヤ,単線ジャンパ各色 + オス-オス数本,1セット,一般的なもの,電源系は短く太いもの
+ブレッドボード,-,電源,安定化電源 6.0V 電流制限1A以上 または 電池ボックス+L91x4,1,一般的なもの,スリープ電流測定は電池と直列のµA電流計
+ブレッドボード,-,TFmini接続補助,ピンヘッダ付きジャンパ または 圧着ピン,適量,一般的なもの,TFminiの線は細く抜けやすい
+ブレッドボード,-,テスター,DC電圧 0.01V単位,1,一般的なもの,各STEPの確認に必須
 TSD20版,-,LiDAR（廉価側）,PONO TSD20,1,https://akizukidenshi.com/catalog/g/g131304/,¥2580。TFmini Plusの代わり。FW未作成
 TSD20版,U2,3.3V LDO（測定時のみON）,NJU7223F33（2個目）,1,https://akizukidenshi.com/catalog/g/g100432/,NJU7223F50の代わり
