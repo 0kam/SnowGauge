@@ -5,7 +5,7 @@
  */
 'use strict';
 
-const APP_VERSION = '2026-09-04b';
+const APP_VERSION = '2026-09-04c';
 
 /* ---------- project schemas ---------- */
 
@@ -325,8 +325,11 @@ async function downloadAll() {
     }
     state.records.sort((a, b) => (a.epoch - b.epoch) || (a.seq - b.seq));
     $('dl-progress').textContent = `合計 ${state.records.length} 件`;
-    state.downloadedThisSession = true;
     renderData();
+    /* One step for the field: the CSV is saved right away, and only then may ERASE be used. */
+    if (state.records.length) { exportCSV(); log('CSV を保存しました（端末のダウンロードフォルダ）'); }
+    else log('レコードがありません（CSV は作成しません）');
+    state.downloadedThisSession = true;
   }
 }
 function qualityFlags(r, intervalMin, prev) {
@@ -497,7 +500,7 @@ if (typeof window !== 'undefined') window.addEventListener('load', () => {
   $('btn-settings-save').onclick = busy($('btn-settings-save'), saveSettings);
   $('btn-settings-reload').onclick = busy($('btn-settings-reload'), loadSettings);
   $('btn-download').onclick = busy($('btn-download'), downloadAll);
-  $('btn-csv').onclick = () => { exportCSV(); toast('CSV を保存しました'); };
+  $('btn-csv').onclick = () => { exportCSV(); toast('CSV をもう一度保存しました'); };
   $('btn-raw').onclick = () => { exportRaw(); toast('生データを保存しました'); };
   $('btn-live-on').onclick = busy($('btn-live-on'), liveOn); $('btn-live-off').onclick = busy($('btn-live-off'), liveOff);
   $('btn-cal-status').onclick = busy($('btn-cal-status'), calStatus);
