@@ -29,12 +29,14 @@
 
 スマホの Chrome で https://0kam.github.io/SnowGauge/app/ を開き「ホーム画面に追加」すると、圏外でも起動するアプリになります（[使い方](docs/04_app.md)）。本体なしで画面を試すには [デモ表示](https://0kam.github.io/SnowGauge/app/?demo=1)。
 
-<p align="center">
-  <img src="docs/assets/screenshots/app_1_sync.png" width="220" alt="同期">
-  <img src="docs/assets/screenshots/app_2_data.png" width="220" alt="観測データ">
-  <img src="docs/assets/screenshots/app_3_schedule.png" width="220" alt="観測スケジュール">
-  <img src="docs/assets/screenshots/app_4_calibration.png" width="220" alt="設置・基準設定">
-</p>
+<table align="center"><tr>
+  <td valign="top" width="25%"><img src="docs/assets/screenshots/app_1_sync.png" alt="同期"></td>
+  <td valign="top" width="25%"><img src="docs/assets/screenshots/app_2_data.png" alt="観測データ"></td>
+  <td valign="top" width="25%"><img src="docs/assets/screenshots/app_3_schedule.png" alt="観測スケジュール"></td>
+  <td valign="top" width="25%"><img src="docs/assets/screenshots/app_4_calibration.png" alt="設置・基準設定"></td>
+</tr><tr>
+  <td align="center">1. 同期</td><td align="center">2. 観測データ</td><td align="center">3. スケジュール</td><td align="center">4. 設置・基準設定</td>
+</tr></table>
 
 ## 主な仕様
 
