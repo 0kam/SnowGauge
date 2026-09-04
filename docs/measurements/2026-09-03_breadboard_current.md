@@ -61,3 +61,21 @@ PSU 6.00 V, USB disconnected, ⑩ in, shell-only build.
 Running total ≈ 26 µA + 3.5 µA measurements ≈ **30 µA average**, against the spec
 §7.1 budget of 50 µA typ / 90 µA worst. The advertising interval stays a knob
 (`ble adv <ms>`; 2 s fixed would roughly halve the +8 µA).
+
+## Release firmware fw-2026-09-04 (step 4d + robustness pass), 2026-09-04 afternoon
+
+Same setup and difference method. Board on PSU only, ⑩ in, clock synced, schedule
+17:00–05:00 / 90 min (no slot during the capture), advertising 1–2 s, live off.
+
+| Item | Value | Note |
+|---|---|---|
+| Raw, ⑩ out (XIAO unpowered, sensor side only, 60 s) | −52.9 µA (sd 18) | U1 quiescent + D1/Q1 leakage ≈ **20 µA** vs. the zero below |
+| Raw, ⑩ in (whole system, 60 s) | −41.2 µA (sd 37) | 10 s blocks −39…−45 µA; sd = advertising bursts |
+| Zero, DUT lead c2 pulled (40 s) | −72.9 µA (sd 22) | |
+| **Sleep + advertising, whole system, release FW** | **32 µA ± 10** | 26 µA on the step-4b build; same within the method's ±10 µA. Settings/NVS, cal work queue, rtc-emul tick: no measurable cost |
+| XIAO + BLE share (derived) | ≈ 12 µA | whole system − sensor side |
+
+Bench incident the same afternoon: 118 mA continuous with the MCU reporting the rail
+OFF. Cause: R3's lead (row b, columns 23–28) had shifted and touched column 22 (3.3 V),
+holding Q2's gate high → Q1 on. Reseating R3 fixed it (Q2 was swapped meanwhile; the
+original was probably fine). Added to docs/02_assembly.md troubleshooting.
