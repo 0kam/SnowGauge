@@ -70,9 +70,11 @@
 
 <section>
   <h2>2. 観測データ</h2>
-  <button id="btn-download" class="needs-conn" disabled>本体からダウンロード</button>
-  <div class="row"><button id="btn-csv" class="secondary" disabled>CSV 保存</button><button id="btn-raw" class="secondary" disabled>生データ保存</button></div>
+  <button id="btn-download" class="needs-conn" disabled>ダウンロードして CSV 保存</button>
   <div id="dl-progress" class="help"></div>
+  <details><summary>もう一度保存 / 生データ</summary>
+    <div class="row"><button id="btn-csv" class="secondary" disabled>CSV をもう一度保存</button><button id="btn-raw" class="secondary" disabled>生データ保存</button></div>
+  </details>
   <canvas id="chart"></canvas>
   <div id="data-summary" class="help"></div>
   <div class="scroll"><table><thead><tr><th>現地時刻</th><th>距離</th><th>積雪</th><th>傾斜</th><th>電池</th><th>有効</th><th>要確認</th></tr></thead><tbody id="data-body"></tbody></table></div>
