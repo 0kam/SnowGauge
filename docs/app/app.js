@@ -97,6 +97,20 @@ function isoLocal(epoch, tzMin) {
 function hhmm(min) { return String(Math.floor(min / 60)).padStart(2, '0') + ':' + String(min % 60).padStart(2, '0'); }
 function parseHHMM(s) { const m = /^(\d{1,2}):(\d{2})$/.exec(s.trim()); if (!m) return null; const v = +m[1] * 60 + +m[2]; return v < 1440 ? v : null; }
 function saveBlob(name, blob) { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 5000); }
+/* Button feedback: disable + "処理中…" while the async action runs, toast at the end. */
+function toast(msg, cls = '') {
+  const t = $('toast'); t.textContent = msg; t.className = 'show ' + cls;
+  clearTimeout(toast._timer); toast._timer = setTimeout(() => { t.className = ''; }, 2500);
+}
+function busy(btn, fn) {
+  return async () => {
+    if (btn.disabled) return;
+    const label = btn.textContent; btn.disabled = true; btn.textContent = '処理中…';
+    try { const r = await fn(); if (r !== false) toast('完了'); }
+    catch (e) { log(e.message, 'err'); toast('失敗: ' + e.message, 'err'); }
+    finally { btn.textContent = label; btn.disabled = !state.smp || !state.smp.connected ? btn.classList.contains('needs-conn') : false; }
+  };
+}
 function csvEscape(v) { if (v === null || v === undefined) return ''; const s = String(v); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; }
 
 /* ---------- state ---------- */
@@ -106,6 +120,7 @@ const state = { device: null, smp: null, cal: null, site: null, settings: {}, re
 /* ---------- connection ---------- */
 
 async function connect() {
+  const b = $('btn-connect'); b.disabled = true; b.textContent = '接続中…';
   try {
     const device = await navigator.bluetooth.requestDevice({
       filters: [{ namePrefix: DEVICE_NAME_PREFIX }],
@@ -116,9 +131,10 @@ async function connect() {
     state.smp = new SMPClient(log);
     await state.smp.connect(device);
     setConnected(true);
-    log('接続: ' + device.name);
+    log('接続: ' + device.name); toast('接続しました');
     await refreshStatus();
-  } catch (e) { log('接続失敗: ' + e.message, 'err'); }
+  } catch (e) { log('接続失敗: ' + e.message, 'err'); toast('接続失敗', 'err'); }
+  b.disabled = false; b.textContent = '接続';
 }
 function setConnected(on) {
   $('btn-connect').hidden = on; $('btn-disconnect').hidden = !on;
@@ -162,17 +178,19 @@ function renderSite() {
   $('site-info').textContent = s ? `${s.name || '(名称なし)'}  lat ${s.lat} lon ${s.lon} alt ${s.alt_m ?? '-'} m (±${s.accuracy_m ?? '-'} m, ${s.source})  tz ${s.tz_min} min  設定 ${s.set_at}` : 'サイト情報なし';
 }
 async function syncAll() {
+  const problems = [];
+  try { await syncTime(); } catch (e) { problems.push('時刻: ' + e.message); }
+  let coords = null;
+  try { coords = await getPosition(); log(`位置取得: ${coords.latitude.toFixed(6)}, ${coords.longitude.toFixed(6)} ±${Math.round(coords.accuracy)} m`); }
+  catch (e) { problems.push('位置: ' + e.message + '（手動入力可）'); }
+  const tz = phoneTzMin();
   try {
-    await syncTime();
-    let coords = null;
-    try { coords = await getPosition(); log(`位置取得: ${coords.latitude.toFixed(6)}, ${coords.longitude.toFixed(6)} ±${Math.round(coords.accuracy)} m`); }
-    catch (e) { log('位置取得失敗: ' + e.message + '（手動入力で設定できます）', 'warn'); }
-    const tz = phoneTzMin();
     if (coords) await writeSite({ lat: +coords.latitude.toFixed(6), lon: +coords.longitude.toFixed(6), alt_m: coords.altitude == null ? null : Math.round(coords.altitude), accuracy_m: Math.round(coords.accuracy), source: 'gps' }, tz);
     else await writeTz(tz);
-    await refreshStatus();
-    log('同期完了');
-  } catch (e) { log('同期失敗: ' + e.message, 'err'); }
+  } catch (e) { problems.push('サイト/タイムゾーン: ' + e.message); }
+  await refreshStatus();
+  if (problems.length) { problems.forEach(m => log(m, 'warn')); throw new Error(problems.length + ' 件の問題（ログ参照）'); }
+  log('同期完了');
 }
 async function writeTz(tz) {
   await state.smp.settings.write('sg/sched/tz_min', LE.i16(tz));
@@ -181,20 +199,22 @@ async function writeTz(tz) {
 }
 async function writeSite(pos, tz) {
   const prev = state.site;
+  let tzErr = null;
   const entry = { ...pos, name: $('site-name').value.trim() || (prev && prev.name) || '', tz_min: tz, tz_name: Intl.DateTimeFormat().resolvedOptions().timeZone, set_at: new Date().toISOString(), device_id: state.deviceId };
   const history = (prev && prev.history) ? prev.history.slice(-20) : [];
   if (prev) { const { history: _h, ...old } = prev; history.push(old); }
   const site = { ...entry, history };
   await state.smp.fs.upload(SITE_FILE, new TextEncoder().encode(JSON.stringify(site)));
-  await writeTz(tz);
   state.site = site; renderSite();
   log('サイト情報を保存');
+  try { await writeTz(tz); } catch (e) { tzErr = e; }
+  if (tzErr) throw new Error('タイムゾーン設定失敗: ' + tzErr.message);
 }
 async function manualSite() {
   const lat = parseFloat($('m-lat').value), lon = parseFloat($('m-lon').value), alt = parseFloat($('m-alt').value);
-  if (isNaN(lat) || isNaN(lon)) return log('緯度経度を入力してください', 'warn');
-  try { await writeSite({ lat, lon, alt_m: isNaN(alt) ? null : alt, accuracy_m: null, source: 'manual' }, phoneTzMin()); }
-  catch (e) { log('保存失敗: ' + e.message, 'err'); }
+  if (isNaN(lat) || isNaN(lon)) throw new Error('緯度経度を入力してください');
+  await writeSite({ lat, lon, alt_m: isNaN(alt) ? null : alt, accuracy_m: null, source: 'manual' }, phoneTzMin());
+  await refreshStatus();
 }
 
 /* ---------- settings ---------- */
@@ -236,22 +256,23 @@ async function loadSettings() {
       if (def.kind === 'hhmm') setSelectValue($('set-' + def.key), v, hhmm);
       else if (def.kind === 'choice') setSelectValue($('set-' + def.key), v, x => x + ' 分');
       else if (def.kind === 'display') $('set-' + def.key).textContent = settingDisplay(def, v);
-    } catch (e) { log('設定読込失敗 ' + def.key + ': ' + e.message, 'warn'); }
+    } catch (e) {
+      log('設定読込失敗 ' + def.key + ': ' + e.message + (e.rc === 8 ? '（本体 FW が設定グループ未対応: 4d 版が必要）' : ''), 'warn');
+      if (e.rc === 8) break;
+    }
   }
   const tz = tzMin(); $('tz-info').textContent = `UTC${tz >= 0 ? '+' : '-'}${hhmm(Math.abs(tz))}（同期時にスマホから自動設定）`;
   $('cal-ref').textContent = calRef() ? `d0 = ${calRef().d0} cm, θ0 = ${calRef().theta0.toFixed(2)}°` : '未設定（無雪 ZERO か積雪深入力で設定）';
 }
 async function saveSettings() {
-  try {
-    for (const def of SETTINGS_SCHEMA) {
-      if (def.kind !== 'hhmm' && def.kind !== 'choice') continue;
-      const bytes = settingBytes(def, parseInt($('set-' + def.key).value, 10));
-      await state.smp.settings.write(def.key, bytes);
-    }
-    await state.smp.settings.save();
-    log('設定を保存');
-    await loadSettings();
-  } catch (e) { log('設定保存失敗: ' + e.message, 'err'); }
+  for (const def of SETTINGS_SCHEMA) {
+    if (def.kind !== 'hhmm' && def.kind !== 'choice') continue;
+    const bytes = settingBytes(def, parseInt($('set-' + def.key).value, 10));
+    await state.smp.settings.write(def.key, bytes);
+  }
+  await state.smp.settings.save();
+  log('設定を保存');
+  await loadSettings();
 }
 function tzMin() { const b = state.settings['sg/sched/tz_min']; return b ? LE.getI16(b) : phoneTzMin(); }
 function calRef() {
@@ -275,8 +296,7 @@ async function listRecordFiles() {
   return names;
 }
 async function downloadAll() {
-  const btn = $('btn-download'); btn.disabled = true;
-  try {
+  {
     const files = await listRecordFiles();
     log(`ファイル ${files.length} 件: ` + files.map(f => `${f.name.split('/').pop()} (${f.len} B)`).join(', '));
     state.records = []; state.rawFiles = {};
@@ -292,8 +312,7 @@ async function downloadAll() {
     state.records.sort((a, b) => (a.epoch - b.epoch) || (a.seq - b.seq));
     $('dl-progress').textContent = `合計 ${state.records.length} 件`;
     renderData();
-  } catch (e) { log('ダウンロード失敗: ' + e.message, 'err'); }
-  btn.disabled = false;
+  }
 }
 function qualityFlags(r, intervalMin, prev) {
   const q = [];
@@ -365,7 +384,7 @@ function exportCSV() {
     lines.push(CSV_COLUMNS.map(c => csvEscape(row[c])).join(','));
   }
   const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
-  saveBlob(`${state.deviceId || 'snowgauge'}_${stamp}.csv`, new Blob([lines.join('\n') + '\n'], { type: 'text/csv' }));
+  saveBlob(`${state.deviceId || 'snowgauge'}_${stamp}.csv`, new Blob(['\ufeff' + lines.join('\n') + '\n'], { type: 'text/csv;charset=utf-8' }));
   log('CSV 保存: ' + state.records.length + ' 件');
 }
 function exportRaw() {
@@ -377,7 +396,9 @@ function exportRaw() {
 
 async function calConnect() {
   if (state.cal) return state.cal;
-  const svc = await state.device.gatt.getPrimaryService(CAL_SVC);
+  let svc;
+  try { svc = await state.device.gatt.getPrimaryService(CAL_SVC); }
+  catch (e) { throw new Error('キャリブレーション用サービスが本体にありません（FW 4d 版が必要）'); }
   const live = await svc.getCharacteristic(CAL_LIVE);
   const ctrl = await svc.getCharacteristic(CAL_CTRL);
   const status = await svc.getCharacteristic(CAL_STATUS);
@@ -402,17 +423,16 @@ async function calStatus() {
   if (res) log('前回コマンド結果: ' + res, 'warn');
   return { d0, th, live, res };
 }
-async function liveOn() { try { await calCmd([0x01]); await calStatus(); } catch (e) { log('ライブ開始失敗: ' + e.message, 'err'); } }
-async function liveOff() { try { await calCmd([0x00]); await calStatus(); } catch (e) { log('ライブ停止失敗: ' + e.message, 'err'); } }
+async function liveOn() { await calCmd([0x01]); await calStatus(); }
+async function liveOff() { await calCmd([0x00]); await calStatus(); }
 /* Reference: ZERO on bare ground (depth 0) or from a probed snow depth. */
 async function setReference(depthCm) {
-  try {
-    await calCmd(depthCm ? [0x11, depthCm & 255, depthCm >> 8] : [0x10]);
-    log(depthCm ? `基準設定中（現在の積雪深 ${depthCm} cm、約 3 秒）` : 'ZERO 実行中（約 3 秒）');
-    await new Promise(r => setTimeout(r, 4000));
-    const st = await calStatus(); await loadSettings();
-    if (st.res) log('基準設定失敗（本体エラー ' + st.res + '）: 測距か傾斜が取れていません', 'err'); else log('基準を保存しました');
-  } catch (e) { log('基準設定失敗: ' + e.message, 'err'); }
+  await calCmd(depthCm ? [0x11, depthCm & 255, depthCm >> 8] : [0x10]);
+  log(depthCm ? `基準設定中（現在の積雪深 ${depthCm} cm、約 3 秒）` : 'ZERO 実行中（約 3 秒）');
+  await new Promise(r => setTimeout(r, 4000));
+  const st = await calStatus(); await loadSettings();
+  if (st.res) throw new Error('本体エラー ' + st.res + '（測距か傾斜が取れていません）');
+  log('基準を保存しました');
 }
 function twoTap(btn, label, action) {
   if (btn.dataset.armed) { delete btn.dataset.armed; btn.textContent = label; action(); return; }
@@ -420,8 +440,8 @@ function twoTap(btn, label, action) {
   setTimeout(() => { if (btn.dataset.armed) { delete btn.dataset.armed; btn.textContent = label; } }, 5000);
 }
 async function doErase() {
-  try { await calCmd([0x20, 0x45, 0x52, 0x41, 0x53, 0x45]); await new Promise(r => setTimeout(r, 2000)); await calStatus(); log('全レコードを消去しました', 'warn'); state.records = []; renderData(); }
-  catch (e) { log('消去失敗: ' + e.message, 'err'); }
+  await calCmd([0x20, 0x45, 0x52, 0x41, 0x53, 0x45]); await new Promise(r => setTimeout(r, 2000)); await calStatus();
+  log('全レコードを消去しました', 'warn'); state.records = []; renderData();
 }
 
 /* ---------- init ---------- */
@@ -431,20 +451,20 @@ if (typeof window !== 'undefined') window.addEventListener('load', () => {
   if (!navigator.bluetooth) { $('nosupport').hidden = false; $('btn-connect').disabled = true; }
   $('btn-connect').onclick = connect;
   $('btn-disconnect').onclick = () => state.smp && state.smp.disconnect();
-  $('btn-sync').onclick = syncAll;
-  $('btn-time').onclick = () => syncTime().then(refreshStatus).catch(e => log(e.message, 'err'));
-  $('btn-site-manual').onclick = manualSite;
-  $('btn-settings-save').onclick = saveSettings;
-  $('btn-settings-reload').onclick = () => loadSettings().catch(e => log(e.message, 'err'));
-  $('btn-download').onclick = downloadAll;
-  $('btn-csv').onclick = exportCSV;
-  $('btn-raw').onclick = exportRaw;
-  $('btn-live-on').onclick = liveOn; $('btn-live-off').onclick = liveOff;
-  $('btn-zero').onclick = () => twoTap($('btn-zero'), 'ZERO（無雪の地面）', () => setReference(0));
-  $('btn-ref-depth').onclick = () => twoTap($('btn-ref-depth'), '積雪深で基準設定', () => setReference(parseInt($('depth-sel').value, 10)));
-  $('btn-erase').onclick = () => twoTap($('btn-erase'), '全レコード消去', doErase);
+  $('btn-sync').onclick = busy($('btn-sync'), syncAll);
+  $('btn-time').onclick = busy($('btn-time'), async () => { await syncTime(); await refreshStatus(); });
+  $('btn-site-manual').onclick = busy($('btn-site-manual'), manualSite);
+  $('btn-settings-save').onclick = busy($('btn-settings-save'), saveSettings);
+  $('btn-settings-reload').onclick = busy($('btn-settings-reload'), loadSettings);
+  $('btn-download').onclick = busy($('btn-download'), downloadAll);
+  $('btn-csv').onclick = () => { exportCSV(); toast('CSV を保存しました'); };
+  $('btn-raw').onclick = () => { exportRaw(); toast('生データを保存しました'); };
+  $('btn-live-on').onclick = busy($('btn-live-on'), liveOn); $('btn-live-off').onclick = busy($('btn-live-off'), liveOff);
+  $('btn-cal-status').onclick = busy($('btn-cal-status'), calStatus);
+  $('btn-zero').onclick = () => twoTap($('btn-zero'), 'ZERO（無雪の地面）', busy($('btn-zero'), () => setReference(0)));
+  $('btn-ref-depth').onclick = () => twoTap($('btn-ref-depth'), '積雪深で基準設定', busy($('btn-ref-depth'), () => setReference(parseInt($('depth-sel').value, 10))));
+  $('btn-erase').onclick = () => twoTap($('btn-erase'), '全レコード消去', busy($('btn-erase'), doErase));
   $('depth-sel').innerHTML = Array.from({ length: 401 }, (_, i) => `<option value="${i}">${i} cm</option>`).join('');
-  $('btn-cal-status').onclick = () => calStatus().catch(e => log(e.message, 'err'));
   window.addEventListener('resize', () => state.records.length && drawChart());
   if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
 });
