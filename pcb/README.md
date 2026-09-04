@@ -41,6 +41,8 @@
 | Pin header 1x4, 2.54mm | 1 | J3 (optional) |
 | M3 screws/standoffs | 4 | mounting holes at corners |
 
+The consolidated BOM for a whole unit (spec §6 parts + these lines, corrected counts, breadboard consumables, TSD20 variant) is [docs/01_parts.md](../docs/01_parts.md) / [docs/01_parts.csv](../docs/01_parts.csv).
+
 ## Safety notes silkscreened on the board
 
 - "NO USB WHILE BATTERY CONNECTED!" — disconnect battery before plugging USB into the XIAO

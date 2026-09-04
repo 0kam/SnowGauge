@@ -79,15 +79,7 @@ record and marks records TIME_ESTIMATED until the next external sync.
 
 ## Shell
 
-```
-measure              one cycle, stored (flag MANUAL); prints the record as CSV
-rec count            record count, next seq, file system / mirror state, newest record
-rec ls               files on /lfs1 with sizes
-rec dump [n]         newest n records from the mirror as CSV (0 = all)
-rec erase ERASE      delete all record files + erase the mirror
-time                 show the clock and its state
-time set <epoch>     set the clock (UTC seconds, e.g. `date +%s`)
-```
+Bench shell commands (`rec`, `time`, `cfg`, `cal`, …) are listed in [firmware/README.md](../firmware/README.md).
 
 ## Offline decoding
 

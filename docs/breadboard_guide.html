@@ -3776,7 +3776,7 @@ footer{margin-top:64px;border-top:1px solid var(--line);padding-top:14px;font-si
 <tr><td class="n">⑩</td><td><i class="chip" style="background:#E07A00"></i>ジャンパ 橙 (3.3V)</td><td class="h">a10</td><td class="h">a22</td><td class="note">U1 の OUT 列 → XIAO 3V3 ピン(e22)の列</td></tr>
 <tr><td class="n">⑪</td><td><i class="chip" style="background:#3A4148"></i>ジャンパ 黒</td><td class="h">a21</td><td class="h">上の青レール(GND)</td><td class="note">XIAO GND ピン(e21)の列 → 上の青レール</td></tr>
 </table></div>
-<ul class="check"><li>XIAO の 3V3 ピン(f22)−GND ピン(f21) 間 = <span class="kbd">3.3V</span>（SnowGauge FW は LED を使わないので LED は点きません）</li></ul>
+<ul class="check"><li>XIAO の 3V3 ピン(e22)−GND ピン(e21) 間 = <span class="kbd">3.3V</span>（SnowGauge FW は LED を使わないので LED は点きません）</li></ul>
 <div class="warn"><b>最重要:</b> パソコンと USB でつなぐ時は<b>必ず電池を抜く</b>。USB を挿したまま電池（や安定化電源）でセンサ側を動かしたい時は、<b>⑩（橙、a10→a22）だけ抜けば両立できます</b>（XIAO は USB 給電、センサレールと分圧は電池給電。GND は共通のまま）。向きを間違えて挿すと壊れるので、⑨は挿す前に指差し確認。</div>
 </div>
 <div class="step">
@@ -7861,6 +7861,6 @@ footer{margin-top:64px;border-top:1px solid var(--line);padding-top:14px;font-si
 <li><b>抵抗の代替値</b>（手持ちで組む場合）: R3 は <b>150Ω〜2.2kΩ</b>（R4 との分圧で Q2 のゲート電圧が 2.7V 以上になること。R3=R4=10k は NG）、R4・R5 は <b>10kΩ</b> 可、R1/R2 は <b>同じ値なら 5k〜1M のどれでも</b>（FW は「読み値 ×2」）、R7 は <b>1k〜5k</b>。分圧は VBAT_SW 側なのでスリープ電流には影響しない</li>
 </ul>
 </section>
-<footer>SnowGauge 設計仕様書 v0.11 / PCB v1.2 トポロジ準拠（分圧は VBAT_SW から・Q3/R6/D3 廃止）。ピン配置の正は pcb/README.md。TSD20 版は U2 を NJU7223F33 に差し替えるだけで同一配線。この HTML は docs/gen_breadboard.py が生成します（手編集しない）。</footer>
+<footer>SnowGauge 設計仕様書 v0.12 / PCB v1.2 トポロジ準拠（分圧は VBAT_SW から・Q3/R6/D3 廃止）。ピン配置の正は pcb/README.md。TSD20 版は U2 を NJU7223F33 に差し替えるだけで同一配線。この HTML は docs/gen_breadboard.py が生成します（手編集しない）。</footer>
 </div>
 </body></html>

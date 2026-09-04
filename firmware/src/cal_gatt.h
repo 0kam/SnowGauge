@@ -2,7 +2,7 @@
  * Calibration GATT service (spec section 12.2, layer 2).
  *
  * Service  53470001-6E63-4D61-8B0C-7A8E9F0B1C2D
- *  live    53470002-...  notify, 12 bytes LE every ~500 ms while enabled:
+ *  live    53470002-...  notify, 12 bytes LE every ~250 ms while enabled:
  *                        dist_cm u16 (0xFFFF none), strength u16, tilt_cdeg i16,
  *                        vbat_mv u16, n_valid u8, n_frames u8, var_cm2 u16
  *  control 53470003-...  write: 0x00 live off, 0x01 live on,

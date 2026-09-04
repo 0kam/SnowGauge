@@ -131,7 +131,7 @@ XIAO_BOT = ['D0/A0', 'D1', 'D2', 'D3', 'D4', 'D5', 'D6/TX']    # row f, cols 20.
 STEPS = {
     1: ('電源部', ['赤レール−青レール間: <span class="kbd">電池電圧 −0.2〜0.35V</span>',
                   'c10（U1 の OUT）−青レール間: <span class="kbd">3.25〜3.35V</span>']),
-    2: ('XIAO', ['XIAO の 3V3 ピン(f22)−GND ピン(f21) 間 = <span class="kbd">3.3V</span>（SnowGauge FW は LED を使わないので LED は点きません）']),
+    2: ('XIAO', ['XIAO の 3V3 ピン(e22)−GND ピン(e21) 間 = <span class="kbd">3.3V</span>（SnowGauge FW は LED を使わないので LED は点きません）']),
     3: ('スイッチと 5V 系', ['なにもしない時: e42−GND 間 = <span class="kbd">0V</span>',
                        'ジャンパ線で a28（Q2 の G）を 3.3V（c10）に触れさせる: e42 = <span class="kbd">4.9〜5.1V</span>、離すと 0V に戻る',
                        'a28 を c10 に触れさせている間: a32（Q1 の G）= <span class="kbd">0V 近く</span>、a33（Q1 の D = VBAT_SW）= <span class="kbd">電池電圧</span>。離している時は逆に a32 ≈ 電池電圧、a33 = 0V']),
@@ -542,7 +542,7 @@ def build_html():
 <li><b>抵抗の代替値</b>（手持ちで組む場合）: R3 は <b>150Ω〜2.2kΩ</b>（R4 との分圧で Q2 のゲート電圧が 2.7V 以上になること。R3=R4=10k は NG）、R4・R5 は <b>10kΩ</b> 可、R1/R2 は <b>同じ値なら 5k〜1M のどれでも</b>（FW は「読み値 ×2」）、R7 は <b>1k〜5k</b>。分圧は VBAT_SW 側なのでスリープ電流には影響しない</li>
 </ul>
 </section>''')
-    h.append('<footer>SnowGauge 設計仕様書 v0.11 / PCB v1.2 トポロジ準拠（分圧は VBAT_SW から・Q3/R6/D3 廃止）。ピン配置の正は pcb/README.md。TSD20 版は U2 を NJU7223F33 に差し替えるだけで同一配線。この HTML は docs/gen_breadboard.py が生成します（手編集しない）。</footer>')
+    h.append('<footer>SnowGauge 設計仕様書 v0.12 / PCB v1.2 トポロジ準拠（分圧は VBAT_SW から・Q3/R6/D3 廃止）。ピン配置の正は pcb/README.md。TSD20 版は U2 を NJU7223F33 に差し替えるだけで同一配線。この HTML は docs/gen_breadboard.py が生成します（手編集しない）。</footer>')
     h.append('</div>')
     return '\n'.join(h)
 

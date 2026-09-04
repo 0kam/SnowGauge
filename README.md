@@ -7,20 +7,42 @@
 
 # SnowGauge
 
-An inexpensive, low-power snow depth logger for remote subalpine sites, designed for multi-point deployment.
+山岳・亜高山帯の無人サイトで 2 年間動く、低価格・低消費電力の積雪深ロガーです。
+近赤外レーザー測距（TFmini Plus）で雪面までの斜距離を測り、IMU の傾斜で補正して積雪深に換算します。
+スマホ（Android Chrome）の Web Bluetooth ページで時刻合わせ・データ回収・設定を行い、電池だけで越冬します。
 
-- **Method**: Near-infrared laser ToF ranging (850–905 nm) aimed obliquely at the snow surface, with IMU-based tilt correction
-- **MCU**: Seeed XIAO nRF52840 Sense (built-in IMU, temperature, RTC, BLE, 2MB QSPI flash)
-- **LiDAR**: PONO TSD20 (low-cost, 3.3V) / Benewake TFmini Plus (IP65, signal strength output) — A/B comparison in the 2026-27 winter field trial
-- **Power**: 4× Energizer L91 AA lithium cells, targeting **2 years maintenance-free** (typ. ~85 µA average)
+*SnowGauge is a low-cost, low-power snow-depth logger (NIR laser ToF + XIAO nRF52840 Sense, Zephyr firmware, Web Bluetooth field app). Documentation is in Japanese; the developer docs (`firmware/README.md`, `docs/app/README.md`, `docs/record_format.md`) are in English.*
 
-## Documentation
+## はじめての方へ（この順に読む）
 
-The single source of truth is the design specification (Japanese):
+| 段階 | 読むもの | 内容 |
+|---|---|---|
+| 1. 部品を買う | [docs/01_parts.md](docs/01_parts.md)（[CSV](docs/01_parts.csv)） | 購入リスト。基板版・ブレッドボード版・TSD20 版の差分 |
+| 2. 組み立てる | [docs/02_assembly.md](docs/02_assembly.md) | ブレッドボード（[配線ガイド](https://0kam.github.io/SnowGauge/breadboard_guide.html)）／基板 v1.2／筐体（検討中） |
+| 3. ファームを書く | [docs/03_firmware.md](docs/03_firmware.md) | [Release](https://github.com/0kam/SnowGauge/releases) からダウンロードして USB で書き込み |
+| 4. アプリを入れる・使う | [docs/04_app.md](docs/04_app.md) | **アプリ: https://0kam.github.io/SnowGauge/app/** 設置時・巡回時の手順 |
+| 5. データを見る | [docs/05_data.md](docs/05_data.md) | CSV の列、品質フラグ、積雪深の再計算 |
 
-- [SnowGauge_設計仕様書_v0.11.md](SnowGauge_設計仕様書_v0.11.md)
-- [Assembly manual (TFmini Plus variant)](docs/assembly_tfmini_plus.md)
+文書一覧と「どこを直すとき何を更新するか」は [docs/README.md](docs/README.md) にあります。
 
-## Status
+## 主な仕様
 
-PCB v1.2 ordered (JLCPCB); breadboard development environment ready. Firmware development starting. Firmware and enclosure development in progress toward the 2026-27 winter comparison trial.
+- 測距: TFmini Plus（近赤外 ToF）。安価な代替として TSD20 版を A/B 比較予定
+- MCU: Seeed XIAO nRF52840 Sense（BLE、IMU 内蔵）、Zephyr（nRF Connect SDK v3.4.0）
+- 電源: リチウム単 3（Energizer L91）×4。実測スリープ 26 µA（BLE アドバタイズ込み）、測定 1 回 0.037 mAh
+- 記録: 40 バイト/回、QSPI フラッシュ上の LittleFS ＋ 内蔵フラッシュへのミラー。8 回/日で 2 年以上
+- 通信: BLE（アドバタイズに電池・件数・最終値、SMP でファイル取得と時刻同期、キャリブレーション用 GATT）
+- 現地 UI: Web Bluetooth ページ（PWA、オフライン動作、手袋前提の大きなボタン）
+
+## 開発者向け
+
+- 設計仕様書（要件・設計判断・改版履歴）: [SnowGauge_設計仕様書_v0.12.md](SnowGauge_設計仕様書_v0.12.md)
+- 基板（KiCad、ガーバー、ピンマップの正）: [pcb/README.md](pcb/README.md)
+- ファームウェアのビルド・シェル: [firmware/README.md](firmware/README.md)
+- アプリの構成（SMP クライアントの流用方法）: [docs/app/README.md](docs/app/README.md)
+- レコード形式・CSV 列定義: [docs/record_format.md](docs/record_format.md)
+- 作業引き継ぎ（AI エージェント向け）: [CLAUDE.md](CLAUDE.md)
+
+## 状態（2026-09-04）
+
+基板 v1.2 発注済み（到着 9/10 ごろ）。ブレッドボードでファームウェア（ステップ 1〜4）とアプリの実機確認まで完了。次は基板到着後の再測定、TSD20 版ファームウェア、筐体。
