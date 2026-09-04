@@ -156,12 +156,27 @@ int config_set(const struct app_config *in)
 
 int config_set_cal(uint16_t d0_cm, int16_t theta0_cdeg, uint32_t epoch)
 {
+	int ret;
+
 	k_mutex_lock(&lock, K_FOREVER);
 	cfg.cal_d0_cm = d0_cm;
 	cfg.cal_theta0_cdeg = theta0_cdeg;
 	cfg.cal_set_epoch = epoch;
 	k_mutex_unlock(&lock);
-	return settings_save_subtree("sg/cal");
+	/*
+	 * settings_save_subtree() matches the *handler* name ("sg"), so a deeper
+	 * subtree silently saves nothing. Save the three keys explicitly.
+	 */
+	ret = settings_save_one("sg/cal/d0_cm", &cfg.cal_d0_cm, sizeof(cfg.cal_d0_cm));
+	if (ret == 0) {
+		ret = settings_save_one("sg/cal/theta0_cdeg", &cfg.cal_theta0_cdeg,
+					sizeof(cfg.cal_theta0_cdeg));
+	}
+	if (ret == 0) {
+		ret = settings_save_one("sg/cal/set_epoch", &cfg.cal_set_epoch,
+					sizeof(cfg.cal_set_epoch));
+	}
+	return ret;
 }
 
 uint32_t config_next_measurement(uint32_t now_epoch)
