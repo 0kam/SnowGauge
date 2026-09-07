@@ -30,7 +30,7 @@ const RECORD_SCHEMA = {
 /* Settings exposed over SMP settings mgmt (firmware/src/config.h). */
 /* kind: 'hhmm' = 30-min picker, 'choice' = fixed list, 'auto' = set by the page (no UI),
  * 'display' = read-only text. Big pickers only: nothing is typed on the phone. */
-const INTERVAL_CHOICES = [[0, '自動観測しない'], [30, '30 分'], [60, '1 時間'], [90, '1 時間 30 分'], [120, '2 時間'], [180, '3 時間'], [240, '4 時間'], [360, '6 時間'], [720, '12 時間'], [1440, '24 時間']];
+const INTERVAL_CHOICES = [[0, '自動観測しない'], [5, '5 分'], [10, '10 分'], [30, '30 分'], [60, '1 時間'], [90, '1 時間 30 分'], [120, '2 時間'], [180, '3 時間'], [240, '4 時間'], [360, '6 時間'], [720, '12 時間'], [1440, '24 時間']];
 const SETTINGS_SCHEMA = [
   { key: 'sg/sched/start_min', type: 'u16', kind: 'hhmm', label: '観測開始' },
   { key: 'sg/sched/end_min', type: 'u16', kind: 'hhmm', label: '観測終了', help: '開始と同じなら終日。開始より前なら夜をまたぐ（例 17:00 → 05:00）' },
