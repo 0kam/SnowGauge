@@ -338,8 +338,10 @@ static int cmd_tilt(const struct shell *sh, size_t argc, char **argv)
 		shell_error(sh, "tilt read failed (%d)", ret);
 		return ret;
 	}
-	shell_print(sh, "tilt=%.2f deg  pitch=%.2f  roll=%.2f  a=(%d,%d,%d) mg  temp=%.1f C  n=%u",
-		    (double)r.tilt_deg, (double)r.pitch_deg, (double)r.roll_deg,
+	shell_print(sh, "tilt=%.2f deg from nadir (axis %s)  pitch=%.2f (toward +X)  roll=%.2f (toward %s)  a=(%d,%d,%d) mg  temp=%.1f C  n=%u",
+		    (double)r.tilt_deg, IS_ENABLED(CONFIG_SNOWGAUGE_SENSOR_AXIS_NEG_Y) ? "-Y" : "Z",
+		    (double)r.pitch_deg, (double)r.roll_deg,
+		    IS_ENABLED(CONFIG_SNOWGAUGE_SENSOR_AXIS_NEG_Y) ? "+Z" : "+Y",
 		    r.ax_mg, r.ay_mg, r.az_mg, (double)r.temp_c, r.n_samples);
 	return 0;
 }

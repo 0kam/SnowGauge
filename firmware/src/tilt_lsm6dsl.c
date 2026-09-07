@@ -163,9 +163,25 @@ int tilt_read(struct tilt_reading *r, uint8_t n_samples)
 		r->tilt_deg = r->pitch_deg = r->roll_deg = NAN;
 		return -ERANGE;
 	}
-	r->tilt_deg = acosf(fabsf(az) / norm) * RAD2DEG;
-	r->pitch_deg = atan2f(ax, sqrtf(ay * ay + az * az)) * RAD2DEG;
-	r->roll_deg = atan2f(ay, sqrtf(ax * ax + az * az)) * RAD2DEG;
+	/*
+	 * Project gravity on the optical axis (down) and the two lateral axes.
+	 * -Y build (vertical PCB): down = -Y, lateral = +X (in-plane), +Z (normal).
+	 * Z build (flat PCB, either face): down = +/-Z, lateral = +X, +Y.
+	 */
+	float down, lat1, lat2;
+
+	if (IS_ENABLED(CONFIG_SNOWGAUGE_SENSOR_AXIS_NEG_Y)) {
+		down = -ay;
+		lat1 = ax;
+		lat2 = az;
+	} else {
+		down = fabsf(az);
+		lat1 = ax;
+		lat2 = ay;
+	}
+	r->tilt_deg = acosf(CLAMP(down / norm, -1.0f, 1.0f)) * RAD2DEG;
+	r->pitch_deg = atan2f(lat1, down) * RAD2DEG;
+	r->roll_deg = atan2f(lat2, down) * RAD2DEG;
 
 	LOG_DBG("n=%u a=(%d,%d,%d) mg tilt=%.2f pitch=%.2f roll=%.2f T=%.1f",
 		n, r->ax_mg, r->ay_mg, r->az_mg, (double)r->tilt_deg,

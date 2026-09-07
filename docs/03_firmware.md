@@ -165,7 +165,7 @@ screen /dev/cu.usbmodem21101 115200  # 名前は自分のものに
 | `cal zero [積雪深 cm]` | 基準値を取る（アプリの「ZERO」「積雪深で基準設定」と同じ） |
 | `cal clear` | 基準値を消す |
 | `batt` | 電池電圧 |
-| `tilt` | 傾斜角 |
+| `tilt` | 傾斜角（光軸の真下からのずれ。基板を鉛直・USB 右・TX 列上に立てたとき 0° 付近） |
 | `rail on` / `rail off` / `rail status` | センサ電源の入・切・状態（`lidar read` の前に `rail on` が必要） |
 | `lidar read [n]` | 距離センサから n 回読んで統計を表示（`tfmini read` / `tsd20 read` も同じ） |
 | `lidar raw [ms]` | 生の距離フレームを流す（TSD20 版は mm 表示） |

@@ -66,6 +66,28 @@ config SNOWGAUGE_TFMINI_MIN_STRENGTH
 	help
 	  Benewake documents distances as unreliable below a strength of 100.
 
+choice SNOWGAUGE_SENSOR_AXIS
+	prompt "Direction of the LiDAR optical axis in the IMU frame"
+	default SNOWGAUGE_SENSOR_AXIS_NEG_Y
+	help
+	  The tilt angle is measured between gravity and this axis, so it is
+	  the deviation of the laser from nadir whatever way the PCB is mounted.
+
+config SNOWGAUGE_SENSOR_AXIS_NEG_Y
+	bool "IMU -Y: PCB vertical, USB to the right, D0-D6 (TX) pin row up (enclosure v1)"
+	help
+	  Measured 2026-09-07: in this orientation gravity reads a = (0, -1, 0) g.
+	  pitch = component toward +X (in-plane, USB side), roll = component
+	  toward +Z (out of plane, component side).
+
+config SNOWGAUGE_SENSOR_AXIS_Z
+	bool "IMU +/-Z: PCB horizontal (flat breadboard on the bench)"
+	help
+	  Either face up. pitch = component toward +X, roll = toward +Y.
+	  Firmware before 2026-09-07 always used this.
+
+endchoice
+
 config SNOWGAUGE_TILT_SAMPLES
 	int "Accelerometer samples averaged per tilt reading"
 	default 16
