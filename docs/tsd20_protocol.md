@@ -8,7 +8,7 @@ Source: TSD20 user manual (PDF hosted by Akizuki, https://akizukidenshi.com/good
 |---|---|---|
 | Supply | 3.3–3.6 V DC, peak 70 mA, average 40 mA (< 0.2 W) | Board variant U2 = NJU7223F33 (3.3 V switched rail). **No reverse/overvoltage protection on the sensor** |
 | Interface | UART (3.3 V logic) or I2C (addr 0x52, 400 kHz) | UART on D6/D7 as with the TFmini; direct connection |
-| Connector | 6-pin 0.8 mm terminal, 20 cm tinned stranded wires | Pin 1 NC, **2 = 3.3 V**, **3 = TX (→ XIAO D7 RX)**, **4 = RX (← XIAO D6 TX via R7)**, 5 NC, **6 = GND**. Wire colours not given in the manual: identify by pin position |
+| Connector | 6-pin 0.8 mm terminal, 20 cm tinned stranded wires | Pin 1 NC, **2 = 3.3 V**, **3 = TX (→ XIAO D7 RX)**, **4 = RX (← XIAO D6 TX via R7)**, 5 NC, **6 = GND**. Wire colours are not in the manual; on our unit (2026-09-07) the connector reads left to right **white, red, yellow, green, light blue, black** = pins 1–6, i.e. **red = 3.3 V, yellow = TX, green = RX, black = GND**, white/light blue unused |
 | Range / accuracy | 0.05–20 m (90 % refl.), 0.05–10 m (10 % refl.); ±5 cm < 5 m, 1 % ≥ 5 m; repeatability ±10 mm; resolution 1 mm | Snow: expect the 10 % reflectivity figure |
 | Rate | 200 Hz default; 100/50/20/10/1 Hz selectable | 100 frames = 0.5 s at 200 Hz |
 | Optics | 905 nm, FOV 3°, spot 5 cm @1 m … 100 cm @20 m; ambient light 8 m @ 100 kLux | Class 1 |
@@ -26,11 +26,31 @@ Source: TSD20 user manual (PDF hosted by Akizuki, https://akizukidenshi.com/good
   - serial number `5A 0D 04 0D 0D 0D BA`, software version `5A 16 02 16 16 BB`
   - The sensor streams frames as soon as it is powered (the quick-test section connects and reads immediately); whether the stop/start state is persistent across power cycles is not stated — the driver must not rely on it and should send "start ranging" after the rail settles.
 
-## Firmware plan (step 5)
+## Bench result (2026-09-07, breadboard, U2 = NJU7223F33, 6.0 V bench supply)
+
+Works with the default sensor settings (460800 baud, 200 Hz): `lidar raw` → `dist=1947 mm`, `lidar read 100` → **100 frames in 499 ms, cksum_err 0**, var 0.00 cm²; `measure` → 100/100 valid in 620 ms, record flags 0x7e (SENSOR_TSD20 set), vbat 5666/5672 mV. Accuracy check: tape measure to the target 194 cm vs sensor 195 cm (+1 cm, spec ±5 cm). A hand at ~0.5 m tracked at 458–511 mm with 1–3 mm frame-to-frame jitter; 1600 frames in 8 s = exactly 200 Hz; no sentinel frames seen (no out-of-range case yet). The static reading is identical across a 100-frame burst (variance 0.00 cm²), i.e. the sensor filters internally, so `dist_var_cm2` will be much smaller than on the TFmini. Raw stream right after `rail on` is the plain 4-byte frame (`5C 9E 07 5A` = 1950 mm), so the sensor streams as soon as it is powered; the start-ranging command is harmless. Wire colours on our unit: white, red, yellow, green, light blue, black = pins 1–6 (red 3.3 V, yellow TX, green RX, black GND). UART logic level is 3.3 V, direct connection (U12 closed).
+
+Gotcha found on the way: `uart_configure()` needs `CONFIG_UART_USE_RUNTIME_CONFIGURE=y` (off by default in NCS 3.4) — without it the call returns -ENOTSUP, the UART stays at the DT 115200 and *zero* bytes arrive (framing errors are dropped silently). Now set in `prj.conf`. Debug shell commands added: `lidar bytes [ms]` (raw hex), `lidar baud <rate>`, `lidar start`, `lidar tx <hex...>`.
+
+Still open: current profile with picowatt, whether the 300 ms rail settle can be shortened, behaviour on a no-target / out-of-range surface (sentinel 50000 not yet seen), second release asset.
+
+## Implementation status (2026-09-04)
+
+Implemented and built (both variants):
+
+- `firmware/src/lidar.h` / `lidar.c`: common UART receiver + burst statistics; backends `tfmini.c` (default) and `tsd20.c`, selected by the Kconfig choice `SNOWGAUGE_SENSOR` (`overlay-tsd20.conf`). The baud rate is set at run time by `lidar_init()` (`uart_configure`, 460800; requires `CONFIG_UART_USE_RUNTIME_CONFIGURE=y`), so no DT overlay is needed.
+- `tsd20.c`: 4-byte parser with resync on a false 0x5C header, mm → cm rounding, sentinel 50000 (and 0) → `n_invalid`, `strength = 0`, `temp_c_x10 = INT16_MIN`; "start ranging" sent by `sensor_rail_on()` after the settle time; `lidar rate <hz>` → frequency command (div = 10000/hz − 1). Host unit test of the parser and command checksums passed (start = `5A 0A 02 02 00 F1`, 100 Hz = `5A 0B 02 63 00 8F`).
+- Record flag bit 6 `SENSOR_TSD20`; BLE name `SG-TSD-XXXX` (TFmini build: `SG-TFM-XXXX`; the page filters on `SG-`); `tools/decode_records.py` and the CSV flag names updated; `CONFIG_SNOWGAUGE_VBAT_MIN_MV` defaults to 3800 for the TSD20.
+- Shell: `lidar read|raw|rate|save|info` (`tsd20` / `tfmini` as aliases). `lidar raw` prints `dist=xxxx mm`.
+- Breadboard: `docs/breadboard_guide_tsd20.html` (generated with `gen_breadboard.py --tsd20`), §5 = conversion steps from the TFmini build.
+
+Open until the bench run: settle time (`CONFIG_SNOWGAUGE_RAIL_SETTLE_MS` 300 ms may be shortened), whether 460800 is clean on the breadboard wires, current profile (expect ≈40 mA × 0.5 s), whether the stop/start state persists across power cycles, and whether the sensor ever emits 0 mm.
+
+## Firmware plan (step 5, written before the implementation)
 
 1. `Kconfig` choice `SNOWGAUGE_SENSOR` = `TFMINI` (default) | `TSD20`; `overlay-tsd20.conf` selects it and sets `uart0` `current-speed = <460800>` via a DT overlay fragment.
 2. Put the sensor behind `lidar.h` (`lidar_init/flush/capture/read_frame/set_frame_rate`, `struct lidar_stats` = today's `tfmini_stats`); `tfmini.c` and new `tsd20.c` implement it. TSD20: 4-byte parser, mm → cm (round) for the v1 record, sentinel 50000 → `n_invalid`, `strength_median` = 0 and `n_weak` = 0 (no strength), `temp_c_x10` = INT16_MIN.
 3. Rail: unchanged (`SENSOR_EN`); settle time may be shorter; measure boot-to-first-frame with the shell `tfmini raw` equivalent (`lidar raw`).
-4. Record: set new flag bit 6 `RECORD_FLAG_SENSOR_TSD20` so CSV/analysis can tell the variants apart (update `record.h`, `docs/record_format.md`, `app.js` `RECORD_SCHEMA.flags`, `tools/decode_records.py`). BLE name prefix `ST-` for the TSD20 build (app `namePrefix` filter: accept both `SG-` and `ST-`).
+4. Record: set new flag bit 6 `RECORD_FLAG_SENSOR_TSD20` so CSV/analysis can tell the variants apart (update `record.h`, `docs/record_format.md`, `app.js` `RECORD_SCHEMA.flags`, `tools/decode_records.py`). BLE name `SG-TSD-XXXX` for the TSD20 build (`SG-TFM-XXXX` for the TFmini; app filter `SG-` matches both).
 5. Release as a second asset in the same tag: `snowgauge_fw_<date>_tsd20.uf2` / `_tsd20_dfu.zip`.
 6. Bench: same STEP 5 check with the TSD20 on the 3.3 V rail (U2 = F33), current profile with picowatt (expect ≈ 40 mA × 0.5 s per measurement).

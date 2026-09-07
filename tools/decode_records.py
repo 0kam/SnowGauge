@@ -26,6 +26,7 @@ FLAGS = {
     3: "tilt_ok",
     4: "manual",
     5: "first_after_boot",
+    6: "sensor_tsd20",
 }
 
 HEADER = [

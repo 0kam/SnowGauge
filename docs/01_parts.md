@@ -4,7 +4,7 @@
 読者: 電子工作が初めての学生。型番・ファイル名は英語のままにしてあります。
 
 > **この表が BOM の唯一の正です。**
-> 設計仕様書 §6 は設計根拠の記録です（v0.12 で v1.2 の数量に修正済み）。購入数量はこのページの表に従ってください。
+> 設計仕様書 §6 は設計根拠の記録です（v0.12 で v1.2 の数量に修正済み、最新は v0.13）。購入数量はこのページの表に従ってください。
 > 電気的なつながり（どのピンに何が付くか）の正は [pcb/README.md](../pcb/README.md) です。
 
 [^spec6]: 資料間で食い違いがある場合は pcb/README.md > docs/gen_breadboard.py の PARTS > 設計仕様書 の順に優先しています（CLAUDE.md の取り決め）。
@@ -73,7 +73,7 @@
 | — | LiDAR（廉価側） | PONO **TSD20** | 1 | [秋月 131304](https://akizukidenshi.com/catalog/g/g131304/) | ¥2,580。8 m@100 kLux、3.3 V 駆動、UART/I2C。TFmini Plus の代わりに使う |
 | U2 | 3.3 V LDO（測定時のみ ON） | **NJU7223F33**（2 個目） | 1 | [秋月 100432](https://akizukidenshi.com/catalog/g/g100432/) | NJU7223F50 の代わり。基板シルク「U2: F50=TFmini / F33=TSD20」 |
 
-注意: TSD20 用ファームウェア（フレーム形式・レンジ外の値 50000 が TFmini と異なる）は**未作成**です（CLAUDE.md FW 開発順序 5）。TSD20 の配線色・コネクタは現物の説明書で確認してください。
+注意: TSD20 用ファームウェアは TFmini 版とは**別ビルド**です（`firmware/overlay-tsd20.conf`、BLE 名が `ST-XXXX` になる。[docs/03_firmware.md](03_firmware.md)）。TSD20 のリード線はコネクタ側で左から 白・赤・黄・緑・水色・黒 = ピン 1〜6（**赤 = 3.3 V、黄 = TX、緑 = RX、黒 = GND**、白・水色 = NC。手持ち品で確認）（[tsd20_protocol.md](tsd20_protocol.md)、ブレッドボードは [breadboard_guide_tsd20.html](https://0kam.github.io/SnowGauge/breadboard_guide_tsd20.html)）。**逆接・過電圧保護がない**ので、U2 が F33 になっていることを確認してからつなぐこと。
 
 ## 3. 概算（1 台）
 

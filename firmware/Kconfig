@@ -2,29 +2,45 @@
 
 menu "SnowGauge application"
 
+choice SNOWGAUGE_SENSOR
+	prompt "Distance sensor (hardware variant, spec section 3.2)"
+	default SNOWGAUGE_SENSOR_TFMINI
+	help
+	  Both variants share PCB v1.2; only U2 (sensor LDO) and the sensor
+	  differ. Select with overlay-tsd20.conf for the TSD20 build.
+
+config SNOWGAUGE_SENSOR_TFMINI
+	bool "Benewake TFmini Plus (5 V, U2 = NJU7223F50, 115200 baud)"
+
+config SNOWGAUGE_SENSOR_TSD20
+	bool "PONO TSD20 (3.3 V, U2 = NJU7223F33, 460800 baud)"
+
+endchoice
+
 config SNOWGAUGE_RAIL_SETTLE_MS
 	int "Sensor rail settle time before touching the UART (ms)"
 	default 300
 	help
-	  Delay between driving SENSOR_EN high and resuming the TFmini UART.
-	  Covers LDO start-up, the 470uF OS-CON charge and the TFmini boot.
+	  Delay between driving SENSOR_EN high and resuming the sensor UART.
+	  Covers LDO start-up, the 470uF OS-CON charge and the sensor boot.
 
-config SNOWGAUGE_TFMINI_SAMPLES
-	int "Number of TFmini frames per measurement (N)"
+config SNOWGAUGE_LIDAR_SAMPLES
+	int "Number of LiDAR frames per measurement (N)"
 	default 100
 	range 1 512
 	help
 	  Frames collected per measurement cycle; the median, variance and
-	  quality counters are computed over this burst. At the default
-	  100 Hz frame rate 100 frames take about 1 s.
+	  quality counters are computed over this burst. 100 frames take
+	  about 1 s on the TFmini Plus (100 Hz) and 0.5 s on the TSD20 (200 Hz).
 
-config SNOWGAUGE_TFMINI_CAPTURE_TIMEOUT_MS
+config SNOWGAUGE_LIDAR_CAPTURE_TIMEOUT_MS
 	int "Maximum time to wait for the N frames (ms)"
 	default 3000
 
 config SNOWGAUGE_TFMINI_MIN_STRENGTH
 	int "Minimum TFmini signal strength for a distance to count as valid"
 	default 100
+	depends on SNOWGAUGE_SENSOR_TFMINI
 	help
 	  Benewake documents distances as unreliable below a strength of 100.
 
@@ -62,12 +78,14 @@ config SNOWGAUGE_BLE_ADV_INT_MAX_MS
 	range 20 10240
 
 config SNOWGAUGE_VBAT_MIN_MV
-	int "Minimum battery voltage for a TFmini capture (mV)"
-	default 4600
+	int "Minimum battery voltage for a LiDAR capture (mV)"
+	default 4600 if SNOWGAUGE_SENSOR_TFMINI
+	default 3800 if SNOWGAUGE_SENSOR_TSD20
 	help
-	  Below this the 5 V sensor LDO is out of regulation and the 120 mA
-	  burst can brown out the board; the measurement then records only
-	  Vbat, tilt and temperature.
+	  Below this the sensor LDO is out of regulation and the capture burst
+	  can brown out the board; the measurement then records only Vbat,
+	  tilt and temperature. TFmini Plus: 5 V LDO + 120 mA. TSD20: 3.3 V
+	  LDO (0.4 V dropout) + 70 mA, i.e. nearly the whole L91 capacity.
 
 config SNOWGAUGE_BOOT_HOLDOFF_MIN
 	int "Delay of the first scheduled measurement after a reset (min)"

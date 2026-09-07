@@ -13,7 +13,7 @@
  *    8   4  seq (monotonic record counter, reset by ERASE)
  *   12   2  dist_median_cm
  *   14   2  dist_var_cm2 (clamped to 65535)
- *   16   2  strength (TFmini signal strength median)
+ *   16   2  strength (TFmini signal strength median; 0 on the TSD20)
  *   18   2  n_frames (checksum-good frames in the burst)
  *   20   2  n_valid (frames used for the distance statistics)
  *   22   2  n_out_of_range (sentinel + saturated + weak-signal frames)
@@ -21,7 +21,7 @@
  *   26   2  pitch (0.01 deg, signed)
  *   28   2  roll (0.01 deg, signed)
  *   30   2  imu_temp (0.1 degC, signed; environment proxy)
- *   32   2  lidar_temp (0.1 degC, signed; TFmini chip temperature)
+ *   32   2  lidar_temp (0.1 degC, signed; TFmini chip temperature; -32768 on the TSD20)
  *   34   2  vbat_start_mv (right after the rail settled)
  *   36   2  vbat_end_mv (under sensor load, before the rail is cut)
  *   38   2  crc16 (Zephyr crc16_ccitt: reflected CCITT poly 0x8408, init 0xFFFF, over bytes 0..37)
@@ -46,6 +46,7 @@
 #define RECORD_FLAG_TILT_OK       BIT(3) /* IMU read succeeded */
 #define RECORD_FLAG_MANUAL        BIT(4) /* triggered from the shell / BLE, not the schedule */
 #define RECORD_FLAG_FIRST_AFTER_BOOT BIT(5)
+#define RECORD_FLAG_SENSOR_TSD20  BIT(6) /* TSD20 variant (no strength / lidar_temp); clear = TFmini Plus */
 
 struct record {
 	uint8_t flags;

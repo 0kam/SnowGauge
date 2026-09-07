@@ -53,9 +53,9 @@ footer{margin-top:64px;border-top:1px solid var(--line);padding-top:14px;font-si
 <body>
 <div class="wrap">
 <header>
-  <div class="eyebrow">SnowGauge — breadboard prototype / TFmini Plus</div>
+  <div class="eyebrow">SnowGauge — breadboard prototype / TSD20</div>
   <h1>SnowGauge ブレッドボード配線図</h1>
-  <p class="lede">PCB が届くまでの開発・ファームウェア検証用に、はんだ付けなしで SnowGauge（<b>TFmini Plus 版</b>、U2 = NJU7223F50）を組む配線図です。TSD20 版は <a href="breadboard_guide_tsd20.html">breadboard_guide_tsd20.html</a>（違いは U2 とセンサ配線だけ、§5 参照）。830 穴ブレッドボード 1 枚とジャンパワイヤで組めます。回路は <b>PCB v1.2 と同一トポロジ</b>（電池監視の分圧をスイッチ済みレールに接続。Q3・R6 は廃止）なので、ここで書いたファームウェアはそのまま PCB で動きます。</p>
+  <p class="lede">PCB が届くまでの開発・ファームウェア検証用に、はんだ付けなしで SnowGauge（<b>TSD20 版</b>、U2 = NJU7223F33）を組む配線図です。TFmini Plus 版は <a href="breadboard_guide.html">breadboard_guide.html</a>（違いは U2 とセンサ配線だけ、§5 参照）。830 穴ブレッドボード 1 枚とジャンパワイヤで組めます。回路は <b>PCB v1.2 と同一トポロジ</b>（電池監視の分圧をスイッチ済みレールに接続。Q3・R6 は廃止）なので、ここで書いたファームウェアはそのまま PCB で動きます。</p>
 </header>
 <section>
 <h2><span class="no">1</span>座標の読み方</h2>
@@ -1192,7 +1192,7 @@ footer{margin-top:64px;border-top:1px solid var(--line);padding-top:14px;font-si
 <text x="958" y="151.5" text-anchor="middle" class="pin" font-weight="700">OUT</text>
 <text x="982" y="151.5" text-anchor="middle" class="pin" font-weight="700">IN</text>
 <text x="1006" y="151.5" text-anchor="middle" class="pin" font-weight="700">GND</text>
-<text x="982.0" y="126" text-anchor="middle" class="cname" stroke="#fff" stroke-width="3" paint-order="stroke">U2 NJU7223F50</text>
+<text x="982.0" y="126" text-anchor="middle" class="cname" stroke="#fff" stroke-width="3" paint-order="stroke">U2 NJU7223F33</text>
 </g>
 <g opacity="1"><circle cx="958" cy="157" r="4.2" fill="#22303A" stroke="#fff" stroke-width="1.2"/><text x="958" y="166" text-anchor="middle" class="pin" stroke="#fff" stroke-width="3" paint-order="stroke">c38</text></g>
 <g opacity="1"><circle cx="982" cy="157" r="4.2" fill="#22303A" stroke="#fff" stroke-width="1.2"/><text x="982" y="166" text-anchor="middle" class="pin" stroke="#fff" stroke-width="3" paint-order="stroke">c39</text></g>
@@ -1417,37 +1417,37 @@ footer{margin-top:64px;border-top:1px solid var(--line);padding-top:14px;font-si
 <g opacity="1"><circle cx="200" cy="24" r="9" fill="#33658A" stroke="#fff" stroke-width="1.5"/><text x="200" y="27.5" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">6</text></g>
 <g opacity="1">
 <path d="M790,284 L790,450" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round"/>
-<path d="M790,284 L790,450" fill="none" stroke="#1565C0" stroke-width="3" stroke-linecap="round"/>
-<text x="797" y="460" text-anchor="start" class="cname" fill="#1565C0" stroke="#fff" stroke-width="3" paint-order="stroke">TFmini 白(RX)</text>
+<path d="M790,284 L790,450" fill="none" stroke="#2E9E44" stroke-width="3" stroke-linecap="round"/>
+<text x="797" y="460" text-anchor="start" class="cname" fill="#2E9E44" stroke="#fff" stroke-width="3" paint-order="stroke">TSD20 ④緑(RX)</text>
 </g>
-<g opacity="1"><circle cx="790" cy="284" r="4.2" fill="#1565C0" stroke="#fff" stroke-width="1.2"/><text x="790" y="275" text-anchor="middle" class="pin" stroke="#fff" stroke-width="3" paint-order="stroke">h31</text></g>
+<g opacity="1"><circle cx="790" cy="284" r="4.2" fill="#2E9E44" stroke="#fff" stroke-width="1.2"/><text x="790" y="275" text-anchor="middle" class="pin" stroke="#fff" stroke-width="3" paint-order="stroke">h31</text></g>
 <g opacity="1"><circle cx="776" cy="446" r="9" fill="#33658A" stroke="#fff" stroke-width="1.5"/><text x="776" y="449.5" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">32</text></g>
 <g opacity="1">
 <path d="M670,108 L670,20" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round"/>
-<path d="M670,108 L670,20" fill="none" stroke="#5BA8DF" stroke-width="3" stroke-linecap="round"/>
-<text x="677" y="18" text-anchor="start" class="cname" fill="#5BA8DF" stroke="#fff" stroke-width="3" paint-order="stroke">TFmini 緑(TX)</text>
+<path d="M670,108 L670,20" fill="none" stroke="#E6B800" stroke-width="3" stroke-linecap="round"/>
+<text x="677" y="18" text-anchor="start" class="cname" fill="#E6B800" stroke="#fff" stroke-width="3" paint-order="stroke">TSD20 ③黄(TX)</text>
 </g>
-<g opacity="1"><circle cx="670" cy="108" r="4.2" fill="#5BA8DF" stroke="#fff" stroke-width="1.2"/><text x="670" y="123" text-anchor="middle" class="pin" stroke="#fff" stroke-width="3" paint-order="stroke">a26</text></g>
+<g opacity="1"><circle cx="670" cy="108" r="4.2" fill="#E6B800" stroke="#fff" stroke-width="1.2"/><text x="670" y="123" text-anchor="middle" class="pin" stroke="#fff" stroke-width="3" paint-order="stroke">a26</text></g>
 <g opacity="1"><circle cx="656" cy="24" r="9" fill="#33658A" stroke="#fff" stroke-width="1.5"/><text x="656" y="27.5" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">33</text></g>
 <g opacity="1">
 <path d="M1054,188 L1054,20" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round"/>
-<path d="M1054,188 L1054,20" fill="none" stroke="#C2185B" stroke-width="3" stroke-linecap="round"/>
-<text x="1061" y="18" text-anchor="start" class="cname" fill="#C2185B" stroke="#fff" stroke-width="3" paint-order="stroke">TFmini 赤(+5V)</text>
+<path d="M1054,188 L1054,20" fill="none" stroke="#D62828" stroke-width="3" stroke-linecap="round"/>
+<text x="1061" y="18" text-anchor="start" class="cname" fill="#D62828" stroke="#fff" stroke-width="3" paint-order="stroke">TSD20 ②赤(3.3V)</text>
 </g>
-<g opacity="1"><circle cx="1054" cy="188" r="4.2" fill="#C2185B" stroke="#fff" stroke-width="1.2"/><text x="1054" y="203" text-anchor="middle" class="pin" stroke="#fff" stroke-width="3" paint-order="stroke">e42</text></g>
+<g opacity="1"><circle cx="1054" cy="188" r="4.2" fill="#D62828" stroke="#fff" stroke-width="1.2"/><text x="1054" y="203" text-anchor="middle" class="pin" stroke="#fff" stroke-width="3" paint-order="stroke">e42</text></g>
 <g opacity="1"><circle cx="1040" cy="24" r="9" fill="#33658A" stroke="#fff" stroke-width="1.5"/><text x="1040" y="27.5" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">34</text></g>
 <g opacity="1">
 <path d="M1246,54 L1246,20" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round"/>
-<path d="M1246,54 L1246,20" fill="none" stroke="#3A4148" stroke-width="3" stroke-linecap="round"/>
-<text x="1253" y="18" text-anchor="start" class="cname" fill="#3A4148" stroke="#fff" stroke-width="3" paint-order="stroke">TFmini 黒(GND)</text>
+<path d="M1246,54 L1246,20" fill="none" stroke="#111111" stroke-width="3" stroke-linecap="round"/>
+<text x="1253" y="18" text-anchor="start" class="cname" fill="#111111" stroke="#fff" stroke-width="3" paint-order="stroke">TSD20 ⑥黒(GND)</text>
 </g>
-<g opacity="1"><circle cx="1246" cy="54" r="4.2" fill="#3A4148" stroke="#fff" stroke-width="1.2"/><text x="1246" y="69" text-anchor="middle" class="pin" stroke="#fff" stroke-width="3" paint-order="stroke">レール</text></g>
+<g opacity="1"><circle cx="1246" cy="54" r="4.2" fill="#111111" stroke="#fff" stroke-width="1.2"/><text x="1246" y="69" text-anchor="middle" class="pin" stroke="#fff" stroke-width="3" paint-order="stroke">レール</text></g>
 <g opacity="1"><circle cx="1232" cy="24" r="9" fill="#33658A" stroke="#fff" stroke-width="1.5"/><text x="1232" y="27.5" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">35</text></g>
-</svg><div class="legend"><span><i style="background:#D62828"></i>VBAT</span><span><i style="background:#3A4148"></i>GND</span><span><i style="background:#E07A00"></i>3.3V</span><span><i style="background:#8E2F3C"></i>VBAT_SW(スイッチ後)</span><span><i style="background:#C2185B"></i>5V(測定時のみ)</span><span><i style="background:#7A5230"></i>Q1ゲート</span><span><i style="background:#6A4CA5"></i>電圧測定</span><span><i style="background:#1565C0"></i>UART TX→白</span><span><i style="background:#5BA8DF"></i>UART 緑→RX</span></div></div>
+</svg><div class="legend"><span><i style="background:#D62828"></i>VBAT</span><span><i style="background:#3A4148"></i>GND</span><span><i style="background:#E07A00"></i>3.3V</span><span><i style="background:#8E2F3C"></i>VBAT_SW(スイッチ後)</span><span><i style="background:#C2185B"></i>センサ 3.3V ノード(測定時のみ)</span><span><i style="background:#7A5230"></i>Q1ゲート</span><span><i style="background:#6A4CA5"></i>電圧測定</span><span><i style="background:#D62828"></i>TSD20 赤 = 3.3V</span><span><i style="background:#E6B800"></i>TSD20 黄 = TX→XIAO D7</span><span><i style="background:#2E9E44"></i>TSD20 緑 = RX←XIAO D6</span><span><i style="background:#111111"></i>TSD20 黒 = GND</span></div></div>
 </section>
 <section>
 <h2><span class="no">3</span>組立チェックリスト</h2>
-<p class="sub">上から順に。<b>各ステップ末尾のテスター確認に合格してから次へ。</b>XIAO と TFmini Plus を挿すのは電源確認のあとです。図はそのステップの部品を色付き、前のステップまでを薄く表示しています。</p>
+<p class="sub">上から順に。<b>各ステップ末尾のテスター確認に合格してから次へ。</b>XIAO と TSD20 を挿すのは電源確認のあとです。図はそのステップの部品を色付き、前のステップまでを薄く表示しています。</p>
 <div class="step">
 <h3><span class="sno">STEP 1</span>電源部</h3>
 <div class="board"><svg viewBox="0 0 1632 470" xmlns="http://www.w3.org/2000/svg" font-family="'Zen Kaku Gothic New',sans-serif">
@@ -3780,7 +3780,7 @@ footer{margin-top:64px;border-top:1px solid var(--line);padding-top:14px;font-si
 <div class="warn"><b>最重要:</b> パソコンと USB でつなぐ時は<b>必ず電池を抜く</b>。USB を挿したまま電池（や安定化電源）でセンサ側を動かしたい時は、<b>⑩（橙、a10→a22）だけ抜けば両立できます</b>（XIAO は USB 給電、センサレールと分圧は電池給電。GND は共通のまま）。向きを間違えて挿すと壊れるので、⑨は挿す前に指差し確認。</div>
 </div>
 <div class="step">
-<h3><span class="sno">STEP 3</span>スイッチと 5V 系</h3>
+<h3><span class="sno">STEP 3</span>スイッチと センサ 3.3V 系</h3>
 <div class="board"><svg viewBox="0 0 1632 470" xmlns="http://www.w3.org/2000/svg" font-family="'Zen Kaku Gothic New',sans-serif">
 <style>.cname{font-weight:700;font-size:11.5px;fill:#22303A}.pin{font-family:"IBM Plex Mono",monospace;font-size:9.5px;fill:#22303A}.rowlab{font-family:"IBM Plex Mono",monospace;font-size:10px;fill:#8a939b}.collab{font-family:"IBM Plex Mono",monospace;font-size:9px}</style>
 <rect x="30" y="12" width="1602" height="446" rx="10" fill="#F2EFE9" stroke="#C9C2B6"/>
@@ -4904,7 +4904,7 @@ footer{margin-top:64px;border-top:1px solid var(--line);padding-top:14px;font-si
 <text x="958" y="151.5" text-anchor="middle" class="pin" font-weight="700">OUT</text>
 <text x="982" y="151.5" text-anchor="middle" class="pin" font-weight="700">IN</text>
 <text x="1006" y="151.5" text-anchor="middle" class="pin" font-weight="700">GND</text>
-<text x="982.0" y="126" text-anchor="middle" class="cname" stroke="#fff" stroke-width="3" paint-order="stroke">U2 NJU7223F50</text>
+<text x="982.0" y="126" text-anchor="middle" class="cname" stroke="#fff" stroke-width="3" paint-order="stroke">U2 NJU7223F33</text>
 </g>
 <g opacity="1"><circle cx="958" cy="157" r="4.2" fill="#22303A" stroke="#fff" stroke-width="1.2"/><text x="958" y="166" text-anchor="middle" class="pin" stroke="#fff" stroke-width="3" paint-order="stroke">c38</text></g>
 <g opacity="1"><circle cx="982" cy="157" r="4.2" fill="#22303A" stroke="#fff" stroke-width="1.2"/><text x="982" y="166" text-anchor="middle" class="pin" stroke="#fff" stroke-width="3" paint-order="stroke">c39</text></g>
@@ -5100,16 +5100,16 @@ footer{margin-top:64px;border-top:1px solid var(--line);padding-top:14px;font-si
 <tr><td class="n">⑰</td><td>R5 100kΩ</td><td class="h">b32</td><td class="h">b34</td><td class="note">Q1 の G–S 間（プルアップ）</td></tr>
 <tr><td class="n">⑱</td><td><i class="chip" style="background:#7A5230"></i>ジャンパ (Q1ゲート)</td><td class="h">a29</td><td class="h">a32</td><td class="note">Q2 の D 列 → Q1 の G 列</td></tr>
 <tr><td class="n">⑲</td><td><i class="chip" style="background:#D62828"></i>ジャンパ 赤</td><td class="h">a34</td><td class="h">上の赤レール(VBAT)</td><td class="note">Q1 の S 列 → 上の赤レール</td></tr>
-<tr><td class="n">⑳</td><td>U2 NJU7223F50</td><td class="h">c38=OUT / c39=IN / c40=GND</td><td class="h"></td><td class="note">TSD20 版はここを F33 に</td></tr>
+<tr><td class="n">⑳</td><td>U2 NJU7223F33</td><td class="h">c38=OUT / c39=IN / c40=GND</td><td class="h"></td><td class="note">TFmini 版はここが F50。印字で確認</td></tr>
 <tr><td class="n">㉑</td><td><i class="chip" style="background:#8E2F3C"></i>ジャンパ (VBAT_SW)</td><td class="h">a33</td><td class="h">a39</td><td class="note">Q1 の D 列 → U2 の IN 列</td></tr>
 <tr><td class="n">㉒</td><td><i class="chip" style="background:#3A4148"></i>ジャンパ 黒</td><td class="h">a40</td><td class="h">上の青レール(GND)</td><td class="note">U2 の GND 列 → 上の青レール</td></tr>
 <tr><td class="n">㉓</td><td>C3 0.1µF</td><td class="h">e39</td><td class="h">e40</td><td class="note"></td></tr>
 <tr><td class="n">㉔</td><td>C4 OS-CON 470µF</td><td class="h">b42</td><td class="h">b44</td><td class="note">極性注意: 長い足(+) を b42、− を b44</td></tr>
 <tr><td class="n">㉔</td><td>C5 0.1µF</td><td class="h">c42</td><td class="h">c44</td><td class="note"></td></tr>
-<tr><td class="n">㉕</td><td><i class="chip" style="background:#C2185B"></i>ジャンパ (5V)</td><td class="h">a38</td><td class="h">a42</td><td class="note">U2 の OUT 列 → 5V ノード</td></tr>
+<tr><td class="n">㉕</td><td><i class="chip" style="background:#C2185B"></i>ジャンパ (センサ 3.3V)</td><td class="h">a38</td><td class="h">a42</td><td class="note">U2 の OUT 列 → センサ 3.3V ノード</td></tr>
 <tr><td class="n">㉖</td><td><i class="chip" style="background:#3A4148"></i>ジャンパ 黒</td><td class="h">a44</td><td class="h">上の青レール(GND)</td><td class="note">C4 の − 列 → 上の青レール</td></tr>
 </table></div>
-<ul class="check"><li>なにもしない時: e42−GND 間 = <span class="kbd">0V</span></li><li>ジャンパ線で a28（Q2 の G）を 3.3V（c10）に触れさせる: e42 = <span class="kbd">4.9〜5.1V</span>、離すと 0V に戻る</li><li>a28 を c10 に触れさせている間: a32（Q1 の G）= <span class="kbd">0V 近く</span>、a33（Q1 の D = VBAT_SW）= <span class="kbd">電池電圧</span>。離している時は逆に a32 ≈ 電池電圧、a33 = 0V</li></ul>
+<ul class="check"><li>なにもしない時: e42−GND 間 = <span class="kbd">0V</span></li><li>ジャンパ線で a28（Q2 の G）を 3.3V（c10）に触れさせる: e42 = <span class="kbd">3.25〜3.35V</span>、離すと 0V に戻る（<b>4.9〜5.1V なら U2 が F50 のまま</b>。TSD20 をつなぐ前に必ず直す）</li><li>a28 を c10 に触れさせている間: a32（Q1 の G）= <span class="kbd">0V 近く</span>、a33（Q1 の D = VBAT_SW）= <span class="kbd">電池電圧</span>。離している時は逆に a32 ≈ 電池電圧、a33 = 0V</li></ul>
 </div>
 <div class="step">
 <h3><span class="sno">STEP 4</span>電池電圧の見張り（スイッチ済みレールから分圧）</h3>
@@ -6236,7 +6236,7 @@ footer{margin-top:64px;border-top:1px solid var(--line);padding-top:14px;font-si
 <text x="958" y="151.5" text-anchor="middle" class="pin" font-weight="700">OUT</text>
 <text x="982" y="151.5" text-anchor="middle" class="pin" font-weight="700">IN</text>
 <text x="1006" y="151.5" text-anchor="middle" class="pin" font-weight="700">GND</text>
-<text x="982.0" y="126" text-anchor="middle" class="cname" stroke="#fff" stroke-width="3" paint-order="stroke">U2 NJU7223F50</text>
+<text x="982.0" y="126" text-anchor="middle" class="cname" stroke="#fff" stroke-width="3" paint-order="stroke">U2 NJU7223F33</text>
 </g>
 <g opacity="0.35"><circle cx="958" cy="157" r="4.2" fill="#22303A" stroke="#fff" stroke-width="1.2"/><text x="958" y="166" text-anchor="middle" class="pin" stroke="#fff" stroke-width="3" paint-order="stroke">c38</text></g>
 <g opacity="0.35"><circle cx="982" cy="157" r="4.2" fill="#22303A" stroke="#fff" stroke-width="1.2"/><text x="982" y="166" text-anchor="middle" class="pin" stroke="#fff" stroke-width="3" paint-order="stroke">c39</text></g>
@@ -6463,7 +6463,7 @@ footer{margin-top:64px;border-top:1px solid var(--line);padding-top:14px;font-si
 <p style="font-size:13.5px;margin-top:10px">FW メモ: 電池電圧はセンサレール ON 中に A0 を読む（読み値 ×2）。旧設計の D3・Q3・R6 は廃止。</p>
 </div>
 <div class="step">
-<h3><span class="sno">STEP 5</span>TFmini Plus</h3>
+<h3><span class="sno">STEP 5</span>TSD20</h3>
 <div class="board"><svg viewBox="0 0 1632 470" xmlns="http://www.w3.org/2000/svg" font-family="'Zen Kaku Gothic New',sans-serif">
 <style>.cname{font-weight:700;font-size:11.5px;fill:#22303A}.pin{font-family:"IBM Plex Mono",monospace;font-size:9.5px;fill:#22303A}.rowlab{font-family:"IBM Plex Mono",monospace;font-size:10px;fill:#8a939b}.collab{font-family:"IBM Plex Mono",monospace;font-size:9px}</style>
 <rect x="30" y="12" width="1602" height="446" rx="10" fill="#F2EFE9" stroke="#C9C2B6"/>
@@ -7587,7 +7587,7 @@ footer{margin-top:64px;border-top:1px solid var(--line);padding-top:14px;font-si
 <text x="958" y="151.5" text-anchor="middle" class="pin" font-weight="700">OUT</text>
 <text x="982" y="151.5" text-anchor="middle" class="pin" font-weight="700">IN</text>
 <text x="1006" y="151.5" text-anchor="middle" class="pin" font-weight="700">GND</text>
-<text x="982.0" y="126" text-anchor="middle" class="cname" stroke="#fff" stroke-width="3" paint-order="stroke">U2 NJU7223F50</text>
+<text x="982.0" y="126" text-anchor="middle" class="cname" stroke="#fff" stroke-width="3" paint-order="stroke">U2 NJU7223F33</text>
 </g>
 <g opacity="0.35"><circle cx="958" cy="157" r="4.2" fill="#22303A" stroke="#fff" stroke-width="1.2"/><text x="958" y="166" text-anchor="middle" class="pin" stroke="#fff" stroke-width="3" paint-order="stroke">c38</text></g>
 <g opacity="0.35"><circle cx="982" cy="157" r="4.2" fill="#22303A" stroke="#fff" stroke-width="1.2"/><text x="982" y="166" text-anchor="middle" class="pin" stroke="#fff" stroke-width="3" paint-order="stroke">c39</text></g>
@@ -7812,43 +7812,43 @@ footer{margin-top:64px;border-top:1px solid var(--line);padding-top:14px;font-si
 <g opacity="0.35"><circle cx="200" cy="24" r="9" fill="#33658A" stroke="#fff" stroke-width="1.5"/><text x="200" y="27.5" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">6</text></g>
 <g opacity="1">
 <path d="M790,284 L790,450" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round"/>
-<path d="M790,284 L790,450" fill="none" stroke="#1565C0" stroke-width="3" stroke-linecap="round"/>
-<text x="797" y="460" text-anchor="start" class="cname" fill="#1565C0" stroke="#fff" stroke-width="3" paint-order="stroke">TFmini 白(RX)</text>
+<path d="M790,284 L790,450" fill="none" stroke="#2E9E44" stroke-width="3" stroke-linecap="round"/>
+<text x="797" y="460" text-anchor="start" class="cname" fill="#2E9E44" stroke="#fff" stroke-width="3" paint-order="stroke">TSD20 ④緑(RX)</text>
 </g>
-<g opacity="1"><circle cx="790" cy="284" r="4.2" fill="#1565C0" stroke="#fff" stroke-width="1.2"/><text x="790" y="275" text-anchor="middle" class="pin" stroke="#fff" stroke-width="3" paint-order="stroke">h31</text></g>
+<g opacity="1"><circle cx="790" cy="284" r="4.2" fill="#2E9E44" stroke="#fff" stroke-width="1.2"/><text x="790" y="275" text-anchor="middle" class="pin" stroke="#fff" stroke-width="3" paint-order="stroke">h31</text></g>
 <g opacity="1"><circle cx="776" cy="446" r="9" fill="#33658A" stroke="#fff" stroke-width="1.5"/><text x="776" y="449.5" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">32</text></g>
 <g opacity="1">
 <path d="M670,108 L670,20" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round"/>
-<path d="M670,108 L670,20" fill="none" stroke="#5BA8DF" stroke-width="3" stroke-linecap="round"/>
-<text x="677" y="18" text-anchor="start" class="cname" fill="#5BA8DF" stroke="#fff" stroke-width="3" paint-order="stroke">TFmini 緑(TX)</text>
+<path d="M670,108 L670,20" fill="none" stroke="#E6B800" stroke-width="3" stroke-linecap="round"/>
+<text x="677" y="18" text-anchor="start" class="cname" fill="#E6B800" stroke="#fff" stroke-width="3" paint-order="stroke">TSD20 ③黄(TX)</text>
 </g>
-<g opacity="1"><circle cx="670" cy="108" r="4.2" fill="#5BA8DF" stroke="#fff" stroke-width="1.2"/><text x="670" y="123" text-anchor="middle" class="pin" stroke="#fff" stroke-width="3" paint-order="stroke">a26</text></g>
+<g opacity="1"><circle cx="670" cy="108" r="4.2" fill="#E6B800" stroke="#fff" stroke-width="1.2"/><text x="670" y="123" text-anchor="middle" class="pin" stroke="#fff" stroke-width="3" paint-order="stroke">a26</text></g>
 <g opacity="1"><circle cx="656" cy="24" r="9" fill="#33658A" stroke="#fff" stroke-width="1.5"/><text x="656" y="27.5" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">33</text></g>
 <g opacity="1">
 <path d="M1054,188 L1054,20" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round"/>
-<path d="M1054,188 L1054,20" fill="none" stroke="#C2185B" stroke-width="3" stroke-linecap="round"/>
-<text x="1061" y="18" text-anchor="start" class="cname" fill="#C2185B" stroke="#fff" stroke-width="3" paint-order="stroke">TFmini 赤(+5V)</text>
+<path d="M1054,188 L1054,20" fill="none" stroke="#D62828" stroke-width="3" stroke-linecap="round"/>
+<text x="1061" y="18" text-anchor="start" class="cname" fill="#D62828" stroke="#fff" stroke-width="3" paint-order="stroke">TSD20 ②赤(3.3V)</text>
 </g>
-<g opacity="1"><circle cx="1054" cy="188" r="4.2" fill="#C2185B" stroke="#fff" stroke-width="1.2"/><text x="1054" y="203" text-anchor="middle" class="pin" stroke="#fff" stroke-width="3" paint-order="stroke">e42</text></g>
+<g opacity="1"><circle cx="1054" cy="188" r="4.2" fill="#D62828" stroke="#fff" stroke-width="1.2"/><text x="1054" y="203" text-anchor="middle" class="pin" stroke="#fff" stroke-width="3" paint-order="stroke">e42</text></g>
 <g opacity="1"><circle cx="1040" cy="24" r="9" fill="#33658A" stroke="#fff" stroke-width="1.5"/><text x="1040" y="27.5" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">34</text></g>
 <g opacity="1">
 <path d="M1246,54 L1246,20" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round"/>
-<path d="M1246,54 L1246,20" fill="none" stroke="#3A4148" stroke-width="3" stroke-linecap="round"/>
-<text x="1253" y="18" text-anchor="start" class="cname" fill="#3A4148" stroke="#fff" stroke-width="3" paint-order="stroke">TFmini 黒(GND)</text>
+<path d="M1246,54 L1246,20" fill="none" stroke="#111111" stroke-width="3" stroke-linecap="round"/>
+<text x="1253" y="18" text-anchor="start" class="cname" fill="#111111" stroke="#fff" stroke-width="3" paint-order="stroke">TSD20 ⑥黒(GND)</text>
 </g>
-<g opacity="1"><circle cx="1246" cy="54" r="4.2" fill="#3A4148" stroke="#fff" stroke-width="1.2"/><text x="1246" y="69" text-anchor="middle" class="pin" stroke="#fff" stroke-width="3" paint-order="stroke">レール</text></g>
+<g opacity="1"><circle cx="1246" cy="54" r="4.2" fill="#111111" stroke="#fff" stroke-width="1.2"/><text x="1246" y="69" text-anchor="middle" class="pin" stroke="#fff" stroke-width="3" paint-order="stroke">レール</text></g>
 <g opacity="1"><circle cx="1232" cy="24" r="9" fill="#33658A" stroke="#fff" stroke-width="1.5"/><text x="1232" y="27.5" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">35</text></g>
 </svg></div>
 <div class="tablebox"><table>
 <tr><th style="width:46px">番号</th><th style="width:170px">部品/線</th><th>端 A（穴）</th><th>端 B（穴）</th><th>備考</th></tr>
 <tr><td class="n">㉛</td><td>R7 1kΩ</td><td class="h">g26</td><td class="h">g31</td><td class="note">XIAO D6(TX) ピン(f26)の列 ↔ 31 列</td></tr>
-<tr><td class="n">㉜</td><td><i class="chip" style="background:#1565C0"></i>TFmini 白 (RX)</td><td class="h">h31</td><td class="h">（外部）</td><td class="note">R7 の先</td></tr>
-<tr><td class="n">㉝</td><td><i class="chip" style="background:#5BA8DF"></i>TFmini 緑 (TX)</td><td class="h">a26</td><td class="h">（外部）</td><td class="note">XIAO D7(RX) ピン(e26)の列</td></tr>
-<tr><td class="n">㉞</td><td><i class="chip" style="background:#C2185B"></i>TFmini 赤 (+5V)</td><td class="h">e42</td><td class="h">（外部）</td><td class="note">5V ノード</td></tr>
-<tr><td class="n">㉟</td><td><i class="chip" style="background:#3A4148"></i>TFmini 黒 (GND)</td><td class="h">上の青レール(GND)</td><td class="h">（外部）</td><td class="note"></td></tr>
+<tr><td class="n">㉜</td><td><i class="chip" style="background:#2E9E44"></i>TSD20 ④ 緑 (RX)</td><td class="h">h31</td><td class="h">（外部）</td><td class="note">R7 の先（XIAO D6 TX → 1kΩ → TSD20 RX）。TFmini の白と同じ穴</td></tr>
+<tr><td class="n">㉝</td><td><i class="chip" style="background:#E6B800"></i>TSD20 ③ 黄 (TX)</td><td class="h">a26</td><td class="h">（外部）</td><td class="note">XIAO D7(RX) ピン(e26)の列。TFmini の緑と同じ穴</td></tr>
+<tr><td class="n">㉞</td><td><i class="chip" style="background:#D62828"></i>TSD20 ② 赤 (+3.3V)</td><td class="h">e42</td><td class="h">（外部）</td><td class="note">センサ 3.3V ノード（U2=F33 の出力。5V ではない！）</td></tr>
+<tr><td class="n">㉟</td><td><i class="chip" style="background:#111111"></i>TSD20 ⑥ 黒 (GND)</td><td class="h">上の青レール(GND)</td><td class="h">（外部）</td><td class="note">①白 と ⑤水色 は NC（未接続のまま）</td></tr>
 </table></div>
-<ul class="check"><li>テスト FW で: <span class="kbd">rail on</span> → <span class="kbd">lidar raw 500</span>（旧名 <span class="kbd">tfmini raw</span> も可）で距離フレーム受信、<span class="kbd">rail off</span> → e42 = 0V</li><li>µA 電流計を電池と直列に: スリープ <span class="kbd">90µA 以下</span>（ブレッドボードは接触・リークで数 µA 上振れすることあり）</li></ul>
-<p style="font-size:13.5px;margin-top:10px">TFmini の線が細くて抜けやすい場合は、ピンヘッダ付きジャンパをかませるか、線先にピンを圧着してください。安定化電源で代用する場合は電流制限を <b>1A 以上</b> に（TFmini 起動時ピーク 500mA）。</p>
+<ul class="check"><li>TSD20 版 FW（<span class="kbd">overlay-tsd20.conf</span> ビルド、BLE 名 <span class="kbd">SG-TSD-XXXX</span>）で: <span class="kbd">rail on</span> → <span class="kbd">lidar raw 500</span>（<span class="kbd">tsd20 raw</span> も可）で <span class="kbd">dist=xxxx mm</span> のフレーム受信（460800 baud、200Hz）、<span class="kbd">lidar read</span> で cksum_err=0、<span class="kbd">rail off</span> → e42 = 0V</li><li>µA 電流計を電池と直列に: スリープ <span class="kbd">90µA 以下</span>（ブレッドボードは接触・リークで数 µA 上振れすることあり）</li></ul>
+<p style="font-size:13.5px;margin-top:10px">TSD20 のリード線（6 本、20cm、先端すずめっき）は基板上のコネクタ側で左から <b>白・赤・黄・緑・水色・黒</b> = ピン <b>1=NC, 2=3.3V, 3=TX, 4=RX, 5=NC, 6=GND</b>（色は手持ち品の実物で確認、説明書に記載なし。赤=3.3V・黒=GND が並びの根拠）。TFmini との対応: 赤→赤、緑→黄、白→緑、黒→黒。線は末端加工なしの極細線なので、そのままでは挿せません。<b>被覆をむいた単線ジャンパ（またはピンヘッダの足）に 1 本ずつはんだ付けし、継ぎ目を熱収縮チューブで覆って</b>から挿します（動作確認だけならミノムシクリップでも可。ねじって巻くだけは電源線では不可）。継ぎ目の手前で線をテープで固定して引っ張りを逃がすこと。安定化電源の電流制限は <b>0.5A 以上</b>（TSD20 ピーク 70mA + XIAO）。<b>TSD20 には逆接・過電圧保護がない</b>ので、②を 5V ノードや VBAT に挿さないこと。</p>
 </div>
 </section>
 <section>
@@ -7856,7 +7856,7 @@ footer{margin-top:64px;border-top:1px solid var(--line);padding-top:14px;font-si
 <ul>
 <li><b>電池を入れたまま USB をつながない</b>（STEP 2 参照。例外は⑩を抜いた時のみ）</li>
 <li>向きがある部品: D1（帯）、C4（長い足が+）、U1/U2/Q1/Q2（1-2-3 の並び、印字面を手前に）。F33 と F50 は印字で読み分け</li>
-<li>TFmini のピーク電流(500mA)はブレッドボードの接触抵抗に厳しいので、<b>電源系のジャンパは短く太いものを</b>。測距が不安定なら C4 の追加や配線短縮を試す</li>
+<li>TSD20 のピーク電流は 70mA なので配線の接触抵抗には寛容。U2 の出力（e42 ノード）が 3.3V であることを、TSD20 をつなぐ<b>前</b>に必ず確認する（F50 が残っていると 5V がかかって壊れる）</li>
 <li>スリープ電流の最終評価は PCB で行う（ブレッドボードはリークが乗るため参考値）</li>
 <li><b>抵抗の代替値</b>（手持ちで組む場合）: R3 は <b>150Ω〜2.2kΩ</b>（R4 との分圧で Q2 のゲート電圧が 2.7V 以上になること。R3=R4=10k は NG）、R4・R5 は <b>10kΩ</b> 可、R1/R2 は <b>同じ値なら 5k〜1M のどれでも</b>（FW は「読み値 ×2」）、R7 は <b>1k〜5k</b>。分圧は VBAT_SW 側なのでスリープ電流には影響しない</li>
 </ul>
@@ -7873,6 +7873,6 @@ footer{margin-top:64px;border-top:1px solid var(--line);padding-top:14px;font-si
 </ol>
 <p style="font-size:13.5px">USB と電池/安定化電源を同時につなぐ時のルール（⑩を抜く）はどちらの版も同じ。</p>
 </section>
-<footer>SnowGauge 設計仕様書 v0.13 / PCB v1.2 トポロジ準拠（分圧は VBAT_SW から・Q3/R6/D3 廃止）。ピン配置の正は pcb/README.md。この HTML（TFmini Plus 版）は docs/gen_breadboard.py が生成します（手編集しない）。</footer>
+<footer>SnowGauge 設計仕様書 v0.13 / PCB v1.2 トポロジ準拠（分圧は VBAT_SW から・Q3/R6/D3 廃止）。ピン配置の正は pcb/README.md。この HTML（TSD20 版）は docs/gen_breadboard.py --tsd20 が生成します（手編集しない）。</footer>
 </div>
 </body></html>

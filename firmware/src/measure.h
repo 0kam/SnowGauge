@@ -3,29 +3,29 @@
 #define SNOWGAUGE_MEASURE_H
 
 #include <stdint.h>
-#include "tfmini.h"
+#include "lidar.h"
 #include "tilt.h"
 
 struct measurement {
 	int64_t uptime_ms;
 	uint16_t vbat_mv_start;  /* right after the rail settled (sensor booting) */
 	uint16_t vbat_mv_end;    /* under sensor load, just before the rail is cut */
-	struct tfmini_stats lidar;
-	int lidar_ret;           /* return value of tfmini_capture() */
+	struct lidar_stats lidar;
+	int lidar_ret;           /* return value of lidar_capture() */
 	struct tilt_reading tilt;
 	int tilt_ret;            /* return value of tilt_read() */
 };
 
 /*
- * Tilt (IMU) -> rail on -> battery -> N TFmini frames -> battery -> rail off.
- * Takes sensor_lock. Skips the TFmini capture (lidar_ret = -ENOTSUP) when
+ * Tilt (IMU) -> rail on -> battery -> N LiDAR frames -> battery -> rail off.
+ * Takes sensor_lock. Skips the LiDAR capture (lidar_ret = -ENOTSUP) when
  * the battery is below CONFIG_SNOWGAUGE_VBAT_MIN_MV right after the rail
  * came up (brown-out loop protection).
  */
 int measure_once(struct measurement *m);
 
 /*
- * Owner lock for the sensor rail, TFmini UART, IMU and ADC. Held by
+ * Owner lock for the sensor rail, sensor UART, IMU and ADC. Held by
  * measure_once(); the calibration live mode takes it per sample so a
  * scheduled measurement and the live view never interleave.
  */

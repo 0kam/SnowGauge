@@ -2,10 +2,12 @@
  * Shell commands for bench testing (USB CDC ACM console).
  *
  *   rail on|off|status
- *   tfmini read [n] [timeout_ms]   burst capture -> statistics
- *   tfmini raw [ms]                live frame dump
- *   tfmini rate <hz>               set frame rate (volatile until 'tfmini save')
- *   tfmini save                    persist TFmini settings
+ *   lidar read [n] [timeout_ms]    burst capture -> statistics
+ *   lidar raw [ms]                 live frame dump
+ *   lidar rate <hz>                set frame rate (volatile until 'lidar save')
+ *   lidar save                     persist sensor settings (TFmini only)
+ *   lidar info                     sensor variant / capture parameters
+ *   (tfmini / tsd20 = alias of lidar, matching the build variant)
  *   batt                           battery voltage (turns the rail on briefly if needed)
  *   tilt [n]                       IMU tilt angle from n averaged samples
  *   dfu                            reboot into the bootloader (serial DFU)
@@ -30,7 +32,7 @@
 #include <string.h>
 
 #include "sensor_rail.h"
-#include "tfmini.h"
+#include "lidar.h"
 #include "battery.h"
 #include "measure.h"
 #include "app.h"
@@ -91,7 +93,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_rail,
 	SHELL_SUBCMD_SET_END);
 SHELL_CMD_REGISTER(rail, &sub_rail, "Sensor rail control", NULL);
 
-/* ---- tfmini ---- */
+/* ---- lidar (alias: tfmini / tsd20 depending on the build) ---- */
 
 static int require_rail(const struct shell *sh)
 {
@@ -102,10 +104,10 @@ static int require_rail(const struct shell *sh)
 	return 0;
 }
 
-static int cmd_tfmini_read(const struct shell *sh, size_t argc, char **argv)
+static int cmd_lidar_read(const struct shell *sh, size_t argc, char **argv)
 {
-	uint16_t n = CONFIG_SNOWGAUGE_TFMINI_SAMPLES;
-	uint32_t timeout_ms = CONFIG_SNOWGAUGE_TFMINI_CAPTURE_TIMEOUT_MS;
+	uint16_t n = CONFIG_SNOWGAUGE_LIDAR_SAMPLES;
+	uint32_t timeout_ms = CONFIG_SNOWGAUGE_LIDAR_CAPTURE_TIMEOUT_MS;
 	struct measurement m = { 0 };
 	int ret;
 
@@ -120,7 +122,7 @@ static int cmd_tfmini_read(const struct shell *sh, size_t argc, char **argv)
 	}
 
 	m.uptime_ms = k_uptime_get();
-	ret = tfmini_capture(n, K_MSEC(timeout_ms), &m.lidar);
+	ret = lidar_capture(n, K_MSEC(timeout_ms), &m.lidar);
 	if (ret < 0) {
 		shell_error(sh, "capture failed (%d)", ret);
 		return ret;
@@ -129,7 +131,7 @@ static int cmd_tfmini_read(const struct shell *sh, size_t argc, char **argv)
 	return 0;
 }
 
-static int cmd_tfmini_raw(const struct shell *sh, size_t argc, char **argv)
+static int cmd_lidar_raw(const struct shell *sh, size_t argc, char **argv)
 {
 	uint32_t ms = 1000;
 
@@ -140,48 +142,152 @@ static int cmd_tfmini_raw(const struct shell *sh, size_t argc, char **argv)
 		ms = strtoul(argv[1], NULL, 0);
 	}
 
-	tfmini_flush();
+	lidar_flush();
 	k_timepoint_t end = sys_timepoint_calc(K_MSEC(ms));
 
 	while (!sys_timepoint_expired(end)) {
-		struct tfmini_frame f;
+		struct lidar_frame f;
 
-		if (tfmini_read_frame(&f, sys_timepoint_timeout(end)) == 0) {
-			shell_print(sh, "dist=%5u cm  str=%5u  temp=%d.%d C",
+		if (lidar_read_frame(&f, sys_timepoint_timeout(end)) != 0) {
+			continue;
+		}
+		if (lidar_has_strength()) {
+			shell_print(sh, "dist=%5u cm  str=%5u  temp=%d.%d C%s",
 				    f.dist_cm, f.strength,
-				    f.temp_c_x10 / 10, abs(f.temp_c_x10 % 10));
+				    f.temp_c_x10 / 10, abs(f.temp_c_x10 % 10),
+				    f.valid ? "" : "  (invalid)");
+		} else {
+			shell_print(sh, "dist=%5u mm (%4u cm)%s", f.dist_mm, f.dist_cm,
+				    f.valid ? "" : "  (out of range)");
 		}
 	}
 	return 0;
 }
 
-static int cmd_tfmini_rate(const struct shell *sh, size_t argc, char **argv)
+static int cmd_lidar_rate(const struct shell *sh, size_t argc, char **argv)
 {
 	uint16_t hz = (uint16_t)strtoul(argv[1], NULL, 0);
+	int ret;
 
 	if (require_rail(sh)) {
 		return -EBUSY;
 	}
-	shell_print(sh, "set frame rate %u Hz (use 'tfmini save' to persist)", hz);
-	return tfmini_set_frame_rate(hz);
+	ret = lidar_set_frame_rate(hz);
+	if (ret == -ENOTSUP) {
+		shell_error(sh, "%s: frame rate command not supported", lidar_name());
+		return ret;
+	}
+	shell_print(sh, "set frame rate %u Hz (volatile unless saved)", hz);
+	return ret;
 }
 
-static int cmd_tfmini_save(const struct shell *sh, size_t argc, char **argv)
+static int cmd_lidar_save(const struct shell *sh, size_t argc, char **argv)
 {
+	int ret;
+
 	if (require_rail(sh)) {
 		return -EBUSY;
 	}
-	shell_print(sh, "saving TFmini settings");
-	return tfmini_save_settings();
+	ret = lidar_save_settings();
+	if (ret == -ENOTSUP) {
+		shell_error(sh, "%s: no save-settings command", lidar_name());
+		return ret;
+	}
+	shell_print(sh, "saving %s settings", lidar_name());
+	return ret;
 }
 
-SHELL_STATIC_SUBCMD_SET_CREATE(sub_tfmini,
-	SHELL_CMD_ARG(read, NULL, "Burst capture: read [n] [timeout_ms]", cmd_tfmini_read, 1, 2),
-	SHELL_CMD_ARG(raw, NULL, "Live frame dump: raw [ms]", cmd_tfmini_raw, 1, 1),
-	SHELL_CMD_ARG(rate, NULL, "Set frame rate: rate <hz>", cmd_tfmini_rate, 2, 0),
-	SHELL_CMD(save, NULL, "Persist TFmini settings", cmd_tfmini_save),
+static int cmd_lidar_bytes(const struct shell *sh, size_t argc, char **argv)
+{
+	uint32_t ms = 1000;
+	uint8_t buf[64];
+	int total = 0;
+
+	if (require_rail(sh)) {
+		return -EBUSY;
+	}
+	if (argc > 1) {
+		ms = strtoul(argv[1], NULL, 0);
+	}
+	lidar_flush();
+	k_timepoint_t end = sys_timepoint_calc(K_MSEC(ms));
+
+	while (!sys_timepoint_expired(end) && total < 2048) {
+		int n = lidar_read_bytes(buf, sizeof(buf), sys_timepoint_timeout(end));
+
+		if (n <= 0) {
+			continue;
+		}
+		total += n;
+		shell_hexdump(sh, buf, n);
+	}
+	shell_print(sh, "%d bytes in %u ms", total, ms);
+	return 0;
+}
+
+static int cmd_lidar_baud(const struct shell *sh, size_t argc, char **argv)
+{
+	uint32_t baud = strtoul(argv[1], NULL, 0);
+	int ret = lidar_set_baud(baud);
+
+	shell_print(sh, "uart baud %u -> %d", baud, ret);
+	return ret;
+}
+
+static int cmd_lidar_start(const struct shell *sh, size_t argc, char **argv)
+{
+	int ret;
+
+	if (require_rail(sh)) {
+		return -EBUSY;
+	}
+	ret = lidar_start();
+	shell_print(sh, "start command -> %d", ret);
+	return ret;
+}
+
+static int cmd_lidar_tx(const struct shell *sh, size_t argc, char **argv)
+{
+	uint8_t buf[16];
+	size_t n = 0;
+
+	if (require_rail(sh)) {
+		return -EBUSY;
+	}
+	for (size_t i = 1; i < argc && n < sizeof(buf); i++) {
+		buf[n++] = (uint8_t)strtoul(argv[i], NULL, 16);
+	}
+	lidar_uart_write(buf, n);
+	shell_print(sh, "sent %u bytes", (unsigned int)n);
+	return 0;
+}
+
+static int cmd_lidar_info(const struct shell *sh, size_t argc, char **argv)
+{
+	shell_print(sh, "sensor=%s  baud=%u  strength=%s  temp=%s  samples=%d  timeout=%d ms  vbat_min=%d mV",
+		    lidar_name(), lidar_backend.baud, lidar_has_strength() ? "yes" : "no",
+		    lidar_has_temp() ? "yes" : "no", CONFIG_SNOWGAUGE_LIDAR_SAMPLES,
+		    CONFIG_SNOWGAUGE_LIDAR_CAPTURE_TIMEOUT_MS, CONFIG_SNOWGAUGE_VBAT_MIN_MV);
+	return 0;
+}
+
+SHELL_STATIC_SUBCMD_SET_CREATE(sub_lidar,
+	SHELL_CMD_ARG(read, NULL, "Burst capture: read [n] [timeout_ms]", cmd_lidar_read, 1, 2),
+	SHELL_CMD_ARG(raw, NULL, "Live frame dump: raw [ms]", cmd_lidar_raw, 1, 1),
+	SHELL_CMD_ARG(rate, NULL, "Set frame rate: rate <hz>", cmd_lidar_rate, 2, 0),
+	SHELL_CMD(save, NULL, "Persist sensor settings (TFmini only)", cmd_lidar_save),
+	SHELL_CMD(info, NULL, "Sensor variant and capture parameters", cmd_lidar_info),
+	SHELL_CMD_ARG(bytes, NULL, "Raw RX hex dump: bytes [ms]", cmd_lidar_bytes, 1, 1),
+	SHELL_CMD_ARG(baud, NULL, "Set UART baud at run time: baud <rate>", cmd_lidar_baud, 2, 0),
+	SHELL_CMD(start, NULL, "Send the sensor's start-streaming command", cmd_lidar_start),
+	SHELL_CMD_ARG(tx, NULL, "Send raw bytes: tx 5A 0A 02 ...", cmd_lidar_tx, 2, 16),
 	SHELL_SUBCMD_SET_END);
-SHELL_CMD_REGISTER(tfmini, &sub_tfmini, "TFmini Plus LiDAR", NULL);
+SHELL_CMD_REGISTER(lidar, &sub_lidar, "Distance sensor (TFmini Plus / TSD20)", NULL);
+#if defined(CONFIG_SNOWGAUGE_SENSOR_TFMINI)
+SHELL_CMD_REGISTER(tfmini, &sub_lidar, "TFmini Plus LiDAR (alias of 'lidar')", NULL);
+#else
+SHELL_CMD_REGISTER(tsd20, &sub_lidar, "TSD20 LiDAR (alias of 'lidar')", NULL);
+#endif
 
 /* ---- battery ---- */
 

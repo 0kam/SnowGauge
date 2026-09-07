@@ -1,7 +1,7 @@
 /*
- * SnowGauge firmware - step 1: Zephyr scaffold + TFmini UART test.
+ * SnowGauge firmware.
  *
- * Boots with the sensor rail off and the TFmini UART parked (Hi-Z), opens a
+ * Boots with the sensor rail off and the sensor UART parked (Hi-Z), opens a
  * shell on USB CDC ACM, and optionally runs a measurement cycle every
  * CONFIG_SNOWGAUGE_AUTO_MEASURE_PERIOD_S seconds.
  */
@@ -16,7 +16,7 @@
 
 #include "app.h"
 #include "sensor_rail.h"
-#include "tfmini.h"
+#include "lidar.h"
 #include "battery.h"
 #include "measure.h"
 #include "tilt.h"
@@ -145,16 +145,16 @@ int main(void)
 {
 	int ret;
 
-	LOG_INF("SnowGauge FW (step 4d: schedule + calibration) - board " CONFIG_BOARD_TARGET);
+	LOG_INF("SnowGauge FW (step 5: %s variant) - board " CONFIG_BOARD_TARGET, lidar_name());
 	boot_holdoff_init();
 
 	ret = sensor_rail_init();
 	if (ret) {
 		LOG_ERR("sensor_rail_init: %d", ret);
 	}
-	ret = tfmini_init();
+	ret = lidar_init();
 	if (ret) {
-		LOG_ERR("tfmini_init: %d", ret);
+		LOG_ERR("lidar_init: %d", ret);
 	}
 	ret = battery_init();
 	if (ret) {

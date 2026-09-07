@@ -34,9 +34,12 @@ static uint16_t clamp_u16(float v)
 
 void record_from_measurement(struct record *r, const struct measurement *m)
 {
-	const struct tfmini_stats *s = &m->lidar;
+	const struct lidar_stats *s = &m->lidar;
 
 	memset(r, 0, sizeof(*r));
+	if (IS_ENABLED(CONFIG_SNOWGAUGE_SENSOR_TSD20)) {
+		r->flags |= RECORD_FLAG_SENSOR_TSD20;
+	}
 
 	if (s->n_valid > 0) {
 		r->flags |= RECORD_FLAG_LIDAR_OK;

@@ -2,7 +2,8 @@
  * BLE advertising with a status payload (spec section 12.2, layer 3).
  *
  * Connectable undirected advertising at a slow interval; the device name
- * "SG-XXXX" (last two bytes of the device ID) goes in the scan response.
+ * "SG-TFM-XXXX" (TFmini Plus) / "SG-TSD-XXXX" (TSD20), XXXX = last two bytes of the
+ * device ID, goes in the scan response.
  * Manufacturer Data (company ID 0xFFFF = unassigned/test) carries:
  *
  *  off size field

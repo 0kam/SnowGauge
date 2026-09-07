@@ -7,7 +7,7 @@ project(snowgauge_fw LANGUAGES C)
 target_sources(app PRIVATE
   src/main.c
   src/sensor_rail.c
-  src/tfmini.c
+  src/lidar.c
   src/battery.c
   src/tilt_lsm6dsl.c
   src/power.c
@@ -22,3 +22,6 @@ target_sources(app PRIVATE
   src/cal_gatt.c
   src/shell_cmds.c
 )
+# Sensor backend (Kconfig choice SNOWGAUGE_SENSOR; overlay-tsd20.conf selects the TSD20)
+target_sources_ifdef(CONFIG_SNOWGAUGE_SENSOR_TFMINI app PRIVATE src/tfmini.c)
+target_sources_ifdef(CONFIG_SNOWGAUGE_SENSOR_TSD20 app PRIVATE src/tsd20.c)

@@ -8,20 +8,21 @@
 #include <errno.h>
 
 #include "sensor_rail.h"
+#include "lidar.h"
 
 LOG_MODULE_REGISTER(sensor_rail, CONFIG_LOG_DEFAULT_LEVEL);
 
 static const struct gpio_dt_spec sensor_en =
 	GPIO_DT_SPEC_GET(DT_PATH(zephyr_user), sensor_en_gpios);
 static const struct device *const sensor_uart =
-	DEVICE_DT_GET(DT_ALIAS(tfmini_uart));
+	DEVICE_DT_GET(DT_ALIAS(lidar_uart));
 
 static bool rail_on;
 
 /*
  * Suspending the nRF UARTE applies its "sleep" pinctrl state, which
  * disconnects TX/RX (input buffer off, no pull). That is what makes the
- * rail cut safe: nothing can leak into the powered-down TFmini via R7.
+ * rail cut safe: nothing can leak into the powered-down sensor via R7.
  */
 static int uart_park(void)
 {
@@ -89,7 +90,16 @@ int sensor_rail_on(void)
 	LOG_DBG("rail ON, settling %d ms", CONFIG_SNOWGAUGE_RAIL_SETTLE_MS);
 	k_sleep(K_MSEC(CONFIG_SNOWGAUGE_RAIL_SETTLE_MS));
 
-	return uart_wake();
+	ret = uart_wake();
+	if (ret) {
+		return ret;
+	}
+	/* Sensor-specific "start streaming" (TSD20); no-op for the TFmini. */
+	ret = lidar_start();
+	if (ret) {
+		LOG_WRN("lidar_start failed (%d)", ret);
+	}
+	return ret;
 }
 
 int sensor_rail_off(void)

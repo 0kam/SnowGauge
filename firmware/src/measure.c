@@ -8,7 +8,7 @@
 #include "measure.h"
 #include "sensor_rail.h"
 #include "battery.h"
-#include "tfmini.h"
+#include "lidar.h"
 #include "tilt.h"
 
 LOG_MODULE_REGISTER(measure, CONFIG_LOG_DEFAULT_LEVEL);
@@ -40,17 +40,17 @@ int measure_once(struct measurement *m)
 
 	if (m->vbat_mv_start != 0 && m->vbat_mv_start < CONFIG_SNOWGAUGE_VBAT_MIN_MV) {
 		/*
-		 * Battery too low for the 5 V rail: do not run the 120 mA
+		 * Battery too low for the sensor rail: do not run the
 		 * capture (brown-out -> reset -> measure -> brown-out loop).
 		 * The record still carries Vbat so the decline is visible.
 		 */
-		LOG_WRN("vbat %u mV below %u mV - TFmini capture skipped", m->vbat_mv_start,
+		LOG_WRN("vbat %u mV below %u mV - LiDAR capture skipped", m->vbat_mv_start,
 			CONFIG_SNOWGAUGE_VBAT_MIN_MV);
 		m->lidar_ret = -ENOTSUP;
 	} else {
-		m->lidar_ret = tfmini_capture(CONFIG_SNOWGAUGE_TFMINI_SAMPLES,
-					      K_MSEC(CONFIG_SNOWGAUGE_TFMINI_CAPTURE_TIMEOUT_MS),
-					      &m->lidar);
+		m->lidar_ret = lidar_capture(CONFIG_SNOWGAUGE_LIDAR_SAMPLES,
+					     K_MSEC(CONFIG_SNOWGAUGE_LIDAR_CAPTURE_TIMEOUT_MS),
+					     &m->lidar);
 	}
 
 	(void)battery_read_mv(&m->vbat_mv_end);
@@ -62,7 +62,7 @@ int measure_once(struct measurement *m)
 
 	k_mutex_unlock(&sensor_lock);
 	if (m->lidar_ret <= 0) {
-		LOG_WRN("no TFmini frames received (%d)", m->lidar_ret);
+		LOG_WRN("no LiDAR frames received (%d)", m->lidar_ret);
 	}
 	return ret;
 }
@@ -70,7 +70,7 @@ int measure_once(struct measurement *m)
 void measure_print(const struct measurement *m,
 		   void (*out)(void *ctx, const char *fmt, ...), void *ctx)
 {
-	const struct tfmini_stats *s = &m->lidar;
+	const struct lidar_stats *s = &m->lidar;
 
 	out(ctx, "t=%lld ms  vbat=%u/%u mV (start/end)",
 	    m->uptime_ms, m->vbat_mv_start, m->vbat_mv_end);
@@ -84,9 +84,11 @@ void measure_print(const struct measurement *m,
 	} else {
 		out(ctx, "dist: no valid samples");
 	}
-	if (s->n_frames > 0) {
-		out(ctx, "strength median=%u  chip temp=%d.%d C",
-		    s->strength_median, s->temp_c_x10 / 10, abs(s->temp_c_x10 % 10));
+	if (s->n_frames > 0 && lidar_has_strength()) {
+		out(ctx, "strength median=%u", s->strength_median);
+	}
+	if (s->n_frames > 0 && lidar_has_temp()) {
+		out(ctx, "chip temp=%d.%d C", s->temp_c_x10 / 10, abs(s->temp_c_x10 % 10));
 	}
 	if (m->tilt_ret == 0) {
 		out(ctx, "tilt=%.2f deg (pitch=%.2f roll=%.2f)  a=(%d,%d,%d) mg  imu temp=%.1f C  n=%u",

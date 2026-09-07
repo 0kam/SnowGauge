@@ -4,8 +4,8 @@
  *
  *   D10 (P1.15) SENSOR_EN  high = sensor rail ON (Q2 -> Q1 high-side switch)
  *   A0  (P0.02) ADC_NODE   VBAT_SW / 2 (1M + 1M divider, 0 V while rail off)
- *   D6  (P1.11) UART TX    -> 1k (R7) -> TFmini RX (white)
- *   D7  (P1.12) UART RX    <- TFmini TX (green)
+ *   D6  (P1.11) UART TX    -> 1k (R7) -> sensor RX (TFmini white / TSD20 pin 4)
+ *   D7  (P1.12) UART RX    <- sensor TX (TFmini green / TSD20 pin 3)
  *   D4/D5       I2C        spare header J3
  */
 
@@ -16,7 +16,7 @@
 	/*
 	 * Console + shell: the board already routes zephyr,console and
 	 * zephyr,shell-uart to USB CDC ACM (board_cdc_acm_uart), so uart0 is free
-	 * for the TFmini.
+	 * for the distance sensor.
 	 */
 
 	zephyr,user {
@@ -25,11 +25,15 @@
 	};
 
 	aliases {
-		tfmini-uart = &uart0;
+		lidar-uart = &uart0;
 	};
 };
 
-/* TFmini Plus: 115200 8N1, 100 Hz, 9-byte frames (board default pins D6/D7). */
+/*
+ * Distance sensor UART (board default pins D6/D7). The rate here is the
+ * TFmini Plus one; lidar_init() reconfigures it at run time from the
+ * selected backend (TSD20 = 460800).
+ */
 &uart0 {
 	status = "okay";
 	current-speed = <115200>;

@@ -6,7 +6,7 @@
 |---|---|---|---|
 | 1 | [01_parts.md](01_parts.md) / [01_parts.csv](01_parts.csv) | 部品を買う人 | 購入リスト（BOM の唯一の正） |
 | 2 | [02_assembly.md](02_assembly.md) | 組み立てる人 | ブレッドボード、基板 v1.2、筐体（検討中） |
-| 2' | [breadboard_guide.html](https://0kam.github.io/SnowGauge/breadboard_guide.html) | 同上 | ブレッドボード配線の図解（生成物） |
+| 2' | [breadboard_guide.html](https://0kam.github.io/SnowGauge/breadboard_guide.html) / [breadboard_guide_tsd20.html](https://0kam.github.io/SnowGauge/breadboard_guide_tsd20.html) | 同上 | ブレッドボード配線の図解（生成物。TFmini Plus 版 / TSD20 版、§5 に組み替え手順） |
 | 3 | [03_firmware.md](03_firmware.md) | 書き込む人 | Release からのダウンロードと USB 書き込み |
 | 4 | [04_app.md](04_app.md) | 現地作業する人 | アプリのインストールと設置・巡回手順 |
 | 5 | [05_data.md](05_data.md) | 解析する人 | CSV の読み方、品質フラグ、再計算 |
@@ -15,12 +15,12 @@
 
 | 文書 | 内容 |
 |---|---|
-| [../SnowGauge_設計仕様書_v0.12.md](../SnowGauge_設計仕様書_v0.12.md) | 要件・設計判断・電力収支・改版履歴。全文改版制（変更のたびに版を上げてファイル名も変える） |
+| [../SnowGauge_設計仕様書_v0.13.md](../SnowGauge_設計仕様書_v0.13.md) | 要件・設計判断・電力収支・改版履歴。全文改版制（変更のたびに版を上げてファイル名も変える） |
 | [../pcb/README.md](../pcb/README.md) | **ピンマップと電気トポロジの正**。基板は `pcb/generate_board.py` から生成（手編集禁止） |
 | [../firmware/README.md](../firmware/README.md) | ビルド、書き込み、ベンチ用シェルコマンド |
 | [record_format.md](record_format.md) | 40 バイトレコード、フラッシュ配置、CSV 列定義 |
 | [app/README.md](app/README.md) | Web Bluetooth ページの構成と他ロガーへの流用 |
-| [tsd20_protocol.md](tsd20_protocol.md) | TSD20（廉価版センサ）の UART 仕様とファームウェア変種の計画 |
+| [tsd20_protocol.md](tsd20_protocol.md) | TSD20（廉価版センサ）の UART 仕様とファームウェア変種の実装メモ |
 | [measurements/](measurements/) | 実測記録（`YYYY-MM-DD_topic.md`） |
 | [archive/](archive/) | 旧版（v1.2 以前の回路。使わないこと） |
 | [../CLAUDE.md](../CLAUDE.md) | AI エージェント向けの作業引き継ぎ（現状・決定事項・次の一手） |
@@ -29,7 +29,7 @@
 
 | 変更 | 必ず更新するもの | あわせて確認 |
 |---|---|---|
-| **ピン割り当て・回路トポロジ** | `pcb/generate_board.py` → 再生成・DRC・ガーバー、`pcb/README.md`、`firmware/boards/*.overlay`、`docs/gen_breadboard.py`（PARTS）→ `breadboard_guide.html` 再生成 | 02_assembly.md、01_parts.md、仕様書 §4、CLAUDE.md の Key GPIO |
+| **ピン割り当て・回路トポロジ** | `pcb/generate_board.py` → 再生成・DRC・ガーバー、`pcb/README.md`、`firmware/boards/*.overlay`、`docs/gen_breadboard.py`（PARTS）→ `breadboard_guide.html` と `--tsd20` で `breadboard_guide_tsd20.html` を再生成 | 02_assembly.md、01_parts.md、仕様書 §4、CLAUDE.md の Key GPIO |
 | **部品・数量・購入先** | `docs/01_parts.md` と `01_parts.csv` | 仕様書 §6（要約のみ）、`pcb/README.md` の追加部品欄 |
 | **レコード形式**（フィールド追加・版上げ） | `firmware/src/record.h/.c`、`docs/record_format.md`、`docs/app/app.js` の `RECORD_SCHEMA`、`tools/decode_records.py` | 05_data.md、仕様書 §4.4 |
 | **CSV の列** | `docs/app/app.js` の `CSV_COLUMNS`/`exportCSV`、`docs/record_format.md` | 05_data.md |

@@ -7,9 +7,16 @@ each end at that hole and prints the hole name next to it. One overview
 figure plus one figure per assembly step (current step in colour, earlier
 steps greyed out) are produced.
 
-Run: python3 docs/gen_breadboard.py
+Run: python3 docs/gen_breadboard.py            -> breadboard_guide.html (TFmini Plus)
+     python3 docs/gen_breadboard.py --tsd20    -> breadboard_guide_tsd20.html (TSD20:
+                                                  U2 = NJU7223F33, sensor wires by pin number)
+Both variants share the netlist; apply_variant() swaps U2, the sensor wires,
+the step-3/5 checks and the wording.
 """
 import html as _html
+import sys
+
+VARIANT = 'tsd20' if '--tsd20' in sys.argv else 'tfmini'
 
 # ------------------------------------------------------------------ geometry
 PITCH = 24
@@ -24,7 +31,9 @@ H = 470
 
 COLORS = {'vbat': '#D62828', 'gnd': '#3A4148', '33': '#E07A00', '5v': '#C2185B',
           'vsw': '#8E2F3C', 'en': '#2E7D32', 'gate': '#7A5230', 'adc': '#6A4CA5',
-          'tx': '#1565C0', 'rx': '#5BA8DF', 'part': '#22303A'}
+          'tx': '#1565C0', 'rx': '#5BA8DF', 'part': '#22303A',
+          # TSD20 lead colours as on the sensor's connector (docs/tsd20_protocol.md)
+          'w_red': '#D62828', 'w_yel': '#E6B800', 'w_grn': '#2E9E44', 'w_blk': '#111111'}
 RAIL_NAMES = {'T+': '上の赤レール(VBAT)', 'T-': '上の青レール(GND)',
               'B-': '下の青レール(GND)', 'B+': '下の赤レール(未使用)'}
 
@@ -128,6 +137,56 @@ PARTS = [
 XIAO_TOP = ['5V', 'GND', '3V3', 'D10', 'D9', 'D8', 'D7/RX']    # row e, cols 20..26
 XIAO_BOT = ['D0/A0', 'D1', 'D2', 'D3', 'D4', 'D5', 'D6/TX']    # row f, cols 20..26
 
+TEXTS = {
+    'tfmini': dict(
+        sensor='TFmini Plus', rail='5V', rail_legend='5V(測定時のみ)', rail_v='4.9〜5.1V', u2='NJU7223F50',
+        tx_legend='UART TX→白', rx_legend='UART 緑→RX', out='breadboard_guide.html',
+        other='TSD20 版', other_file='breadboard_guide_tsd20.html',
+        step5_note='TFmini の線が細くて抜けやすい場合は、ピンヘッダ付きジャンパをかませるか、線先にピンを圧着してください。安定化電源で代用する場合は電流制限を <b>1A 以上</b> に（TFmini 起動時ピーク 500mA）。',
+        peak_note='TFmini のピーク電流(500mA)はブレッドボードの接触抵抗に厳しいので、<b>電源系のジャンパは短く太いものを</b>。測距が不安定なら C4 の追加や配線短縮を試す',
+        fw_note='テスト FW で: <span class="kbd">rail on</span> → <span class="kbd">lidar raw 500</span>（旧名 <span class="kbd">tfmini raw</span> も可）で距離フレーム受信、<span class="kbd">rail off</span> → e42 = 0V'),
+    'tsd20': dict(
+        sensor='TSD20', rail='3.3V(SW)', rail_legend='センサ 3.3V ノード(測定時のみ)', rail_v='3.25〜3.35V', u2='NJU7223F33',
+        tx_legend='UART TX→緑(④)', rx_legend='UART 黄(③)→RX', out='breadboard_guide_tsd20.html',
+        other='TFmini Plus 版', other_file='breadboard_guide.html',
+        step5_note='TSD20 のリード線（6 本、20cm、先端すずめっき）は基板上のコネクタ側で左から <b>白・赤・黄・緑・水色・黒</b> = ピン <b>1=NC, 2=3.3V, 3=TX, 4=RX, 5=NC, 6=GND</b>（色は手持ち品の実物で確認、説明書に記載なし。赤=3.3V・黒=GND が並びの根拠）。TFmini との対応: 赤→赤、緑→黄、白→緑、黒→黒。線は末端加工なしの極細線なので、そのままでは挿せません。<b>被覆をむいた単線ジャンパ（またはピンヘッダの足）に 1 本ずつはんだ付けし、継ぎ目を熱収縮チューブで覆って</b>から挿します（動作確認だけならミノムシクリップでも可。ねじって巻くだけは電源線では不可）。継ぎ目の手前で線をテープで固定して引っ張りを逃がすこと。安定化電源の電流制限は <b>0.5A 以上</b>（TSD20 ピーク 70mA + XIAO）。<b>TSD20 には逆接・過電圧保護がない</b>ので、②を 5V ノードや VBAT に挿さないこと。',
+        peak_note='TSD20 のピーク電流は 70mA なので配線の接触抵抗には寛容。U2 の出力（e42 ノード）が 3.3V であることを、TSD20 をつなぐ<b>前</b>に必ず確認する（F50 が残っていると 5V がかかって壊れる）',
+        fw_note='TSD20 版 FW（<span class="kbd">overlay-tsd20.conf</span> ビルド、BLE 名 <span class="kbd">SG-TSD-XXXX</span>）で: <span class="kbd">rail on</span> → <span class="kbd">lidar raw 500</span>（<span class="kbd">tsd20 raw</span> も可）で <span class="kbd">dist=xxxx mm</span> のフレーム受信（460800 baud、200Hz）、<span class="kbd">lidar read</span> で cksum_err=0、<span class="kbd">rail off</span> → e42 = 0V'),
+}
+T = TEXTS[VARIANT]
+
+
+def apply_variant():
+    """Swap the variant-specific parts of PARTS / STEPS in place."""
+    if VARIANT != 'tsd20':
+        return
+    for p in PARTS:
+        if p['name'] == 'U2 NJU7223F50':
+            p['name'] = 'U2 NJU7223F33'
+            p['note'] = 'TFmini 版はここが F50。印字で確認'
+        if p['name'] == 'ジャンパ (5V)':
+            p['name'] = 'ジャンパ (センサ 3.3V)'
+            p['note'] = 'U2 の OUT 列 → センサ 3.3V ノード'
+    del PARTS[[i for i, p in enumerate(PARTS) if p['step'] == 5 and p['kind'] == 'ext'][0]:]
+    PARTS.extend([
+        dict(n=32, step=5, kind='ext', name='TSD20 ④ 緑 (RX)', a='h31', color='w_grn',
+             label='TSD20 ④緑(RX)', note='R7 の先（XIAO D6 TX → 1kΩ → TSD20 RX）。TFmini の白と同じ穴'),
+        dict(n=33, step=5, kind='ext', name='TSD20 ③ 黄 (TX)', a='a26', color='w_yel',
+             label='TSD20 ③黄(TX)', note='XIAO D7(RX) ピン(e26)の列。TFmini の緑と同じ穴'),
+        dict(n=34, step=5, kind='ext', name='TSD20 ② 赤 (+3.3V)', a='e42', color='w_red',
+             label='TSD20 ②赤(3.3V)', note='センサ 3.3V ノード（U2=F33 の出力。5V ではない！）'),
+        dict(n=35, step=5, kind='ext', name='TSD20 ⑥ 黒 (GND)', a='T-@50', color='w_blk',
+             label='TSD20 ⑥黒(GND)', note='①白 と ⑤水色 は NC（未接続のまま）'),
+    ])
+    STEPS[3] = ('スイッチと センサ 3.3V 系', [
+        'なにもしない時: e42−GND 間 = <span class="kbd">0V</span>',
+        'ジャンパ線で a28（Q2 の G）を 3.3V（c10）に触れさせる: e42 = <span class="kbd">3.25〜3.35V</span>、離すと 0V に戻る（<b>4.9〜5.1V なら U2 が F50 のまま</b>。TSD20 をつなぐ前に必ず直す）',
+        'a28 を c10 に触れさせている間: a32（Q1 の G）= <span class="kbd">0V 近く</span>、a33（Q1 の D = VBAT_SW）= <span class="kbd">電池電圧</span>。離している時は逆に a32 ≈ 電池電圧、a33 = 0V'])
+    STEPS[5] = ('TSD20', [
+        T['fw_note'],
+        'µA 電流計を電池と直列に: スリープ <span class="kbd">90µA 以下</span>（ブレッドボードは接触・リークで数 µA 上振れすることあり）'])
+
+
 STEPS = {
     1: ('電源部', ['赤レール−青レール間: <span class="kbd">電池電圧 −0.2〜0.35V</span>',
                   'c10（U1 の OUT）−青レール間: <span class="kbd">3.25〜3.35V</span>']),
@@ -137,7 +196,7 @@ STEPS = {
                        'a28 を c10 に触れさせている間: a32（Q1 の G）= <span class="kbd">0V 近く</span>、a33（Q1 の D = VBAT_SW）= <span class="kbd">電池電圧</span>。離している時は逆に a32 ≈ 電池電圧、a33 = 0V']),
     4: ('電池電圧の見張り（スイッチ済みレールから分圧）',
         ['STEP 3 と同じく a28 を c10 に触れさせている間: a36−GND 間 = <span class="kbd">電池電圧のほぼ半分</span>。離している時は <span class="kbd">0V</span>']),
-    5: ('TFmini Plus', ['テスト FW で: <span class="kbd">rail on</span> → <span class="kbd">tfmini raw 500</span> で距離フレーム受信、<span class="kbd">rail off</span> → e42 = 0V',
+    5: ('TFmini Plus', [T['fw_note'],
                         'µA 電流計を電池と直列に: スリープ <span class="kbd">90µA 以下</span>（ブレッドボードは接触・リークで数 µA 上振れすることあり）']),
 }
 
@@ -486,9 +545,15 @@ footer{margin-top:64px;border-top:1px solid var(--line);padding-top:14px;font-si
 @media print{.board{overflow:visible}}
 """
 
-LEGEND = ''.join(f'<span><i style="background:{COLORS[c]}"></i>{t}</span>' for c, t in [
-    ('vbat', 'VBAT'), ('gnd', 'GND'), ('33', '3.3V'), ('vsw', 'VBAT_SW(スイッチ後)'), ('5v', '5V(測定時のみ)'),
-    ('gate', 'Q1ゲート'), ('adc', '電圧測定'), ('tx', 'UART TX→白'), ('rx', 'UART 緑→RX')])
+def legend():
+    items = [('vbat', 'VBAT'), ('gnd', 'GND'), ('33', '3.3V'), ('vsw', 'VBAT_SW(スイッチ後)'), ('5v', T['rail_legend']),
+             ('gate', 'Q1ゲート'), ('adc', '電圧測定')]
+    if VARIANT == 'tsd20':
+        items += [('w_red', 'TSD20 赤 = 3.3V'), ('w_yel', 'TSD20 黄 = TX→XIAO D7'),
+                  ('w_grn', 'TSD20 緑 = RX←XIAO D6'), ('w_blk', 'TSD20 黒 = GND')]
+    else:
+        items += [('tx', T['tx_legend']), ('rx', T['rx_legend'])]
+    return ''.join(f'<span><i style="background:{COLORS[c]}"></i>{t}</span>' for c, t in items)
 
 
 def build_html():
@@ -498,10 +563,10 @@ def build_html():
     h.append('<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700&family=IBM+Plex+Mono:wght@400;600&display=swap">')
     h.append(f'<style>{CSS}</style>')
     h.append('<div class="wrap">')
-    h.append('''<header>
-  <div class="eyebrow">SnowGauge — breadboard prototype / TFmini Plus</div>
+    h.append(f'''<header>
+  <div class="eyebrow">SnowGauge — breadboard prototype / {T['sensor']}</div>
   <h1>SnowGauge ブレッドボード配線図</h1>
-  <p class="lede">PCB が届くまでの開発・ファームウェア検証用に、はんだ付けなしで SnowGauge を組む配線図です。830 穴ブレッドボード 1 枚とジャンパワイヤで組めます。回路は <b>PCB v1.2 と同一トポロジ</b>（電池監視の分圧をスイッチ済みレールに接続。Q3・R6 は廃止）なので、ここで書いたファームウェアはそのまま PCB で動きます。</p>
+  <p class="lede">PCB が届くまでの開発・ファームウェア検証用に、はんだ付けなしで SnowGauge（<b>{T['sensor']} 版</b>、U2 = {T['u2']}）を組む配線図です。{T['other']}は <a href="{T['other_file']}">{T['other_file']}</a>（違いは U2 とセンサ配線だけ、§5 参照）。830 穴ブレッドボード 1 枚とジャンパワイヤで組めます。回路は <b>PCB v1.2 と同一トポロジ</b>（電池監視の分圧をスイッチ済みレールに接続。Q3・R6 は廃止）なので、ここで書いたファームウェアはそのまま PCB で動きます。</p>
 </header>''')
     h.append('''<section>
 <h2><span class="no">1</span>座標の読み方</h2>
@@ -514,10 +579,10 @@ def build_html():
 </section>''')
     h.append('<section>\n<h2><span class="no">2</span>全体配線図</h2>')
     h.append('<p class="sub">丸数字は下のチェックリストの番号。各部品・線の両端に穴名を表示しています（ステップごとの拡大図は §3）。</p>')
-    h.append(f'<div class="board">{render_svg(None)}<div class="legend">{LEGEND}</div></div>')
+    h.append(f'<div class="board">{render_svg(None)}<div class="legend">{legend()}</div></div>')
     h.append('</section>')
     h.append('<section>\n<h2><span class="no">3</span>組立チェックリスト</h2>')
-    h.append('<p class="sub">上から順に。<b>各ステップ末尾のテスター確認に合格してから次へ。</b>XIAO と TFmini を挿すのは電源確認のあとです。図はそのステップの部品を色付き、前のステップまでを薄く表示しています。</p>')
+    h.append(f'<p class="sub">上から順に。<b>各ステップ末尾のテスター確認に合格してから次へ。</b>XIAO と {T['sensor']} を挿すのは電源確認のあとです。図はそのステップの部品を色付き、前のステップまでを薄く表示しています。</p>')
     for k in sorted(STEPS):
         title, checks = STEPS[k]
         h.append(f'<div class="step">\n<h3><span class="sno">STEP {k}</span>{title}</h3>')
@@ -529,20 +594,32 @@ def build_html():
         if k == 4:
             h.append('<p style="font-size:13.5px;margin-top:10px">FW メモ: 電池電圧はセンサレール ON 中に A0 を読む（読み値 ×2）。旧設計の D3・Q3・R6 は廃止。</p>')
         if k == 5:
-            h.append('<p style="font-size:13.5px;margin-top:10px">TFmini の線が細くて抜けやすい場合は、ピンヘッダ付きジャンパをかませるか、線先にピンを圧着してください。安定化電源で代用する場合は電流制限を <b>1A 以上</b> に（TFmini 起動時ピーク 500mA）。</p>')
+            h.append(f'<p style="font-size:13.5px;margin-top:10px">{T['step5_note']}</p>')
         h.append('</div>')
     h.append('</section>')
-    h.append('''<section>
+    h.append(f'''<section>
 <h2><span class="no">4</span>注意メモ</h2>
 <ul>
 <li><b>電池を入れたまま USB をつながない</b>（STEP 2 参照。例外は⑩を抜いた時のみ）</li>
 <li>向きがある部品: D1（帯）、C4（長い足が+）、U1/U2/Q1/Q2（1-2-3 の並び、印字面を手前に）。F33 と F50 は印字で読み分け</li>
-<li>TFmini のピーク電流(500mA)はブレッドボードの接触抵抗に厳しいので、<b>電源系のジャンパは短く太いものを</b>。測距が不安定なら C4 の追加や配線短縮を試す</li>
+<li>{T['peak_note']}</li>
 <li>スリープ電流の最終評価は PCB で行う（ブレッドボードはリークが乗るため参考値）</li>
 <li><b>抵抗の代替値</b>（手持ちで組む場合）: R3 は <b>150Ω〜2.2kΩ</b>（R4 との分圧で Q2 のゲート電圧が 2.7V 以上になること。R3=R4=10k は NG）、R4・R5 は <b>10kΩ</b> 可、R1/R2 は <b>同じ値なら 5k〜1M のどれでも</b>（FW は「読み値 ×2」）、R7 は <b>1k〜5k</b>。分圧は VBAT_SW 側なのでスリープ電流には影響しない</li>
 </ul>
 </section>''')
-    h.append('<footer>SnowGauge 設計仕様書 v0.12 / PCB v1.2 トポロジ準拠（分圧は VBAT_SW から・Q3/R6/D3 廃止）。ピン配置の正は pcb/README.md。TSD20 版は U2 を NJU7223F33 に差し替えるだけで同一配線。この HTML は docs/gen_breadboard.py が生成します（手編集しない）。</footer>')
+    h.append('''<section>
+<h2><span class="no">5</span>TFmini Plus 版 ⇄ TSD20 版の組み替え</h2>
+<p class="sub">同じ基板・同じ配線で、変わるのは <b>U2（センサ用 LDO）とセンサの 4 本の線だけ</b>。ファームウェアも別ビルド（TFmini 版 = 既定、TSD20 版 = <span class="kbd">overlay-tsd20.conf</span>、BLE 名は <span class="kbd">SG-TFM-</span> / <span class="kbd">SG-TSD-</span>）。</p>
+<ol style="font-size:14px;line-height:1.7">
+<li><b>電源を切る</b>（電池・安定化電源・USB すべて外す）。センサの線を 4 本とも抜く</li>
+<li><b>U2 を差し替える</b>: c38–c40 の NJU7223F50 を抜き、同じ向き（印字面を手前に OUT–IN–GND）で NJU7223F33 を挿す（逆方向は F33 → F50）。C3/C4/C5 と㉑〜㉖のジャンパはそのまま</li>
+<li>電源を入れ、<b>STEP 3 の確認</b>: a28 を c10 に触れさせて e42 = <b>3.25〜3.35V（TSD20 版）</b> / <b>4.9〜5.1V（TFmini 版）</b>。<b>この確認を飛ばして TSD20 に 5V をかけると壊れます</b>（逆接・過電圧保護なし）</li>
+<li>センサをつなぐ（電源を切ってから）。TSD20 は線の色ではなく<b>ピン番号</b>で: ② 赤 3.3V → e42、③ 黄 TX → a26（XIAO D7 RX の列）、④ 緑 RX → h31（R7 の先）、⑥ 黒 GND → 青レール。① 白・⑤ 水色 は NC。TFmini は 赤 → e42、緑 → a26、白 → h31、黒 → 青レール</li>
+<li>該当バリアントの FW を書き込み、STEP 5 の確認（<span class="kbd">rail on</span> → <span class="kbd">lidar raw 500</span>）。TSD20 版はフレームが <span class="kbd">dist=xxxx mm</span>（460800 baud）で出る</li>
+</ol>
+<p style="font-size:13.5px">USB と電池/安定化電源を同時につなぐ時のルール（⑩を抜く）はどちらの版も同じ。</p>
+</section>''')
+    h.append(f'<footer>SnowGauge 設計仕様書 v0.13 / PCB v1.2 トポロジ準拠（分圧は VBAT_SW から・Q3/R6/D3 廃止）。ピン配置の正は pcb/README.md。この HTML（{T["sensor"]} 版）は docs/gen_breadboard.py{" --tsd20" if VARIANT == "tsd20" else ""} が生成します（手編集しない）。</footer>')
     h.append('</div>')
     return '\n'.join(h)
 
@@ -568,9 +645,10 @@ def check_conflicts():
 
 
 if __name__ == '__main__':
+    apply_variant()
     check_conflicts()
     import os
-    out = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'breadboard_guide.html')
+    out = os.path.join(os.path.dirname(os.path.abspath(__file__)), T['out'])
     with open(out, 'w', encoding='utf-8') as f:
         head, body = build_html().split('<div class="wrap">', 1)
         f.write('<!doctype html>\n<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">\n')

@@ -14,7 +14,7 @@
 #include "app.h"
 #include "config.h"
 #include "sensor_rail.h"
-#include "tfmini.h"
+#include "lidar.h"
 #include "tilt.h"
 #include "battery.h"
 #include "storage.h"
@@ -146,7 +146,7 @@ BT_GATT_SERVICE_DEFINE(cal_svc,
 static void live_work_fn(struct k_work *work)
 {
 	ARG_UNUSED(work);
-	struct tfmini_stats s;
+	struct lidar_stats s;
 	struct tilt_reading t;
 	uint16_t vbat = 0;
 	int n;
@@ -168,7 +168,7 @@ static void live_work_fn(struct k_work *work)
 		(void)sensor_rail_on(); /* a measurement cut the rail meanwhile */
 		k_sleep(K_MSEC(CONFIG_SNOWGAUGE_RAIL_SETTLE_MS));
 	}
-	n = tfmini_capture(10, K_MSEC(400), &s);
+	n = lidar_capture(10, K_MSEC(400), &s);
 	(void)tilt_read(&t, 4);
 	(void)battery_read_mv(&vbat);
 	k_mutex_unlock(&sensor_lock);

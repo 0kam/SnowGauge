@@ -10,7 +10,7 @@
 ### CSV（ふつうはこれだけ使う）
 
 - ファイル名: **`<本体名>_<保存日時>.csv`**、例 `SG-3F2A_2026-12-31-03-15-20.csv`
-  - 本体名 = Bluetooth に出る `SG-XXXX`。
+  - 本体名 = Bluetooth に出る `SG-TFM-XXXX`（TFmini 版）/ `SG-TSD-XXXX`（TSD20 版）。旧ファームウェアは `SG-XXXX`。
   - 保存日時はスマホがファイルを作った時刻（**UTC**）です。観測時刻ではありません。
 - 1 行目が見出し、2 行目以降が 1 観測 = 1 行。UTF-8（BOM 付き）。Excel でそのまま開けます。
 - 列の並びと意味: [record_format.md の「CSV export」](record_format.md#csv-export-web-bluetooth-page-docsapp) を見てください。
@@ -39,7 +39,7 @@
 | `dist_var_cm2`, `strength`, `n_frames`, `n_valid`, `n_out_of_range` | 品質（第 4 節） |
 | `tilt_deg` | センサの傾き（真下方向からの角度）。`pitch_deg` / `roll_deg` はその内訳 |
 | `imu_temp_c` | 基板上の温度。気温の目安（直射日光・筐体内なので参考値） |
-| `lidar_temp_c` | 距離センサの**内部**温度。50〜75 °C は正常で、気温ではありません |
+| `lidar_temp_c` | 距離センサの**内部**温度。50〜75 °C は正常で、気温ではありません。TSD20 版は出力がないので空 |
 | `vbat_start_mv`, `vbat_end_mv` | 電池電圧（mV）、センサ通電の直後と直前。`end` の方が負荷時。4400 未満は交換時期 |
 | `d0_cm`, `theta0_deg` | 基準値（設置時の ZERO または積雪深入力で本体に保存されたもの） |
 | `snow_depth_cm` | **積雪深** = `(d0_cm − dist_cm) × cos(tilt_deg)`。基準値がない・距離がないときは空 |
@@ -59,6 +59,7 @@
 | `tilt_ok` | 傾斜センサが読めた |
 | `manual` | 自動観測ではなく、シェルや BLE から手動で測ったもの。解析からは除くのが普通 |
 | `first_after_boot` | 再起動（電池交換など）後の最初の記録。区切りの目印 |
+| `sensor_tsd20` | TSD20 版の本体が書いた記録（付いていなければ TFmini Plus 版）。この記録では `strength` は常に 0、`lidar_temp_c` は空 |
 
 ---
 
@@ -78,7 +79,7 @@
 | 前の行との間隔が観測間隔の 1.5 倍超（`manual` 以外） | 欠測あり | 電池・再起動 |
 | `vbat_end_mv < 4400` | 電池低 | 交換時期。通電直後の電圧（`vbat_start_mv`）が 4600 未満だと本体は距離測定を止める |
 
-`strength`（信号強度）は 100 未満だとセンサの仕様上信頼できず、65535 は飽和です。雪面では通常数百〜数千です。
+`strength`（信号強度）は 100 未満だとセンサの仕様上信頼できず、65535 は飽和です。雪面では通常数百〜数千です。TSD20 版（`sensor_tsd20` フラグ）には信号強度がなく常に 0 なので、品質は `n_valid`/`n_out_of_range` と `dist_var_cm2` だけで判断します。
 
 ---
 

@@ -9,7 +9,7 @@ const APP_VERSION = '2026-09-05a';
 
 /* ---------- project schemas ---------- */
 
-const DEVICE_NAME_PREFIX = 'SG-';
+const DEVICE_NAME_PREFIX = 'SG-'; // SG-TFM-XXXX = TFmini Plus build, SG-TSD-XXXX = TSD20 build (older FW: SG-XXXX)
 const FS_DIR = '/lfs1/';
 const SITE_FILE = FS_DIR + 'site.json';
 
@@ -24,7 +24,7 @@ const RECORD_SCHEMA = {
     ['imu_temp_c', 'i16', 30, { scale: 10 }], ['lidar_temp_c', 'i16', 32, { scale: 10 }],
     ['vbat_start_mv', 'u16', 34], ['vbat_end_mv', 'u16', 36],
   ],
-  flags: { 0: 'time_synced', 1: 'time_estimated', 2: 'lidar_ok', 3: 'tilt_ok', 4: 'manual', 5: 'first_after_boot' },
+  flags: { 0: 'time_synced', 1: 'time_estimated', 2: 'lidar_ok', 3: 'tilt_ok', 4: 'manual', 5: 'first_after_boot', 6: 'sensor_tsd20' },
 };
 
 /* Settings exposed over SMP settings mgmt (firmware/src/config.h). */

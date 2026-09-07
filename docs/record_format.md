@@ -12,17 +12,17 @@ Source of truth: `firmware/src/record.h` (layout), `firmware/src/storage.h`
 | 3 | 1 | flags | see below |
 | 4 | 4 | epoch | UTC seconds; 0 = clock was unset |
 | 8 | 4 | seq | record counter since the last ERASE |
-| 12 | 2 | dist_median_cm | median of valid TFmini samples; 65535 = none valid |
+| 12 | 2 | dist_median_cm | median of valid LiDAR samples (TSD20: mm rounded to cm); 65535 = none valid |
 | 14 | 2 | dist_var_cm2 | variance (clamped to 65535); 65535 = none valid |
-| 16 | 2 | strength | TFmini signal-strength median |
+| 16 | 2 | strength | TFmini signal-strength median; **0 on the TSD20** (no strength output) |
 | 18 | 2 | n_frames | checksum-good frames in the burst (N=100 nominal) |
 | 20 | 2 | n_valid | frames used for the distance statistics |
-| 22 | 2 | n_out_of_range | sentinel (0/65535 cm) + saturated + weak-signal frames |
+| 22 | 2 | n_out_of_range | sentinel (TFmini 0/65535 cm, TSD20 50000 mm) + saturated + weak-signal frames |
 | 24 | 2 | tilt | 0.01°, angle between gravity and the board normal; -32768 = IMU failed |
 | 26 | 2 | pitch | 0.01°, signed |
 | 28 | 2 | roll | 0.01°, signed |
 | 30 | 2 | imu_temp | 0.1 °C, signed (environment proxy) |
-| 32 | 2 | lidar_temp | 0.1 °C, signed; TFmini *chip* temperature (50–75 °C is normal) |
+| 32 | 2 | lidar_temp | 0.1 °C, signed; TFmini *chip* temperature (50–75 °C is normal); **-32768 on the TSD20** |
 | 34 | 2 | vbat_start_mv | battery right after the sensor rail settled |
 | 36 | 2 | vbat_end_mv | battery under sensor load, just before the rail is cut |
 | 38 | 2 | crc16 | Zephyr `crc16_ccitt()`: reflected CCITT (poly 0x8408, i.e. 0x1021 bit-reversed), init 0xFFFF, no final XOR, over bytes 0–37 |
@@ -37,6 +37,7 @@ Flags (bit set = true):
 | 3 | TILT_OK | IMU read succeeded |
 | 4 | MANUAL | triggered from the shell / BLE, not the schedule |
 | 5 | FIRST_AFTER_BOOT | first record after a reset (a reset marker for the analysis) |
+| 6 | SENSOR_TSD20 | written by the TSD20 firmware variant (`overlay-tsd20.conf`); clear = TFmini Plus. `strength` and `lidar_temp` carry no information when set |
 
 Neither time flag set and epoch = 0: the clock had never been set and there
 was no previous record to restore from.
