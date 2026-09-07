@@ -37,6 +37,28 @@ config SNOWGAUGE_LIDAR_CAPTURE_TIMEOUT_MS
 	int "Maximum time to wait for the N frames (ms)"
 	default 3000
 
+config SNOWGAUGE_LIDAR_RETRY
+	bool "Power-cycle the sensor and retry once when a capture yields no frames"
+	default y
+	help
+	  A sensor that does not answer at all (0 frames within the capture
+	  timeout) is switched off for SNOWGAUGE_LIDAR_RETRY_OFF_MS and the
+	  capture is repeated once. The record then carries the RETRIED flag.
+
+config SNOWGAUGE_LIDAR_RETRY_OFF_MS
+	int "Sensor rail off time before the retry (ms)"
+	default 1000
+	depends on SNOWGAUGE_LIDAR_RETRY
+
+config SNOWGAUGE_TIME_SAVE_MIN
+	int "Period of the wall-clock checkpoint in the settings (min, 0 = off)"
+	default 60
+	help
+	  The clock is lost on reset and otherwise restored from the newest
+	  record only. Saving it periodically (NVS key sgt/epoch) bounds the
+	  error after a watchdog reset to this period even when no record was
+	  written for days.
+
 config SNOWGAUGE_TFMINI_MIN_STRENGTH
 	int "Minimum TFmini signal strength for a distance to count as valid"
 	default 100

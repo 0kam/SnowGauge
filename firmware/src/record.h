@@ -47,6 +47,7 @@
 #define RECORD_FLAG_MANUAL        BIT(4) /* triggered from the shell / BLE, not the schedule */
 #define RECORD_FLAG_FIRST_AFTER_BOOT BIT(5)
 #define RECORD_FLAG_SENSOR_TSD20  BIT(6) /* TSD20 variant (no strength / lidar_temp); clear = TFmini Plus */
+#define RECORD_FLAG_RETRIED       BIT(7) /* sensor gave no frames; power-cycled once and the capture repeated */
 
 struct record {
 	uint8_t flags;

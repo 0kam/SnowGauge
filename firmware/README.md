@@ -18,12 +18,12 @@ SnowGauge PCB v1.2 (or the equivalent breadboard, `docs/breadboard_guide.html`).
 | TSD20 | `src/tsd20.c` | `overlay-tsd20.conf` backend: 4-byte frames, mm → cm, sentinel 50000, no strength / temperature, 460800 baud, "start ranging" after the rail settles, frame-rate command. Protocol: `docs/tsd20_protocol.md` |
 | Battery | `src/battery.c` | A0 via SAADC (gain 1/6, 40 µs acquisition for the 500 kΩ source). Valid only while the rail is on; Vbat = node × 2 |
 | Tilt | `src/tilt.h`, `src/tilt_lsm6dsl.c` | `TiltSensor` abstraction; LSM6DS3TR-C implementation (accel only, 52 Hz burst, powered down between reads). Deferred init: the board's regulator delay is too short for the chip |
-| Measure | `src/measure.c` | tilt → rail on → Vbat → N frames → Vbat → rail off; `sensor_lock` mutex shared with the calibration live mode |
+| Measure | `src/measure.c` | tilt → rail on → Vbat → N frames → Vbat → rail off; `sensor_lock` mutex shared with the calibration live mode. 0 frames → one power-cycle retry (`CONFIG_SNOWGAUGE_LIDAR_RETRY`, 1 s off, TSD20 gets stop → start), record flag RETRIED |
 | Power | `src/power.c` | Green LED pulse; checks that the QSPI flash runs under runtime PM (deep power-down between accesses) |
 | USB PM | `src/usb_pm.c` | USB device enabled only while VBUS is present (board default keeps HFXO+USBD on: 1.8 mA) |
 | Record | `src/record.c` | 40-byte record v1 encode/decode with CRC-16 (`docs/record_format.md`); flag bit 6 marks records from the TSD20 build |
 | Storage | `src/storage.c` | LittleFS on the QSPI (`/lfs1/rec_YYYYMM.bin`) + raw append-only mirror in internal flash; restores clock/seq at boot |
-| Clock | `src/timekeeping.c` | Emulated RTC behind the `rtc` alias; UNSET / ESTIMATED / SYNCED state |
+| Clock | `src/timekeeping.c` | Emulated RTC behind the `rtc` alias; UNSET / ESTIMATED / SYNCED state. Checkpoint in NVS (`sgt/epoch`) every `CONFIG_SNOWGAUGE_TIME_SAVE_MIN` (60) and 2 s after every external sync; at boot the later of the newest record and the checkpoint seeds the estimate |
 | Config | `src/config.c` | Zephyr settings (`sg/sched/*`, `sg/cal/*`) exposed over the SMP settings group; scheduler (local time window + interval, tz offset) and the calibration reference d0/θ0 |
 | BLE adv | `src/ble_adv.c` | Connectable advertising 1–2 s, name `SG-TFM-XXXX` (TSD20 build: `SG-TSD-XXXX`), Manufacturer Data with Vbat / record count / last distance / flags (layout in `ble_adv.h`); restarts advertising after a disconnect |
 | SMP | `src/smp_mgmt.c` | mcumgr hooks: os datetime get/set → app clock, fs access hook (a read of `rec_*.bin` unlocks the BLE ERASE), over BLE and over the USB shell |

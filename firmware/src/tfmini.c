@@ -109,6 +109,7 @@ const struct lidar_backend lidar_backend = {
 	.parser_reset = parser_reset,
 	.parse_byte = parse_byte,
 	.start = NULL,
+	.stop = NULL,
 	.set_frame_rate = set_frame_rate,
 	.save_settings = save_settings,
 };

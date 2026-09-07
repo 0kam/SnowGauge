@@ -4,7 +4,9 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/rtc.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/settings/settings.h>
 #include <stdio.h>
+#include <string.h>
 #include <time.h>
 
 #include "timekeeping.h"
@@ -23,6 +25,62 @@ static enum time_state state = TIME_UNSET;
  */
 static uint32_t base_epoch;
 static int64_t base_uptime_ms;
+
+/* ---- checkpoint in the settings (sgt/epoch) ---- */
+
+#define SAVE_KEY "sgt/epoch"
+static uint32_t saved_epoch;
+
+static int sgt_set(const char *name, size_t len, settings_read_cb read_cb, void *cb_arg)
+{
+	if (strcmp(name, "epoch") == 0 && len == sizeof(saved_epoch)) {
+		return read_cb(cb_arg, &saved_epoch, len) == (ssize_t)len ? 0 : -EIO;
+	}
+	return -ENOENT;
+}
+SETTINGS_STATIC_HANDLER_DEFINE(sgt, "sgt", NULL, sgt_set, NULL, NULL);
+
+static void time_save(struct k_work *work)
+{
+	uint32_t now;
+
+	if (time_now(&now) == 0) {
+		int ret = settings_save_one(SAVE_KEY, &now, sizeof(now));
+
+		if (ret) {
+			LOG_WRN("clock checkpoint: %d", ret);
+		} else {
+			LOG_DBG("clock checkpoint %u", now);
+		}
+	}
+	if (CONFIG_SNOWGAUGE_TIME_SAVE_MIN > 0) {
+		k_work_reschedule(k_work_delayable_from_work(work),
+				  K_MINUTES(CONFIG_SNOWGAUGE_TIME_SAVE_MIN));
+	}
+}
+static K_WORK_DELAYABLE_DEFINE(time_save_work, time_save);
+
+int time_restore_saved(void)
+{
+	uint32_t now = 0;
+	int ret = settings_load_subtree("sgt");
+
+	if (ret) {
+		LOG_WRN("load sgt: %d", ret);
+		return ret;
+	}
+	if (saved_epoch == 0) {
+		return -ENODATA;
+	}
+	if (time_now(&now) == 0 && now >= saved_epoch) {
+		return 0; /* the newest record is later than the checkpoint */
+	}
+	ret = time_set(saved_epoch, false);
+	if (ret == 0) {
+		LOG_INF("clock restored from the checkpoint (%u)", saved_epoch);
+	}
+	return ret;
+}
 
 int time_init(void)
 {
@@ -73,6 +131,12 @@ int time_set(uint32_t epoch, bool synced)
 	base_uptime_ms = k_uptime_get();
 	base_epoch = epoch;
 	state = synced ? TIME_SYNCED : TIME_ESTIMATED;
+
+	if (CONFIG_SNOWGAUGE_TIME_SAVE_MIN > 0) {
+		/* Checkpoint right away after an external sync, else on the period. */
+		k_work_reschedule(&time_save_work,
+				  synced ? K_SECONDS(2) : K_MINUTES(CONFIG_SNOWGAUGE_TIME_SAVE_MIN));
+	}
 
 	ret = rtc_set_time(rtc, &t);
 	if (ret) {

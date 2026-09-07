@@ -66,6 +66,9 @@ void lidar_flush(void);
  */
 int lidar_start(void);
 
+/* Sensor-specific "stop streaming" hook (TSD20), sent before a deliberate power cycle. */
+int lidar_stop(void);
+
 /*
  * Block until n_samples good frames have been received or timeout expires,
  * then fill *stats. The sensor rail must be on. Returns the number of good
@@ -102,6 +105,7 @@ struct lidar_backend {
 	void (*parser_reset)(void);
 	enum lidar_parse (*parse_byte)(uint8_t b, struct lidar_frame *frame);
 	int (*start)(void);                    /* optional */
+	int (*stop)(void);                     /* optional */
 	int (*set_frame_rate)(uint16_t hz);    /* optional */
 	int (*save_settings)(void);            /* optional */
 };

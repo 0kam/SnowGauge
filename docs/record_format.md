@@ -38,6 +38,7 @@ Flags (bit set = true):
 | 4 | MANUAL | triggered from the shell / BLE, not the schedule |
 | 5 | FIRST_AFTER_BOOT | first record after a reset (a reset marker for the analysis) |
 | 6 | SENSOR_TSD20 | written by the TSD20 firmware variant (`overlay-tsd20.conf`); clear = TFmini Plus. `strength` and `lidar_temp` carry no information when set |
+| 7 | RETRIED | the sensor gave no frames at all; it was power-cycled once (1 s off, TSD20: explicit stop → start) and the capture repeated. The statistics are from the second attempt |
 
 Neither time flag set and epoch = 0: the clock had never been set and there
 was no previous record to restore from.

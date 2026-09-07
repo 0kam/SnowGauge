@@ -132,6 +132,14 @@ int lidar_start(void)
 	return lidar_backend.start();
 }
 
+int lidar_stop(void)
+{
+	if (lidar_backend.stop == NULL) {
+		return 0;
+	}
+	return lidar_backend.stop();
+}
+
 int lidar_read_frame(struct lidar_frame *frame, k_timeout_t timeout)
 {
 	k_timepoint_t end = sys_timepoint_calc(timeout);

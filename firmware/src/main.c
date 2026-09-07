@@ -157,6 +157,7 @@ int main(void)
 		LOG_ERR("config_init: %d", ret);
 	}
 	(void)diag_count_boot(); /* needs the settings subsystem (config_init) */
+	(void)time_restore_saved();
 	(void)diag_log_boot();
 	config_set_change_cb(config_changed);
 	ret = ble_adv_init();

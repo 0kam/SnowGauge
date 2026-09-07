@@ -7,8 +7,10 @@
  * datetime command will talk to over BLE (step 4c).
  *
  * The clock is lost on reset. storage_init() re-seeds it from the newest
- * stored record, so time keeps moving forward but is marked ESTIMATED
- * until it is set from outside again.
+ * stored record, and time_restore_saved() from the periodic checkpoint in
+ * the settings (NVS key sgt/epoch, every CONFIG_SNOWGAUGE_TIME_SAVE_MIN and
+ * on every external sync), whichever is later; time keeps moving forward
+ * but is marked ESTIMATED until it is set from outside again.
  */
 #ifndef SNOWGAUGE_TIMEKEEPING_H
 #define SNOWGAUGE_TIMEKEEPING_H
@@ -24,6 +26,9 @@ enum time_state {
 };
 
 int time_init(void);
+
+/* Apply the saved checkpoint if it is later than the current estimate (after config_init()). */
+int time_restore_saved(void);
 
 /* Current UTC epoch seconds. Returns -ENODATA while TIME_UNSET. */
 int time_now(uint32_t *epoch);

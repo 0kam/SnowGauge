@@ -108,6 +108,14 @@ static int start(void)
 	return send_cmd(cmd, sizeof(cmd));
 }
 
+static int stop(void)
+{
+	const uint8_t cmd[] = { TSD20_CMD_HDR, 0x0A, 0x02, 0x00, 0x00, 0x00 };
+
+	LOG_DBG("stop ranging");
+	return send_cmd(cmd, sizeof(cmd));
+}
+
 static int set_frame_rate(uint16_t hz)
 {
 	if (hz == 0 || hz > 10000) {
@@ -129,6 +137,7 @@ const struct lidar_backend lidar_backend = {
 	.parser_reset = parser_reset,
 	.parse_byte = parse_byte,
 	.start = start,
+	.stop = stop,
 	.set_frame_rate = set_frame_rate,
 	.save_settings = NULL,
 };

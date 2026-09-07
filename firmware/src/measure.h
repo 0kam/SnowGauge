@@ -3,6 +3,7 @@
 #define SNOWGAUGE_MEASURE_H
 
 #include <stdint.h>
+#include <stdbool.h>
 #include "lidar.h"
 #include "tilt.h"
 
@@ -12,6 +13,7 @@ struct measurement {
 	uint16_t vbat_mv_end;    /* under sensor load, just before the rail is cut */
 	struct lidar_stats lidar;
 	int lidar_ret;           /* return value of lidar_capture() */
+	bool retried;            /* sensor was power-cycled and the capture repeated */
 	struct tilt_reading tilt;
 	int tilt_ret;            /* return value of tilt_read() */
 };

@@ -27,6 +27,7 @@ FLAGS = {
     4: "manual",
     5: "first_after_boot",
     6: "sensor_tsd20",
+    7: "retried",
 }
 
 HEADER = [

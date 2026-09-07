@@ -40,6 +40,9 @@ void record_from_measurement(struct record *r, const struct measurement *m)
 	if (IS_ENABLED(CONFIG_SNOWGAUGE_SENSOR_TSD20)) {
 		r->flags |= RECORD_FLAG_SENSOR_TSD20;
 	}
+	if (m->retried) {
+		r->flags |= RECORD_FLAG_RETRIED;
+	}
 
 	if (s->n_valid > 0) {
 		r->flags |= RECORD_FLAG_LIDAR_OK;

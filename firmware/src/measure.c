@@ -51,6 +51,29 @@ int measure_once(struct measurement *m)
 		m->lidar_ret = lidar_capture(CONFIG_SNOWGAUGE_LIDAR_SAMPLES,
 					     K_MSEC(CONFIG_SNOWGAUGE_LIDAR_CAPTURE_TIMEOUT_MS),
 					     &m->lidar);
+		if (m->lidar_ret <= 0 && IS_ENABLED(CONFIG_SNOWGAUGE_LIDAR_RETRY)) {
+			/*
+			 * Nothing at all from the sensor: power-cycle it once. The
+			 * TSD20 gets an explicit stop first in case its ranging state
+			 * outlives the short rail-off; sensor_rail_on() sends start.
+			 */
+			LOG_WRN("no frames (%d) - power-cycling the sensor and retrying once",
+				m->lidar_ret);
+			(void)lidar_stop();
+			(void)sensor_rail_off();
+			k_sleep(K_MSEC(CONFIG_SNOWGAUGE_LIDAR_RETRY_OFF_MS));
+			ret = sensor_rail_on();
+			if (ret == 0) {
+				m->retried = true;
+				m->lidar_ret = lidar_capture(CONFIG_SNOWGAUGE_LIDAR_SAMPLES,
+							     K_MSEC(CONFIG_SNOWGAUGE_LIDAR_CAPTURE_TIMEOUT_MS),
+							     &m->lidar);
+			} else {
+				LOG_ERR("rail on for the retry failed (%d)", ret);
+				k_mutex_unlock(&sensor_lock);
+				return ret;
+			}
+		}
 	}
 
 	(void)battery_read_mv(&m->vbat_mv_end);
@@ -74,9 +97,9 @@ void measure_print(const struct measurement *m,
 
 	out(ctx, "t=%lld ms  vbat=%u/%u mV (start/end)",
 	    m->uptime_ms, m->vbat_mv_start, m->vbat_mv_end);
-	out(ctx, "frames=%u in %u ms  valid=%u weak=%u sat=%u invalid=%u cksum_err=%u",
+	out(ctx, "frames=%u in %u ms  valid=%u weak=%u sat=%u invalid=%u cksum_err=%u%s",
 	    s->n_frames, s->elapsed_ms, s->n_valid, s->n_weak, s->n_saturated,
-	    s->n_invalid, s->n_checksum_err);
+	    s->n_invalid, s->n_checksum_err, m->retried ? "  (retried after a power cycle)" : "");
 	if (s->n_valid > 0) {
 		out(ctx, "dist: median=%u cm  mean=%.1f  var=%.2f cm^2  min=%u max=%u",
 		    s->dist_median_cm, (double)s->dist_mean_cm, (double)s->dist_var_cm2,
