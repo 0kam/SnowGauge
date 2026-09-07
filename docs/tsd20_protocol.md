@@ -32,7 +32,7 @@ Works with the default sensor settings (460800 baud, 200 Hz): `lidar raw` → `d
 
 Gotcha found on the way: `uart_configure()` needs `CONFIG_UART_USE_RUNTIME_CONFIGURE=y` (off by default in NCS 3.4) — without it the call returns -ENOTSUP, the UART stays at the DT 115200 and *zero* bytes arrive (framing errors are dropped silently). Now set in `prj.conf`. Debug shell commands added: `lidar bytes [ms]` (raw hex), `lidar baud <rate>`, `lidar start`, `lidar tx <hex...>`.
 
-Still open: current profile with picowatt, whether the 300 ms rail settle can be shortened, behaviour on a no-target / out-of-range surface (sentinel 50000 not yet seen), second release asset.
+Current profile (picowatt, same day): one scheduled cycle 0.95 s, 42 mA while streaming, 650 mA / 2 ms inrush into C4, **35 mA·s = 0.0098 mAh**; sleep + advertising 36 µA ±10 → `docs/measurements/2026-09-07_tsd20_breadboard_current.md`. The sensor starts streaming ~150 ms after the rail comes up, so `CONFIG_SNOWGAUGE_RAIL_SETTLE_MS` could drop to ~200 ms (not changed). Still open: behaviour on a no-target / out-of-range surface (sentinel 50000 not yet seen), second release asset.
 
 ## Implementation status (2026-09-04)
 

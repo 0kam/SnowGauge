@@ -30,17 +30,18 @@ SnowGauge 本体（XIAO nRF52840 Sense）に、公開済みのファームウェ
 
 公開場所（GitHub Release）:
 
-**https://github.com/0kam/SnowGauge/releases/tag/fw-2026-09-04**
+**https://github.com/0kam/SnowGauge/releases/tag/fw-2026-09-07**
 
 ページ下部の "Assets" に 3 つのファイルがあります。用途に合わせて 1 つだけ落とせば十分です。
 
 | ファイル | 使い方 |
 |---|---|
-| `snowgauge_fw_2026-09-04.uf2` | **方法 A**（ドラッグ＆ドロップ）。Windows / Linux / 古めの macOS |
-| `snowgauge_fw_2026-09-04_dfu.zip` | **方法 B**（シリアル DFU）。**macOS 26** ではこちらが必須 |
-| `snowgauge_fw_2026-09-04.hex` | 開発者向け（自分でパッケージを作る場合）。通常は不要 |
+| `snowgauge_fw_2026-09-07.uf2` | **方法 A**（ドラッグ＆ドロップ）。Windows / Linux / 古めの macOS |
+| `snowgauge_fw_2026-09-07_dfu.zip` | **方法 B**（シリアル DFU）。**macOS 26** ではこちらが必須 |
+| `snowgauge_fw_2026-09-07.hex` | 開発者向け（自分でパッケージを作る場合）。通常は不要 |
+| `snowgauge_fw_2026-09-07_tsd20.uf2` / `_tsd20_dfu.zip` / `_tsd20.hex` | 上の 3 つの **TSD20 版**（下記参照） |
 
-**TSD20 版の本体**（U2 = NJU7223F33、センサが TSD20）には、ファイル名に `_tsd20` が付いた方（`snowgauge_fw_<日付>_tsd20.uf2` / `_tsd20_dfu.zip`）を書き込みます。TFmini 版のファームウェアを TSD20 本体に入れても（またはその逆でも）壊れはしませんが、距離が読めません。見分け方: 本体の名前で分かります。TFmini 版は `SG-TFM-XXXX`、TSD20 版は `SG-TSD-XXXX`（`fw-2026-09-04` 以前のファームウェアは `SG-XXXX`）。
+**TSD20 版の本体**（U2 = NJU7223F33、センサが TSD20）には、ファイル名に `_tsd20` が付いた方（`snowgauge_fw_<日付>_tsd20.uf2` / `_tsd20_dfu.zip`）を書き込みます。TFmini 版のファームウェアを TSD20 本体に入れても（またはその逆でも）壊れはしませんが、距離が読めません。見分け方: 本体の名前で分かります。TFmini 版は `SG-TFM-XXXX`、TSD20 版は `SG-TSD-XXXX`（`fw-2026-09-07` 以前のファームウェアは `SG-XXXX`）。
 
 新しい版が出ると Release のタグ名（`fw-YYYY-MM-DD`）が変わります。ファイル名の日付も同じです。
 
@@ -55,7 +56,7 @@ XIAO には「ブートローダ」という小さな書き込みプログラム
 3. XIAO の **RESET ボタン**（USB-C コネクタのすぐ横にある小さなボタン）を**すばやく 2 回**押す（ダブルクリックの要領、0.5 秒以内に 2 回）。
    - 成功すると、PC に **`XIAO-SENSE`** という名前のドライブ（USB メモリのようなもの）が現れます。
    - 現れないときは、間隔を変えてもう一度ダブルタップしてみてください。
-4. ダウンロードした `snowgauge_fw_2026-09-04.uf2` を **`XIAO-SENSE` ドライブにコピー**（ドラッグ＆ドロップ）する。
+4. ダウンロードした `snowgauge_fw_2026-09-07.uf2` を **`XIAO-SENSE` ドライブにコピー**（ドラッグ＆ドロップ）する。
 5. 数秒でドライブが自動的に消え、本体が再起動します。これで書き込み完了です。
    - Windows で「ドライブが正しく取り外されませんでした」のような警告が出ても問題ありません。
 6. USB を抜いてから電池をつなぐ（現地に持っていく場合）。
@@ -109,7 +110,7 @@ Windows では「デバイス マネージャー」→「ポート (COM と LPT)
 ダウンロードした zip のあるフォルダで（`cd ~/Downloads` など）:
 
 ```bash
-adafruit-nrfutil dfu serial --package snowgauge_fw_2026-09-04_dfu.zip -p /dev/cu.usbmodem21101 -b 115200 --singlebank
+adafruit-nrfutil dfu serial --package snowgauge_fw_2026-09-07_dfu.zip -p /dev/cu.usbmodem21101 -b 115200 --singlebank
 ```
 
 `-p` のあとは 4.3 で調べたポート名に置き換えます。進捗バーが 100% まで進み、`Device programmed.` と出れば完了です。本体は自動的に再起動します。確認方法は方法 A と同じです。

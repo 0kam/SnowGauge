@@ -30,18 +30,19 @@ SnowGauge PCB v1.2 (or the equivalent breadboard, `docs/breadboard_guide.html`).
 | Calibration GATT | `src/cal_gatt.c` | Custom service (UUIDs in `cal_gatt.h`): live notify (dist/strength/tilt/vbat/quality, 5 min timeout, stops on disconnect), control write (live on/off, ZERO, reference from probed depth, ERASE + token), status read (d0/θ0/set epoch/live/busy/seq) on its own work queue |
 | Shell | `src/shell_cmds.c` | Bench commands over USB CDC ACM (table below) |
 
-Phone / PC UI: the Web Bluetooth page at **https://0kam.github.io/SnowGauge/app/** (source `docs/app/`, see `docs/app/README.md`). Bench SMP from the Mac: `tools/smp_datetime.py` (pip install smpclient); shell scripting: `tools/sgshell.py` (pyserial). Sleep-current results: `../docs/measurements/2026-09-03_breadboard_current.md`. The TSD20 variant (step 5) was verified on the breadboard on 2026-09-07 (U2 = NJU7223F33, `docs/breadboard_guide_tsd20.html`): 100 frames / 499 ms, 0 checksum errors, records flagged SENSOR_TSD20. Details in `docs/tsd20_protocol.md`.
+Phone / PC UI: the Web Bluetooth page at **https://0kam.github.io/SnowGauge/app/** (source `docs/app/`, see `docs/app/README.md`). Bench SMP from the Mac: `tools/smp_datetime.py` (pip install smpclient); shell scripting: `tools/sgshell.py` (pyserial). Sleep-current results: `../docs/measurements/2026-09-03_breadboard_current.md`. The TSD20 variant (step 5) was verified on the breadboard on 2026-09-07 (U2 = NJU7223F33, `docs/breadboard_guide_tsd20.html`): 100 frames / 499 ms, 0 checksum errors, records flagged SENSOR_TSD20, one measurement = 0.0098 mAh, sleep 36 µA (`docs/measurements/2026-09-07_tsd20_breadboard_current.md`). The TFmini build after the lidar refactor was re-verified the same day (100 frames / 1010 ms, name `SG-TFM-XXXX`). Details in `docs/tsd20_protocol.md`.
 
 ## Prebuilt binaries
 
 Firmware builds are published as GitHub Releases, tag `fw-YYYY-MM-DD`. Current:
-**https://github.com/0kam/SnowGauge/releases/tag/fw-2026-09-04**
+**https://github.com/0kam/SnowGauge/releases/tag/fw-2026-09-07**
 
 | Asset | Use |
 |---|---|
-| `snowgauge_fw_2026-09-04.uf2` | UF2 drag-and-drop onto the `XIAO-SENSE` drive (Windows / Linux / older macOS) |
-| `snowgauge_fw_2026-09-04_dfu.zip` | Serial DFU package for `adafruit-nrfutil` (required on macOS 26); already built with `--sd-req 0xFFFE` |
-| `snowgauge_fw_2026-09-04.hex` | Application hex (linked at 0x27000) for building your own package |
+| `snowgauge_fw_2026-09-07.uf2` | UF2 drag-and-drop onto the `XIAO-SENSE` drive (Windows / Linux / older macOS) |
+| `snowgauge_fw_2026-09-07_dfu.zip` | Serial DFU package for `adafruit-nrfutil` (required on macOS 26); already built with `--sd-req 0xFFFE` |
+| `snowgauge_fw_2026-09-07.hex` | Application hex (linked at 0x27000) for building your own package |
+| `snowgauge_fw_2026-09-07_tsd20.uf2` / `_tsd20_dfu.zip` / `_tsd20.hex` | The same three files for the **TSD20 variant** (U2 = NJU7223F33; BLE name `SG-TSD-XXXX`) |
 
 Step-by-step flashing instructions for non-developers: [`docs/03_firmware.md`](../docs/03_firmware.md). The app requires this release or newer (settings group + calibration service).
 
