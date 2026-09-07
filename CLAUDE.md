@@ -5,7 +5,7 @@ Low-cost, low-power snow depth logger (NIR laser ToF + XIAO nRF52840 Sense). Fie
 ## Single sources of truth
 
 - **Docs map**: `docs/README.md` lists every document and the "what to update when X changes" table. User docs are `docs/01_parts.md` … `docs/05_data.md` (Japanese); README.md is the start-here spine. Old pre-v1.2 assembly guides live in `docs/archive/` and must not be used.
-- Requirements/architecture: `SnowGauge_設計仕様書_v0.13.md` (Japanese; full-revision policy — bump the version on every change)
+- Requirements/architecture: `SnowGauge_設計仕様書_v0.14.md` (Japanese; full-revision policy — bump the version on every change)
 - Purchasing BOM: `docs/01_parts.md` (+ `01_parts.csv`)
 - Firmware binaries: GitHub Releases, tag `fw-YYYY-MM-DD` (latest `fw-2026-09-07`: TFmini + `_tsd20` assets), built from `firmware/build`
 - **Pin map & electrical topology: `pcb/README.md`** (PCB v1.2). Anything else (older docs, §4 of the spec) is superseded where they disagree.
@@ -38,9 +38,9 @@ Low-cost, low-power snow depth logger (NIR laser ToF + XIAO nRF52840 Sense). Fie
 **Open items**
 - GitHub Pages serves `docs/` (landing `docs/index.html`, app at `/app/`, `breadboard_guide.html`). Pushing to main redeploys in ~1 min.
 - BLE gotcha fixed 2026-09-03: legacy advertising did *not* resume after a disconnect (device said adv=on, phone saw nothing) → `ble_adv.c` stops+restarts from a work item on disconnect.
-- WDT (spec §12.3) still off: the nRF52 WDT keeps running across a soft reset into the Adafruit bootloader, so enable it only with a long timeout and verify the `dfu` path still works.
+- **WDT implemented 2026-09-07** (`wdt_mon.c`: HW WDT 120 s, supervisor on the sysworkq feeds only while main loop (2 h) / measurement (60 s) / BLE adv are alive; `diag.c`: reset cause via hwinfo, fatal handler reboots with reason in GPREGRET2 (soft reset retains it; **a WDT reset wipes GPREGRET2**, measured), consecutive boot count in NVS settings key `sgd/boots`, `/lfs1/boot.log`, measurements halted after 12 consecutive resets; shell `diag [log]`, `wdt [stall ch]`, `hang`, `fault`, `panic`; adv payload v2 = 18 B with boot count + reset cause). Adafruit bootloader ≥0.6.1 feeds a running WDT in its DFU wait loop (`wait_for_events()`), so `dfu` works. Bench-verified 2026-09-07 on the TFmini breadboard: dfu+serial DFU with the WDT running, `fault`/`panic`/`hang`/`wdt stall` → reboot with the right cause in `diag` and boot.log, counter persists across WDT/soft resets. Counter clears after the 10 min hold-off (verified: reboot → boot=1). Not yet: sleep current with the WDT build (supervisor wakes every 30 s; expect no visible change), release assets for fw with WDT.
 - Time after a reset is only an estimate (restored from the last record); the mcumgr datetime sync at each visit (4c) fixes it going forward. Consider persisting time periodically in `storage_partition` if the drift after WDT resets matters.
-- Spec is at v0.13 (2026-09-04, TSD20 variant implemented). Next bump when PCB v1.2 measurements land (§7.1) or the TSD20 bench results are in.
+- Spec is at v0.14 (2026-09-07, WDT/diag implemented). Next bump when PCB v1.2 measurements land (§7.1).
 - `~/NIES/picowatt` has an **uncommitted** agent-made change (`app/src/picowatt/cli.py`: per-channel vbus/current summary + "vbus unstable → check GND link" warning; pytest passes). User to decide whether to commit. Root cause of the 18 V VBUS reading was a missing PSU(−)–Pico GND link, not software.
 - Student assembly session 2026-09-17: hand-outs = README → docs/01…05.
 

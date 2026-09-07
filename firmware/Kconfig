@@ -96,6 +96,26 @@ config SNOWGAUGE_BOOT_HOLDOFF_MIN
 	  The first scheduled measurement is held off by this many minutes,
 	  multiplied by the number of resets within the last hold-off window.
 
+config SNOWGAUGE_BOOT_MAX_RESETS
+	int "Consecutive resets after which scheduled measurements are halted"
+	default 12
+	range 2 15
+	help
+	  Counted in GPREGRET2 (cleared after one hold-off window of normal
+	  operation, or by a power cycle). Past this count the device keeps
+	  advertising and answering BLE but does not measure until the next
+	  reboot: a reset loop (brown-out, crash) then cannot drain the cells.
+
+config SNOWGAUGE_WDT_TIMEOUT_S
+	int "Hardware watchdog timeout (s)"
+	default 120
+	range 30 3600
+	help
+	  Fed every quarter of this period by the supervisor in wdt_mon.c while
+	  all subsystems are alive. Must be comfortably longer than the
+	  bootloader's start-up (it feeds the WDT itself only in the DFU wait
+	  loop) and the longest sensor capture.
+
 config SNOWGAUGE_SCHED_DEFAULT_INTERVAL_MIN
 	int "Default measurement interval until configured (min, 0 = off)"
 	default 180

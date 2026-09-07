@@ -58,6 +58,10 @@ Snow depth is *not* stored; it is computed offline from the ZERO reference
    clock estimate and the sequence counter after a reset, for the shell
    `rec dump`, and as the fallback if the QSPI file system is unusable.
    When it is full, records keep going to LittleFS only.
+3. **Boot log `/lfs1/boot.log`** (text, one line per boot, rotated to
+   `boot.log.1` at 8 kB; deleted by ERASE): `[~]<time> boot=<n> cause=<power/brownout|pin|software|watchdog|lockup|fatal> fatal=<none|cpu-exception|stack-overflow|oops|panic|…> hw=<hwinfo flags> fw=<sensor>[ HALTED]`.
+   `~` marks an estimated clock, `boot=n` the consecutive-reset count (1 = clean start).
+   Download it with the record files when a device has been misbehaving.
 
 Internal flash layout (overrides the board's UF2 default; the bootloader
 regions are untouched):

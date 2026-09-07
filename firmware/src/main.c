@@ -28,6 +28,8 @@
 #include "ble_adv.h"
 #include "config.h"
 #include "cal_gatt.h"
+#include "diag.h"
+#include "wdt_mon.h"
 
 LOG_MODULE_REGISTER(main, CONFIG_LOG_DEFAULT_LEVEL);
 
@@ -57,35 +59,6 @@ uint32_t app_get_auto_period(void)
 
 static bool first_record_after_boot = true;
 
-/*
- * Reset-loop protection. GPREGRET2 survives soft resets and brown-outs (not
- * a power cycle): count boots, clear the counter once the firmware has run
- * for one hold-off window, and stretch the first scheduled measurement by
- * the count. A brown-out during the 120 mA burst therefore cannot make the
- * device measure again immediately after every reset.
- */
-static uint32_t boot_count;
-static int64_t holdoff_until_ms;
-
-static void boot_counter_clear(struct k_work *work)
-{
-	ARG_UNUSED(work);
-	NRF_POWER->GPREGRET2 = 0;
-}
-static K_WORK_DELAYABLE_DEFINE(boot_counter_work, boot_counter_clear);
-
-static void boot_holdoff_init(void)
-{
-	boot_count = NRF_POWER->GPREGRET2 + 1;
-	NRF_POWER->GPREGRET2 = MIN(boot_count, 255);
-	holdoff_until_ms = (int64_t)CONFIG_SNOWGAUGE_BOOT_HOLDOFF_MIN * 60 * 1000 * MIN(boot_count, 12);
-	k_work_schedule(&boot_counter_work, K_MINUTES(CONFIG_SNOWGAUGE_BOOT_HOLDOFF_MIN));
-	if (boot_count > 1) {
-		LOG_WRN("boot #%u within the hold-off window - first measurement in %lld min",
-			boot_count, holdoff_until_ms / 60000);
-	}
-}
-
 int app_measure_and_store(bool manual, struct measurement *m_out, struct record *r_out)
 {
 	struct measurement m;
@@ -93,6 +66,7 @@ int app_measure_and_store(bool manual, struct measurement *m_out, struct record 
 	uint32_t epoch = 0;
 	int ret;
 
+	wdt_mon_alive(WDT_CH_MEASURE, WDT_MEASURE_TIMEOUT_S);
 	ret = measure_once(&m);
 	if (m_out) {
 		*m_out = m;
@@ -100,6 +74,7 @@ int app_measure_and_store(bool manual, struct measurement *m_out, struct record 
 	if (ret) {
 		LOG_ERR("measurement failed (%d) - not stored", ret);
 		(void)ble_adv_update(true);
+		wdt_mon_disarm(WDT_CH_MEASURE);
 		return ret;
 	}
 
@@ -126,6 +101,7 @@ int app_measure_and_store(bool manual, struct measurement *m_out, struct record 
 		*r_out = r;
 	}
 	(void)ble_adv_update(ret != 0);
+	wdt_mon_disarm(WDT_CH_MEASURE);
 	return ret;
 }
 
@@ -146,7 +122,7 @@ int main(void)
 	int ret;
 
 	LOG_INF("SnowGauge FW (step 5: %s variant) - board " CONFIG_BOARD_TARGET, lidar_name());
-	boot_holdoff_init();
+	diag_init();
 
 	ret = sensor_rail_init();
 	if (ret) {
@@ -180,6 +156,8 @@ int main(void)
 	if (ret) {
 		LOG_ERR("config_init: %d", ret);
 	}
+	(void)diag_count_boot(); /* needs the settings subsystem (config_init) */
+	(void)diag_log_boot();
 	config_set_change_cb(config_changed);
 	ret = ble_adv_init();
 	if (ret) {
@@ -193,6 +171,10 @@ int main(void)
 	if (ret) {
 		LOG_ERR("usb_pm_init: %d", ret);
 	}
+	ret = wdt_mon_init();
+	if (ret) {
+		LOG_ERR("wdt_mon_init: %d", ret);
+	}
 
 	LOG_INF("ready - type 'help' in the USB shell (rail is OFF)");
 
@@ -201,6 +183,13 @@ int main(void)
 	for (;;) {
 		uint32_t period = auto_period_s;
 
+		wdt_mon_alive(WDT_CH_MAIN, WDT_MAIN_TIMEOUT_S);
+		if (diag_measure_halted()) {
+			/* Reset loop: stay reachable over BLE, do not measure. */
+			k_sem_take(&period_changed, K_MINUTES(10));
+			first = true;
+			continue;
+		}
 		if (period != 0) {
 			/* Bench mode: fixed period from the shell / Kconfig. */
 			if (!first && k_sem_take(&period_changed, K_SECONDS(period)) == 0) {
@@ -219,8 +208,8 @@ int main(void)
 				first = true;
 				continue;
 			}
-			/* Hold-off after a reset (see boot_holdoff_init). */
-			int64_t left_ms = holdoff_until_ms - k_uptime_get();
+			/* Hold-off after a reset (see diag_init). */
+			int64_t left_ms = diag_holdoff_until_ms() - k_uptime_get();
 
 			if (left_ms > 0) {
 				if (k_sem_take(&period_changed, K_MSEC(MIN(left_ms, 3600000))) == 0) {

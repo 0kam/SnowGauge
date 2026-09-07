@@ -47,7 +47,16 @@ bool storage_fs_ok(void);
 /* Print the record files ("name size"). */
 int storage_list_files(void (*out)(void *ctx, const char *fmt, ...), void *ctx);
 
-/* Delete all record files and erase the mirror. Sequence restarts at 0. */
+/* Delete all record files, boot.log and erase the mirror. Sequence restarts at 0. */
 int storage_erase_all(void);
+
+/*
+ * Boot log: one text line per boot in "/lfs1/boot.log" (diag.c). Rotated to
+ * boot.log.1 past STORAGE_BOOTLOG_MAX bytes. -ENODEV while not mounted.
+ */
+#define STORAGE_BOOTLOG_PATH "/lfs1/boot.log"
+#define STORAGE_BOOTLOG_MAX 8192
+int storage_bootlog_append(const char *line);
+int storage_bootlog_print(void (*out)(void *ctx, const char *fmt, ...), void *ctx);
 
 #endif /* SNOWGAUGE_STORAGE_H */

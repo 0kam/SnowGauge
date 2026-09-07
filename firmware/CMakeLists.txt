@@ -21,6 +21,8 @@ target_sources(app PRIVATE
   src/config.c
   src/cal_gatt.c
   src/shell_cmds.c
+  src/diag.c
+  src/wdt_mon.c
 )
 # Sensor backend (Kconfig choice SNOWGAUGE_SENSOR; overlay-tsd20.conf selects the TSD20)
 target_sources_ifdef(CONFIG_SNOWGAUGE_SENSOR_TFMINI app PRIVATE src/tfmini.c)

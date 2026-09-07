@@ -366,6 +366,14 @@ int storage_erase_all(void)
 			(void)fs_closedir(&dir);
 		}
 	}
+	if (fs_mounted) {
+		int r = fs_unlink(STORAGE_BOOTLOG_PATH);
+
+		if (r && r != -ENOENT) {
+			LOG_WRN("unlink boot.log: %d", r);
+		}
+		(void)fs_unlink(STORAGE_BOOTLOG_PATH ".1");
+	}
 	int ret_erase = flash_area_erase(mirror, 0, mirror->fa_size);
 
 	if (ret_erase) {
@@ -378,6 +386,87 @@ int storage_erase_all(void)
 	record_count = 0;
 	next_seq = 0;
 out:
+	k_mutex_unlock(&lock);
+	return ret;
+}
+
+/* ---- boot log ---- */
+
+int storage_bootlog_append(const char *line)
+{
+	struct fs_file_t f;
+	struct fs_dirent st;
+	int ret;
+
+	if (!fs_mounted) {
+		return -ENODEV;
+	}
+	k_mutex_lock(&lock, K_FOREVER);
+	if (fs_stat(STORAGE_BOOTLOG_PATH, &st) == 0 && st.size >= STORAGE_BOOTLOG_MAX) {
+		(void)fs_unlink(STORAGE_BOOTLOG_PATH ".1");
+		(void)fs_rename(STORAGE_BOOTLOG_PATH, STORAGE_BOOTLOG_PATH ".1");
+	}
+	fs_file_t_init(&f);
+	ret = fs_open(&f, STORAGE_BOOTLOG_PATH, FS_O_CREATE | FS_O_WRITE | FS_O_APPEND);
+	if (ret == 0) {
+		ret = fs_write(&f, line, strlen(line));
+		ret = ret < 0 ? ret : 0;
+		(void)fs_close(&f);
+	}
+	if (ret) {
+		LOG_ERR("boot.log append: %d", ret);
+	}
+	k_mutex_unlock(&lock);
+	return ret;
+}
+
+int storage_bootlog_print(void (*out)(void *ctx, const char *fmt, ...), void *ctx)
+{
+	struct fs_file_t f;
+	char buf[128];
+	size_t fill = 0;
+	int ret;
+
+	if (!fs_mounted) {
+		return -ENODEV;
+	}
+	k_mutex_lock(&lock, K_FOREVER);
+	fs_file_t_init(&f);
+	ret = fs_open(&f, STORAGE_BOOTLOG_PATH, FS_O_READ);
+	if (ret) {
+		k_mutex_unlock(&lock);
+		return ret;
+	}
+	for (;;) {
+		ssize_t n = fs_read(&f, &buf[fill], sizeof(buf) - 1 - fill);
+
+		if (n < 0) {
+			ret = (int)n;
+			break;
+		}
+		fill += n;
+		buf[fill] = '\0';
+		if (fill == 0) {
+			break;
+		}
+		char *nl = strchr(buf, '\n');
+
+		if (nl == NULL && n > 0 && fill < sizeof(buf) - 1) {
+			continue; /* partial line: read more */
+		}
+		if (nl) {
+			*nl = '\0';
+		}
+		out(ctx, "%s", buf);
+		size_t used = nl ? (size_t)(nl - buf) + 1 : fill;
+
+		memmove(buf, &buf[used], fill - used);
+		fill -= used;
+		if (n == 0 && fill == 0) {
+			break;
+		}
+	}
+	(void)fs_close(&f);
 	k_mutex_unlock(&lock);
 	return ret;
 }

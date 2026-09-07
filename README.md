@@ -49,7 +49,7 @@
 
 ## 開発者向け
 
-- 設計仕様書（要件・設計判断・改版履歴）: [SnowGauge_設計仕様書_v0.13.md](SnowGauge_設計仕様書_v0.13.md)
+- 設計仕様書（要件・設計判断・改版履歴）: [SnowGauge_設計仕様書_v0.14.md](SnowGauge_設計仕様書_v0.14.md)
 - 基板（KiCad、ガーバー、ピンマップの正）: [pcb/README.md](pcb/README.md)
 - ファームウェアのビルド・シェル: [firmware/README.md](firmware/README.md)
 - アプリの構成（SMP クライアントの流用方法）: [docs/app/README.md](docs/app/README.md)

@@ -28,6 +28,8 @@ SnowGauge PCB v1.2 (or the equivalent breadboard, `docs/breadboard_guide.html`).
 | BLE adv | `src/ble_adv.c` | Connectable advertising 1–2 s, name `SG-TFM-XXXX` (TSD20 build: `SG-TSD-XXXX`), Manufacturer Data with Vbat / record count / last distance / flags (layout in `ble_adv.h`); restarts advertising after a disconnect |
 | SMP | `src/smp_mgmt.c` | mcumgr hooks: os datetime get/set → app clock, fs access hook (a read of `rec_*.bin` unlocks the BLE ERASE), over BLE and over the USB shell |
 | Calibration GATT | `src/cal_gatt.c` | Custom service (UUIDs in `cal_gatt.h`): live notify (dist/strength/tilt/vbat/quality, 5 min timeout, stops on disconnect), control write (live on/off, ZERO, reference from probed depth, ERASE + token), status read (d0/θ0/set epoch/live/busy/seq) on its own work queue |
+| Diag | `src/diag.c` | Reset cause (hwinfo, cleared after reading), consecutive-reset counter in NVS (`sgd/boots`; GPREGRET2 is wiped by a watchdog reset, measured 2026-09-07), fatal reason in GPREGRET2 (soft reset only), hold-off, measurement halt past `CONFIG_SNOWGAUGE_BOOT_MAX_RESETS` resets, one line per boot in `/lfs1/boot.log`; `k_sys_fatal_error_handler` reboots on exceptions/panics instead of halting |
+| Watchdog | `src/wdt_mon.c` | nRF52 WDT (`CONFIG_SNOWGAUGE_WDT_TIMEOUT_S` = 120 s, runs in sleep) fed by a supervisor on the system work queue only while the scheduler loop (2 h), a running measurement (60 s) and BLE advertising are all alive |
 | Shell | `src/shell_cmds.c` | Bench commands over USB CDC ACM (table below) |
 
 Phone / PC UI: the Web Bluetooth page at **https://0kam.github.io/SnowGauge/app/** (source `docs/app/`, see `docs/app/README.md`). Bench SMP from the Mac: `tools/smp_datetime.py` (pip install smpclient); shell scripting: `tools/sgshell.py` (pyserial). Sleep-current results: `../docs/measurements/2026-09-03_breadboard_current.md`. The TSD20 variant (step 5) was verified on the breadboard on 2026-09-07 (U2 = NJU7223F33, `docs/breadboard_guide_tsd20.html`): 100 frames / 499 ms, 0 checksum errors, records flagged SENSOR_TSD20, one measurement = 0.0098 mAh, sleep 36 µA (`docs/measurements/2026-09-07_tsd20_breadboard_current.md`). The TFmini build after the lidar refactor was re-verified the same day (100 frames / 1010 ms, name `SG-TFM-XXXX`). Details in `docs/tsd20_protocol.md`.
@@ -121,13 +123,16 @@ Open the USB serial port (`/dev/cu.usbmodem*`, `COMx`, `/dev/ttyACM0`) with e.g.
 | `cal clear` | clear the reference |
 | `cal live [off]` | live-mode state; `off` stops it (start only from the BLE page) |
 | `ble [adv <min_ms> [max_ms]]` | advertising status / interval (`ble adv 0` stops) |
+| `diag [log]` | reset cause / boot counter / last fatal reason; `log` also prints `/lfs1/boot.log` |
+| `wdt [stall main\|measure\|ble]` | watchdog supervisor status; `stall` simulates a stuck subsystem (reset within ~150 s) |
+| `hang` / `fault` / `panic` | TEST: lock the CPU (watchdog reset after 120 s) / CPU exception / `k_panic()` (both reboot through the fatal handler; `diag` on the next boot shows `fatal=…`) |
 | `reboot` | warm reset into the application |
 | `dfu` | reboot into the Adafruit bootloader (then run `adafruit-nrfutil dfu serial`) |
 | `device list`, `sensor get lsm6ds3tr-c@6a` | Zephyr built-ins (debug) |
 
 Bench test (breadboard STEP 5 / PCB bring-up): `rail status` → `rail on` (sensor node = 5 V with the TFmini LED on / 3.3 V for the TSD20) → `lidar raw 500` → `lidar read 100` → `batt` → `rail off` (sensor node = 0 V) → `measure`. Measured on the breadboard (2026-09-03, 6 V bench supply): `vbat = 5624 mV`, 100 frames / 997 ms, `cksum_err=0`, median 197 cm, strength ~6830, chip temp 65 °C. If the TFmini stays dimly alive with the rail off, the UART is not parked — check that `rail off` returned 0.
 
-Boot behaviour worth knowing on the bench: the first *scheduled* measurement is held off for 10 min × consecutive-reset count (`CONFIG_SNOWGAUGE_BOOT_HOLDOFF_MIN`); `measure` and `auto` are not affected. Vbat < 4600 mV skips the TFmini burst.
+Boot behaviour worth knowing on the bench: the first *scheduled* measurement is held off for 10 min × consecutive-reset count (`CONFIG_SNOWGAUGE_BOOT_HOLDOFF_MIN`); `measure` and `auto` are not affected. After `CONFIG_SNOWGAUGE_BOOT_MAX_RESETS` (12) consecutive resets scheduled measurements stop for that boot (advertising continues, flag MEAS_HALTED); the counter clears after 10 min of running, so a `reboot` (or the page's reset) restores normal operation. Vbat < 4600 mV skips the TFmini burst. Every boot appends a line to `/lfs1/boot.log` (`diag log`), e.g. `~2026-09-07T10:00:00Z boot=2 cause=watchdog fatal=none hw=0x2 fw=TFmini Plus`.
 
 ## Shell output fields
 
@@ -138,4 +143,4 @@ Boot behaviour worth knowing on the bench: the first *scheduled* measurement is 
 - **No MCUboot / BLE DFU in v1 (decided 2026-09-02, spec v0.11)**: the XIAO ships with the Adafruit UF2 bootloader at 0x0 and installing MCUboot would overwrite it, which needs an SWD probe. The firmware is flashed over USB as UF2 / serial DFU; field updates mean opening the enclosure and plugging in USB (battery disconnected).
 - Build reproducibility: the SDK version is pinned here (v3.4.0) and the build uses the SDK's own workspace. There is **no `west.yml` manifest in this repo**; add one for a self-contained workspace when the build moves to CI.
 - No pairing: anyone nearby can erase (token-protected, and only after a download since boot) or change settings. PIN later if needed.
-- WDT (spec §12.3) still off: the nRF52 WDT keeps running across a soft reset into the Adafruit bootloader; enable only with a long timeout and verify the `dfu` path.
+- WDT on since 2026-09-07 (120 s). The nRF52 WDT keeps running across a soft reset into the Adafruit bootloader; the bootloader (0.6.1 and later, `lib/sdk11/.../bootloader.c` `wait_for_events()`) feeds a running WDT in its DFU wait loop, so `dfu` + serial DFU keep working. Verify the bootloader version on a new board (it is the USB `bcdDevice` while in bootloader mode: `system_profiler SPUSBDataType`).

@@ -18,6 +18,9 @@
  *   reboot                         warm reset into the application
  *   time [set <epoch>]             wall clock (UTC epoch seconds)
  *   ble [adv <min_ms> <max_ms>]    advertising status / interval (max 0 = stop)
+ *   diag [log]                     reset cause, boot counter, fatal reason; boot.log
+ *   wdt [stall main|measure|ble]   watchdog supervisor status; simulate a stuck subsystem
+ *   hang | fault | panic           deliberately lock up / crash (watchdog + diag tests)
  */
 
 #include <zephyr/kernel.h>
@@ -43,6 +46,8 @@
 #include "ble_adv.h"
 #include "config.h"
 #include "cal_gatt.h"
+#include "diag.h"
+#include "wdt_mon.h"
 
 static void shell_out(void *ctx, const char *fmt, ...)
 {
@@ -364,6 +369,72 @@ static int cmd_reboot(const struct shell *sh, size_t argc, char **argv)
 	return 0;
 }
 SHELL_CMD_REGISTER(reboot, NULL, "Warm reset into the application", cmd_reboot);
+
+/* ---- diag / wdt / crash tests ---- */
+
+static int cmd_diag(const struct shell *sh, size_t argc, char **argv)
+{
+	diag_print(shell_out, (void *)sh);
+	if (argc > 1 && strcmp(argv[1], "log") == 0) {
+		int ret = storage_bootlog_print(shell_out, (void *)sh);
+
+		if (ret) {
+			shell_error(sh, "boot.log: %d", ret);
+		}
+	}
+	return 0;
+}
+SHELL_CMD_ARG_REGISTER(diag, NULL, "Boot diagnostics: diag [log]", cmd_diag, 1, 1);
+
+static int cmd_wdt(const struct shell *sh, size_t argc, char **argv)
+{
+	if (argc == 3 && strcmp(argv[1], "stall") == 0) {
+		static const char *const names[WDT_CH_COUNT] = { "main", "measure", "ble" };
+
+		for (int i = 0; i < WDT_CH_COUNT; i++) {
+			if (strcmp(argv[2], names[i]) == 0) {
+				wdt_mon_stall((enum wdt_ch)i);
+				shell_print(sh, "channel %s stalled - expect a watchdog reset", names[i]);
+				return 0;
+			}
+		}
+		shell_error(sh, "unknown channel (main|measure|ble)");
+		return -EINVAL;
+	}
+	wdt_mon_status(shell_out, (void *)sh);
+	return 0;
+}
+SHELL_CMD_ARG_REGISTER(wdt, NULL, "Watchdog: wdt [stall main|measure|ble]", cmd_wdt, 1, 2);
+
+static int cmd_hang(const struct shell *sh, size_t argc, char **argv)
+{
+	shell_print(sh, "locking interrupts and spinning - watchdog reset in <= %u s",
+		    CONFIG_SNOWGAUGE_WDT_TIMEOUT_S);
+	k_sleep(K_MSEC(100));
+	(void)irq_lock();
+	for (;;) {
+	}
+	return 0;
+}
+SHELL_CMD_REGISTER(hang, NULL, "TEST: lock up the CPU (watchdog reset)", cmd_hang);
+
+static int cmd_fault(const struct shell *sh, size_t argc, char **argv)
+{
+	shell_print(sh, "raising a CPU exception (undefined instruction)");
+	k_sleep(K_MSEC(100));
+	__asm__ volatile("udf #0");
+	return 0;
+}
+SHELL_CMD_REGISTER(fault, NULL, "TEST: CPU exception -> fatal handler -> reboot", cmd_fault);
+
+static int cmd_panic(const struct shell *sh, size_t argc, char **argv)
+{
+	shell_print(sh, "k_panic()");
+	k_sleep(K_MSEC(100));
+	k_panic();
+	return 0;
+}
+SHELL_CMD_REGISTER(panic, NULL, "TEST: kernel panic -> fatal handler -> reboot", cmd_panic);
 
 /* ---- measure / auto ---- */
 

@@ -16,10 +16,11 @@
 #include "timekeeping.h"
 #include "record.h"
 #include "cal_gatt.h"
+#include "diag.h"
 
 LOG_MODULE_REGISTER(ble_adv, CONFIG_LOG_DEFAULT_LEVEL);
 
-#define MFG_LEN 16
+#define MFG_LEN 18
 
 static uint8_t mfg[2 + MFG_LEN];
 static char name[CONFIG_BT_DEVICE_NAME_MAX + 1];
@@ -67,6 +68,14 @@ static void build_payload(bool last_failed)
 	if (last_failed) {
 		flags |= BLE_ADV_FLAG_LAST_MEAS_ERR;
 	}
+	const struct diag_boot *boot = diag_boot_info();
+
+	if (boot->abnormal) {
+		flags |= BLE_ADV_FLAG_ABNORMAL_RESET;
+	}
+	if (boot->halted) {
+		flags |= BLE_ADV_FLAG_MEAS_HALTED;
+	}
 
 	sys_put_le16(BLE_ADV_COMPANY_ID, &mfg[0]);
 	uint8_t *p = &mfg[2];
@@ -78,6 +87,8 @@ static void build_payload(bool last_failed)
 	p[9] = flags;
 	sys_put_le32(have_last ? last.epoch : 0, &p[10]);
 	sys_put_le16((uint16_t)MIN(up_h, 0xFFFF), &p[14]);
+	p[16] = boot->boot_count;
+	p[17] = (uint8_t)boot->reset;
 }
 
 static int adv_start(void)
@@ -217,6 +228,11 @@ int ble_adv_set_interval(uint32_t min_ms, uint32_t max_ms)
 bool ble_adv_is_connected(void)
 {
 	return connected;
+}
+
+bool ble_adv_is_healthy(void)
+{
+	return connected || advertising || cur_max_ms == 0;
 }
 
 void ble_adv_status(void (*out)(void *ctx, const char *fmt, ...), void *ctx)
