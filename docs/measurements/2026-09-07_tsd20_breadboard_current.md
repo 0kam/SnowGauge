@@ -21,7 +21,7 @@ app and capturing across 13:00 (`--preset normal`, 908 Sa/s).
 
 Profile (50 ms bins, baseline subtracted): rail on at t = 0 → 11 mA until +0.15 s →
 42 mA from +0.15 s (sensor streaming; the firmware only starts reading at +0.30 s) →
-off at +0.90 s. The rail settle time could be shortened to ~200 ms (saves ~4 mA·s, 10 %).
+off at +0.90 s. The rail settle time could be shortened to ~200 ms (saves ~4 mA·s, 10 %) — **decided against on 2026-09-07 (user): the gain is ≈0.1 µA average and the 300 ms margin covers the LDO/OS-CON start-up and sensor boot across temperature; keep 300 ms.**
 Data: `data/2026-09-07_tsd20_burst_900Hz.csv` (burst window only).
 
 BLE advertising spikes seen in the same capture: every ~1 s, mean 4.6 mA above baseline
