@@ -18,9 +18,9 @@ Source of truth: `firmware/src/record.h` (layout), `firmware/src/storage.h`
 | 18 | 2 | n_frames | checksum-good frames in the burst (N=100 nominal) |
 | 20 | 2 | n_valid | frames used for the distance statistics |
 | 22 | 2 | n_out_of_range | sentinel (TFmini 0/65535 cm, TSD20 50000 mm) + saturated + weak-signal frames |
-| 24 | 2 | tilt | 0.01°, angle between gravity and the LiDAR optical axis (deviation from nadir); -32768 = IMU failed. Optical axis in the IMU frame = build option `SNOWGAUGE_SENSOR_AXIS`: **−Y** for the vertical PCB in the enclosure (firmware from 2026-09-07 on), ±Z (board normal) for a flat board and for all earlier firmware |
+| 24 | 2 | tilt | 0.01°, angle between gravity and the LiDAR optical axis (deviation from nadir; definitions and figure: [coordinate_system.md](coordinate_system.md)); -32768 = IMU failed. Optical axis in the IMU frame = build option `SNOWGAUGE_SENSOR_AXIS`: **+Y** for the vertical PCB in the enclosure (firmware from 2026-09-07 on), ±Z (board normal) for a flat board and for all earlier firmware |
 | 26 | 2 | pitch | 0.01°, signed component of the deviation toward IMU +X (in the PCB plane, toward the USB side) |
-| 28 | 2 | roll | 0.01°, signed component toward IMU +Z (out of the PCB plane, component side) in the −Y build; toward +Y in the Z build |
+| 28 | 2 | roll | 0.01°, signed component toward IMU +Z (out of the PCB plane, component side) in the +Y build; toward +Y in the Z build |
 | 30 | 2 | imu_temp | 0.1 °C, signed (environment proxy) |
 | 32 | 2 | lidar_temp | 0.1 °C, signed; TFmini *chip* temperature (50–75 °C is normal); **-32768 on the TSD20** |
 | 34 | 2 | vbat_start_mv | battery right after the sensor rail settled |

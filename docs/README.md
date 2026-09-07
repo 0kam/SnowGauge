@@ -19,6 +19,7 @@
 | [../pcb/README.md](../pcb/README.md) | **ピンマップと電気トポロジの正**。基板は `pcb/generate_board.py` から生成（手編集禁止） |
 | [../firmware/README.md](../firmware/README.md) | ビルド、書き込み、ベンチ用シェルコマンド |
 | [record_format.md](record_format.md) | 40 バイトレコード、フラッシュ配置、CSV 列定義 |
+| [coordinate_system.md](coordinate_system.md) | **基板の取付姿勢と IMU 座標系、tilt / pitch / roll の定義の正**（図付き） |
 | [app/README.md](app/README.md) | Web Bluetooth ページの構成と他ロガーへの流用 |
 | [tsd20_protocol.md](tsd20_protocol.md) | TSD20（廉価版センサ）の UART 仕様とファームウェア変種の実装メモ |
 | [measurements/](measurements/) | 実測記録（`YYYY-MM-DD_topic.md`） |
@@ -38,6 +39,7 @@
 | **アプリ UI** | `docs/app/index.html`、`app.js`（`APP_VERSION` を上げる）、`sw.js`（`CACHE` 名を上げる） | 04_app.md（ボタン名を一致させる） |
 | **ファームウェアのリリース** | GitHub Release（タグ `fw-YYYY-MM-DD`、.uf2 / _dfu.zip / .hex）、`docs/03_firmware.md` のリンク | `firmware/README.md`、CLAUDE.md |
 | **電流・電池寿命の実測** | `docs/measurements/YYYY-MM-DD_*.md` | 仕様書 §7.1、README の主な仕様 |
+| **基板の取付姿勢・傾斜の定義** | `firmware/src/tilt_lsm6dsl.c`、`Kconfig` の `SNOWGAUGE_SENSOR_AXIS`、`docs/coordinate_system.md`（図を描き直す） | record_format.md、05_data.md、02_assembly.md、仕様書 §4.5 |
 | **設計判断の変更** | 仕様書（版を上げ、§14 改版履歴に 1 行） | CLAUDE.md の決定事項 |
 
 原則: 同じ事実を 2 か所に書かない。書く場合は片方を「正」と決めてもう片方からリンクする。

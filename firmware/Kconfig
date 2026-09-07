@@ -68,15 +68,16 @@ config SNOWGAUGE_TFMINI_MIN_STRENGTH
 
 choice SNOWGAUGE_SENSOR_AXIS
 	prompt "Direction of the LiDAR optical axis in the IMU frame"
-	default SNOWGAUGE_SENSOR_AXIS_NEG_Y
+	default SNOWGAUGE_SENSOR_AXIS_POS_Y
 	help
 	  The tilt angle is measured between gravity and this axis, so it is
 	  the deviation of the laser from nadir whatever way the PCB is mounted.
 
-config SNOWGAUGE_SENSOR_AXIS_NEG_Y
-	bool "IMU -Y: PCB vertical, USB to the right, D0-D6 (TX) pin row up (enclosure v1)"
+config SNOWGAUGE_SENSOR_AXIS_POS_Y
+	bool "IMU +Y points down: PCB vertical, USB to the right, D0-D6 (TX) pin row up (enclosure v1)"
 	help
-	  Measured 2026-09-07: in this orientation gravity reads a = (0, -1, 0) g.
+	  Measured 2026-09-07: in this orientation the accelerometer reads a = (0, -1, 0) g,
+	  i.e. +Y points down along the laser (it reads +1 g on the axis that points up).
 	  pitch = component toward +X (in-plane, USB side), roll = component
 	  toward +Z (out of plane, component side).
 

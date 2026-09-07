@@ -165,12 +165,13 @@ int tilt_read(struct tilt_reading *r, uint8_t n_samples)
 	}
 	/*
 	 * Project gravity on the optical axis (down) and the two lateral axes.
-	 * -Y build (vertical PCB): down = -Y, lateral = +X (in-plane), +Z (normal).
+	 * +Y build (vertical PCB): down = +Y (the reading is +1 g on the axis pointing
+	 * up, so ay = -1 g when +Y points down), lateral = +X (in-plane), +Z (normal).
 	 * Z build (flat PCB, either face): down = +/-Z, lateral = +X, +Y.
 	 */
 	float down, lat1, lat2;
 
-	if (IS_ENABLED(CONFIG_SNOWGAUGE_SENSOR_AXIS_NEG_Y)) {
+	if (IS_ENABLED(CONFIG_SNOWGAUGE_SENSOR_AXIS_POS_Y)) {
 		down = -ay;
 		lat1 = ax;
 		lat2 = az;
