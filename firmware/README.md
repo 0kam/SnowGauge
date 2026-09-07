@@ -41,10 +41,10 @@ Firmware builds are published as GitHub Releases, tag `fw-YYYY-MM-DD`. Current:
 
 | Asset | Use |
 |---|---|
-| `snowgauge_fw_2026-09-07.uf2` | UF2 drag-and-drop onto the `XIAO-SENSE` drive (Windows / Linux / older macOS) |
-| `snowgauge_fw_2026-09-07_dfu.zip` | Serial DFU package for `adafruit-nrfutil` (required on macOS 26); already built with `--sd-req 0xFFFE` |
-| `snowgauge_fw_2026-09-07.hex` | Application hex (linked at 0x27000) for building your own package |
-| `snowgauge_fw_2026-09-07_tsd20.uf2` / `_tsd20_dfu.zip` / `_tsd20.hex` | The same three files for the **TSD20 variant** (U2 = NJU7223F33; BLE name `SG-TSD-XXXX`) |
+| `snowgauge_fw_2026-09-07b.uf2` | UF2 drag-and-drop onto the `XIAO-SENSE` drive (Windows / Linux / older macOS) |
+| `snowgauge_fw_2026-09-07b_dfu.zip` | Serial DFU package for `adafruit-nrfutil` (required on macOS 26); already built with `--sd-req 0xFFFE` |
+| `snowgauge_fw_2026-09-07b.hex` | Application hex (linked at 0x27000) for building your own package |
+| `snowgauge_fw_2026-09-07b_tsd20.uf2` / `_tsd20_dfu.zip` / `_tsd20.hex` | The same three files for the **TSD20 variant** (U2 = NJU7223F33; BLE name `SG-TSD-XXXX`) |
 
 Step-by-step flashing instructions for non-developers: [`docs/03_firmware.md`](../docs/03_firmware.md). The app requires this release or newer (settings group + calibration service).
 
