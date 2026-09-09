@@ -30,7 +30,7 @@
 
 | 変更 | 必ず更新するもの | あわせて確認 |
 |---|---|---|
-| **ピン割り当て・回路トポロジ** | `pcb/generate_board.py` → 再生成・DRC・ガーバー、`pcb/README.md`、`firmware/boards/*.overlay`、`docs/gen_breadboard.py`（PARTS）→ `breadboard_guide.html` と `--tsd20` で `breadboard_guide_tsd20.html` を再生成 | 02_assembly.md、01_parts.md、仕様書 §4、CLAUDE.md の Key GPIO |
+| **ピン割り当て・回路トポロジ** | `pcb/generate_board.py` → 再生成・DRC・ガーバー、`pcb/README.md`、`firmware/boards/*.overlay`、`docs/gen_breadboard.py`（PARTS）→ `breadboard_guide.html` と `--tsd20` で `breadboard_guide_tsd20.html` を再生成、`docs/assets/figures/gen_component_orientation.py`（部品の向きの図）を再実行 | 02_assembly.md、01_parts.md、仕様書 §4、CLAUDE.md の Key GPIO |
 | **部品・数量・購入先** | `docs/01_parts.md` と `01_parts.csv` | 仕様書 §6（要約のみ）、`pcb/README.md` の追加部品欄 |
 | **レコード形式**（フィールド追加・版上げ） | `firmware/src/record.h/.c`、`docs/record_format.md`、`docs/app/app.js` の `RECORD_SCHEMA`、`tools/decode_records.py` | 05_data.md、仕様書 §4.4 |
 | **CSV の列** | `docs/app/app.js` の `CSV_COLUMNS`/`exportCSV`、`docs/record_format.md` | 05_data.md |
