@@ -5,7 +5,7 @@
  */
 'use strict';
 
-const APP_VERSION = '2026-09-11a';
+const APP_VERSION = '2026-09-11b';
 
 /* ---------- project schemas ---------- */
 
@@ -122,7 +122,7 @@ function anchorSave(name, blob) {
 function asFiles(list) { return list.map(f => new File([f.blob], f.name, { type: f.blob.type || 'application/octet-stream' })); }
 async function shareFiles(list) {
   const files = asFiles(list);
-  if (!(navigator.canShare && navigator.canShare({ files }))) throw new Error('この端末は共有に対応していません（下の「共有できないとき」からコピー／別タブで開いてください）');
+  if (!(navigator.canShare && navigator.canShare({ files }))) throw new Error('この端末は共有に対応していません（下の「画面で確認 / コピー / 別タブ」を使ってください）');
   await navigator.share({ files, title: files[0].name });
 }
 /* Returns 'download' | 'share' | 'pending' | 'abort'. The anchor is always
@@ -142,7 +142,10 @@ async function saveFiles(list, textForCopy) {
 function renderSaveFallback() {
   const box = $('save-fallback'), p = state.pending;
   if (!box) return;
-  box.hidden = !(IS_IOS && p && p.list.length);
+  /* Shown on every platform: the text view is also how the field checks whether
+   * a mojibake CSV is broken in the file or only in the app that opened it. */
+  box.hidden = !(p && p.list.length);
+  $('ios-help').hidden = $('btn-share').hidden = !IS_IOS;
   $('btn-share').disabled = !(p && p.list.length);
   $('btn-copy').disabled = !(p && p.text);
   $('btn-open').disabled = !(p && p.list.length);
