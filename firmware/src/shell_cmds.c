@@ -324,6 +324,15 @@ SHELL_CMD_REGISTER(batt, NULL, "Battery voltage", cmd_batt);
 
 /* ---- tilt ---- */
 
+/* Optical axis in the IMU frame; see docs/coordinate_system.md. */
+#if defined(CONFIG_SNOWGAUGE_SENSOR_AXIS_NEG_Y)
+#define TILT_AXIS_STR "-Y"
+#elif defined(CONFIG_SNOWGAUGE_SENSOR_AXIS_POS_Y)
+#define TILT_AXIS_STR "+Y"
+#else
+#define TILT_AXIS_STR "Z"
+#endif
+
 static int cmd_tilt(const struct shell *sh, size_t argc, char **argv)
 {
 	struct tilt_reading r;
@@ -339,9 +348,9 @@ static int cmd_tilt(const struct shell *sh, size_t argc, char **argv)
 		return ret;
 	}
 	shell_print(sh, "tilt=%.2f deg from nadir (axis %s)  pitch=%.2f (toward +X)  roll=%.2f (toward %s)  a=(%d,%d,%d) mg  temp=%.1f C  n=%u",
-		    (double)r.tilt_deg, IS_ENABLED(CONFIG_SNOWGAUGE_SENSOR_AXIS_POS_Y) ? "+Y" : "Z",
+		    (double)r.tilt_deg, TILT_AXIS_STR,
 		    (double)r.pitch_deg, (double)r.roll_deg,
-		    IS_ENABLED(CONFIG_SNOWGAUGE_SENSOR_AXIS_POS_Y) ? "+Z" : "+Y",
+		    IS_ENABLED(CONFIG_SNOWGAUGE_SENSOR_AXIS_Z) ? "+Y" : "+Z",
 		    r.ax_mg, r.ay_mg, r.az_mg, (double)r.temp_c, r.n_samples);
 	return 0;
 }

@@ -165,13 +165,22 @@ int tilt_read(struct tilt_reading *r, uint8_t n_samples)
 	}
 	/*
 	 * Project gravity on the optical axis (down) and the two lateral axes.
-	 * +Y build (vertical PCB): down = +Y (the reading is +1 g on the axis pointing
-	 * up, so ay = -1 g when +Y points down), lateral = +X (in-plane), +Z (normal).
-	 * Z build (flat PCB, either face): down = +/-Z, lateral = +X, +Y.
+	 * The accelerometer reads +1 g on the axis that points up, so the
+	 * component of gravity along an optical axis pointing down is -a on
+	 * that axis.
+	 * -Y build (vertical PCB, USB left, J2 up; default): down = -Y, i.e.
+	 * ay = +1 g when the laser looks straight down. Lateral axes are +X
+	 * (in-plane) and +Z (board normal).
+	 * +Y build (vertical PCB, USB right): the mirror image, down = +Y.
+	 * Z build (flat PCB, either face up): down = +/-Z, lateral = +X, +Y.
 	 */
 	float down, lat1, lat2;
 
-	if (IS_ENABLED(CONFIG_SNOWGAUGE_SENSOR_AXIS_POS_Y)) {
+	if (IS_ENABLED(CONFIG_SNOWGAUGE_SENSOR_AXIS_NEG_Y)) {
+		down = ay;
+		lat1 = ax;
+		lat2 = az;
+	} else if (IS_ENABLED(CONFIG_SNOWGAUGE_SENSOR_AXIS_POS_Y)) {
 		down = -ay;
 		lat1 = ax;
 		lat2 = az;

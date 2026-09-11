@@ -17,7 +17,7 @@ SnowGauge PCB v1.2 (or the equivalent breadboard, `docs/breadboard_guide.html`).
 | TFmini Plus | `src/tfmini.c` | Default backend: 9-byte frames, cm, strength + chip temperature, 115200 baud, frame-rate / save commands |
 | TSD20 | `src/tsd20.c` | `overlay-tsd20.conf` backend: 4-byte frames, mm → cm, sentinel 50000, no strength / temperature, 460800 baud, "start ranging" after the rail settles, frame-rate command. Protocol: `docs/tsd20_protocol.md` |
 | Battery | `src/battery.c` | A0 via SAADC (gain 1/6, 40 µs acquisition for the 500 kΩ source). Valid only while the rail is on; Vbat = node × 2 |
-| Tilt | `src/tilt.h`, `src/tilt_lsm6dsl.c` | `TiltSensor` abstraction; LSM6DS3TR-C implementation (accel only, 52 Hz burst, powered down between reads). Deferred init: the board's regulator delay is too short for the chip. Tilt = angle between gravity and the LiDAR axis in the IMU frame: **+Y** (PCB vertical in the enclosure: USB right, D0–D6 row up; default since 2026-09-07) or ±Z (flat board, `overlay-flat.conf`); definitions and figure in `docs/coordinate_system.md` |
+| Tilt | `src/tilt.h`, `src/tilt_lsm6dsl.c` | `TiltSensor` abstraction; LSM6DS3TR-C implementation (accel only, 52 Hz burst, powered down between reads). Deferred init: the board's regulator delay is too short for the chip. Tilt = angle between gravity and the LiDAR axis in the IMU frame: **−Y** (PCB vertical in the enclosure: USB left, sensor terminal J2 up; default since 2026-09-11), +Y (the 2026-09-07 mount, USB right) or ±Z (flat board, `overlay-flat.conf`); definitions and figure in `docs/coordinate_system.md` |
 | Measure | `src/measure.c` | tilt → rail on → Vbat → N frames → Vbat → rail off; `sensor_lock` mutex shared with the calibration live mode. 0 frames → one power-cycle retry (`CONFIG_SNOWGAUGE_LIDAR_RETRY`, 1 s off, TSD20 gets stop → start), record flag RETRIED |
 | Power | `src/power.c` | Green LED pulse; checks that the QSPI flash runs under runtime PM (deep power-down between accesses) |
 | USB PM | `src/usb_pm.c` | USB device enabled only while VBUS is present (board default keeps HFXO+USBD on: 1.8 mA) |
@@ -71,7 +71,7 @@ Add `-p` after `west build` for a pristine rebuild; `-- -DEXTRA_CONF_FILE=overla
 | default | TFmini Plus / NJU7223F50 (5 V) | none | `SG-TFM-XXXX` |
 | TSD20 | PONO TSD20 / NJU7223F33 (3.3 V) | `-- -DEXTRA_CONF_FILE=overlay-tsd20.conf` (use a separate build dir, e.g. `-d firmware/build-tsd20`) | `SG-TSD-XXXX` |
 
-`overlay-flat.conf` selects the old flat-board tilt axis (IMU Z) for a breadboard lying on the bench; without it a flat board reads tilt ≈ 90°. Both overlays can be combined: `-DEXTRA_CONF_FILE="overlay-tsd20.conf;overlay-auto60.conf"`. A TSD20 build on a TFmini board (or vice versa) is harmless but reads no distance (`lidar info` shows which variant is running).
+`overlay-flat.conf` selects the flat-board tilt axis (IMU Z) for a breadboard lying on the bench; without it a flat board reads tilt ≈ 90°. The previous vertical mount (USB right) is `CONFIG_SNOWGAUGE_SENSOR_AXIS_POS_Y=y` in a conf fragment of its own. Both overlays can be combined: `-DEXTRA_CONF_FILE="overlay-tsd20.conf;overlay-auto60.conf"`. A TSD20 build on a TFmini board (or vice versa) is harmless but reads no distance (`lidar info` shows which variant is running).
 
 ## Flash (stock Adafruit bootloader, no debugger needed)
 

@@ -7,9 +7,10 @@
  *
  * Axes are the sensor's own. The tilt angle is measured between the
  * gravity vector and the LiDAR optical axis expressed in the IMU frame
- * (Kconfig choice SNOWGAUGE_SENSOR_AXIS: +Y for the vertical PCB in the
+ * (Kconfig choice SNOWGAUGE_SENSOR_AXIS: -Y for the vertical PCB in the
  * enclosure, +/-Z for a flat board), i.e. it is the laser's deviation from
  * nadir. pitch / roll are the two components of that deviation (see below).
+ * Definitions and a figure: docs/coordinate_system.md.
  */
 #ifndef SNOWGAUGE_TILT_H
 #define SNOWGAUGE_TILT_H
@@ -19,8 +20,8 @@
 struct tilt_reading {
 	int16_t ax_mg, ay_mg, az_mg;  /* averaged acceleration, milli-g */
 	float tilt_deg;               /* angle between gravity and the optical axis, 0 = nadir */
-	float pitch_deg;              /* signed component of the deviation toward IMU +X (in-plane, USB side) */
-	float roll_deg;               /* signed component toward +Z (+Y axis build: out of plane, component side) / +Y (Z axis build) */
+	float pitch_deg;              /* signed component of the deviation toward IMU +X (in-plane, battery-terminal side) */
+	float roll_deg;               /* signed component toward +Z (Y axis builds: out of plane, component side) / +Y (Z axis build) */
 	float temp_c;                 /* IMU die temperature */
 	uint8_t n_samples;            /* samples actually averaged */
 };

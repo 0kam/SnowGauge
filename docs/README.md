@@ -15,7 +15,7 @@
 
 | 文書 | 内容 |
 |---|---|
-| [../SnowGauge_設計仕様書_v0.14.md](../SnowGauge_設計仕様書_v0.14.md) | 要件・設計判断・電力収支・改版履歴。全文改版制（変更のたびに版を上げてファイル名も変える） |
+| [../SnowGauge_設計仕様書_v0.15.md](../SnowGauge_設計仕様書_v0.15.md) | 要件・設計判断・電力収支・改版履歴。全文改版制（変更のたびに版を上げてファイル名も変える） |
 | [../pcb/README.md](../pcb/README.md) | **ピンマップと電気トポロジの正**。基板は `pcb/generate_board.py` から生成（手編集禁止） |
 | [../firmware/README.md](../firmware/README.md) | ビルド、書き込み、ベンチ用シェルコマンド |
 | [record_format.md](record_format.md) | 40 バイトレコード、フラッシュ配置、CSV 列定義 |
@@ -39,7 +39,7 @@
 | **アプリ UI** | `docs/app/index.html`、`app.js`（`APP_VERSION` を上げる）、`sw.js`（`CACHE` 名を上げる） | 04_app.md（ボタン名を一致させる） |
 | **ファームウェアのリリース** | GitHub Release（タグ `fw-YYYY-MM-DD`、.uf2 / _dfu.zip / .hex）、`docs/03_firmware.md` のリンク | `firmware/README.md`、CLAUDE.md |
 | **電流・電池寿命の実測** | `docs/measurements/YYYY-MM-DD_*.md` | 仕様書 §7.1、README の主な仕様 |
-| **基板の取付姿勢・傾斜の定義** | `firmware/src/tilt_lsm6dsl.c`、`Kconfig` の `SNOWGAUGE_SENSOR_AXIS`、`docs/coordinate_system.md`（図を描き直す） | record_format.md、05_data.md、02_assembly.md、仕様書 §4.5 |
+| **基板の取付姿勢・傾斜の定義** | `firmware/src/tilt_lsm6dsl.c`、`Kconfig` の `SNOWGAUGE_SENSOR_AXIS`、`docs/coordinate_system.md` と `docs/assets/figures/gen_coordinate_system.py`（図を再生成） | record_format.md、05_data.md、02_assembly.md、仕様書 §4.5 |
 | **設計判断の変更** | 仕様書（版を上げ、§14 改版履歴に 1 行） | CLAUDE.md の決定事項 |
 
 原則: 同じ事実を 2 か所に書かない。書く場合は片方を「正」と決めてもう片方からリンクする。
