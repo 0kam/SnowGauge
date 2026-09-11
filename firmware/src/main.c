@@ -96,6 +96,12 @@ int app_measure_and_store(bool manual, struct measurement *m_out, struct record 
 	ret = storage_append(&r);
 	if (ret) {
 		LOG_ERR("record %u not stored (%d)", r.seq, ret);
+	} else if (m.lidar_ret != -ENOTSUP) {
+		/*
+		 * Surviving the full-load rail burst and storing its record is the
+		 * proof, regardless of distance validity; a low-battery skip is not.
+		 */
+		diag_measure_succeeded();
 	}
 	if (r_out) {
 		*r_out = r;
@@ -210,7 +216,7 @@ int main(void)
 				continue;
 			}
 			/* Hold-off after a reset (see diag_init). */
-			int64_t left_ms = diag_holdoff_until_ms() - k_uptime_get();
+			int64_t left_ms = (int64_t)diag_holdoff_until_s() * 1000 - k_uptime_get();
 
 			if (left_ms > 0) {
 				if (k_sem_take(&period_changed, K_MSEC(MIN(left_ms, 3600000))) == 0) {

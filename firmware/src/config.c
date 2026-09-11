@@ -108,7 +108,11 @@ static int sg_export(int (*cb)(const char *name, const void *value, size_t val_l
 
 	for (size_t i = 0; i < ARRAY_SIZE(keys); i++) {
 		snprintk(name, sizeof(name), "sg/%s", keys[i].name);
-		(void)cb(name, keys[i].ptr, keys[i].size);
+		int ret = cb(name, keys[i].ptr, keys[i].size);
+
+		if (ret) {
+			return ret;
+		}
 	}
 	return 0;
 }
@@ -147,8 +151,11 @@ int config_set(const struct app_config *in)
 	int ret;
 
 	k_mutex_lock(&lock, K_FOREVER);
+	struct app_config saved = cfg;
+
 	cfg = *in;
 	if (!validate()) {
+		cfg = saved;
 		k_mutex_unlock(&lock);
 		return -EINVAL;
 	}

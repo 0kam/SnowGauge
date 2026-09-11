@@ -11,10 +11,13 @@
  *   GPREGRET2 turned out to be cleared by a watchdog reset (measured
  *   2026-09-07; only a soft reset retains it), so the counter lives in
  *   flash and survives every kind of reset including a power cycle. It is
- *   cleared after one hold-off window of normal operation. Drives the
- *   scheduler hold-off and, past CONFIG_SNOWGAUGE_BOOT_MAX_RESETS, a
+ *   cleared after a measurement with valid LiDAR data is stored, or on BLE
+ *   connection. Drives the scheduler hold-off and, at
+ *   CONFIG_SNOWGAUGE_BOOT_MAX_RESETS, a
  *   "measurements halted" mode that keeps advertising so the site visit
- *   can still read the device (a reboot after the counter cleared resumes).
+ *   can still read the device. BLE connection drops the halt immediately;
+ *   a successful manual measurement clears the counter but needs a reboot
+ *   to drop the halt. Rebooting alone does not clear the counter.
  * - One text line per boot appended to /lfs1/boot.log (diag_log_boot()).
  *
  * GPREGRET2 = DIAG_FATAL_* reason of the last fatal error (0 = none); it is
@@ -57,6 +60,19 @@ struct diag_boot {
 	bool halted;              /* boot_count reached CONFIG_SNOWGAUGE_BOOT_MAX_RESETS */
 };
 
+/*
+ * A phone connected over BLE: someone is standing at the logger, so the resets
+ * that got us here were a human power-cycling it (a loose battery holder at
+ * installation), not the brown-out loop the backoff protects against. Drops the
+ * "halted" state and the boot_count multiplier, leaving the base hold-off, and
+ * clears the stored counter. Returns true only if halt / hold-off changed
+ * and the scheduler needs waking. Safe to call on every connection.
+ */
+bool diag_user_present(void);
+
+/* Clear the stored counter after valid LiDAR data is stored; keep this boot's halt. */
+void diag_measure_succeeded(void);
+
 /* Read + clear the reset cause and the fatal reason. Call first thing in main(). */
 void diag_init(void);
 
@@ -71,8 +87,8 @@ const struct diag_boot *diag_boot_info(void);
 /* Scheduled measurements are suspended for this boot (reset loop protection). */
 bool diag_measure_halted(void);
 
-/* Uptime (ms) before which the scheduler must not measure. */
-int64_t diag_holdoff_until_ms(void);
+/* Uptime (seconds) before which the scheduler must not measure. */
+uint32_t diag_holdoff_until_s(void);
 
 /* Append the boot line to /lfs1/boot.log (after storage_init + clock restore). */
 int diag_log_boot(void);

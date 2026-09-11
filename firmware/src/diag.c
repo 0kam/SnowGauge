@@ -7,6 +7,7 @@
 #include <zephyr/logging/log_ctrl.h>
 #include <nrfx.h>
 #include <zephyr/settings/settings.h>
+#include <zephyr/sys/atomic.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -20,7 +21,7 @@ LOG_MODULE_REGISTER(diag, CONFIG_LOG_DEFAULT_LEVEL);
 #define BOOTS_KEY "sgd/boots"
 
 static struct diag_boot info;
-static int64_t holdoff_until_ms;
+static atomic_t holdoff_until_s;
 static uint8_t stored_boots;
 
 static int sgd_set(const char *name, size_t len, settings_read_cb read_cb, void *cb_arg)
@@ -38,18 +39,18 @@ static int save_boots(uint8_t n)
 
 	if (ret) {
 		LOG_ERR("save %s: %d", BOOTS_KEY, ret);
+	} else {
+		stored_boots = n;
 	}
 	return ret;
 }
 
-/* Clear the consecutive-reset counter once the firmware has run for one hold-off window. */
-static void boot_counter_clear(struct k_work *work)
+void diag_measure_succeeded(void)
 {
-	ARG_UNUSED(work);
-	(void)save_boots(0);
-	LOG_INF("hold-off window passed - reset counter cleared");
+	if (stored_boots != 0 && save_boots(0) == 0) {
+		LOG_INF("measurement succeeded - reset counter cleared");
+	}
 }
-static K_WORK_DELAYABLE_DEFINE(boot_counter_work, boot_counter_clear);
 
 static enum diag_reset classify(uint32_t cause, enum diag_fatal fatal)
 {
@@ -92,7 +93,7 @@ void diag_init(void)
 			 info.reset == DIAG_RESET_FATAL);
 	/* Until the counter is loaded: behave like a first boot after a clean start. */
 	info.boot_count = 1;
-	holdoff_until_ms = (int64_t)CONFIG_SNOWGAUGE_BOOT_HOLDOFF_MIN * 60 * 1000;
+	atomic_set(&holdoff_until_s, CONFIG_SNOWGAUGE_BOOT_HOLDOFF_MIN * 60U);
 
 	LOG_INF("reset cause: %s (0x%x)%s%s", diag_reset_str(info.reset), cause,
 		info.fatal ? " fatal=" : "", info.fatal ? diag_fatal_str(info.fatal) : "");
@@ -107,18 +108,17 @@ int diag_count_boot(void)
 	}
 	info.boot_count = MIN((uint32_t)stored_boots + 1, 255);
 	info.halted = info.boot_count >= CONFIG_SNOWGAUGE_BOOT_MAX_RESETS;
-	holdoff_until_ms = (int64_t)CONFIG_SNOWGAUGE_BOOT_HOLDOFF_MIN * 60 * 1000 *
-			   MIN(info.boot_count, 12);
+	atomic_set(&holdoff_until_s, CONFIG_SNOWGAUGE_BOOT_HOLDOFF_MIN * 60U *
+		   MIN(info.boot_count, 12));
 	ret = save_boots(info.boot_count);
-	k_work_schedule(&boot_counter_work, K_MINUTES(CONFIG_SNOWGAUGE_BOOT_HOLDOFF_MIN));
 
-	LOG_INF("boot #%u since the last clean hold-off window", info.boot_count);
+	LOG_INF("boot #%u since the reset counter was cleared", info.boot_count);
 	if (info.halted) {
-		LOG_ERR("%u consecutive resets - scheduled measurements HALTED until the next reboot",
+		LOG_ERR("%u consecutive resets - scheduled measurements HALTED; connect BLE to recover",
 			info.boot_count);
 	} else if (info.boot_count > 1) {
-		LOG_WRN("boot #%u within the hold-off window - first measurement in %lld min",
-			info.boot_count, holdoff_until_ms / 60000);
+		LOG_WRN("boot #%u without a successful measurement - hold-off until uptime %u min",
+			info.boot_count, diag_holdoff_until_s() / 60U);
 	}
 	return ret;
 }
@@ -128,14 +128,33 @@ const struct diag_boot *diag_boot_info(void)
 	return &info;
 }
 
+bool diag_user_present(void)
+{
+	uint32_t base = CONFIG_SNOWGAUGE_BOOT_HOLDOFF_MIN * 60U;
+	bool changed = info.halted || diag_holdoff_until_s() > base;
+
+	/* Clearing NVS alone does not change the schedule or require a wakeup. */
+	if (stored_boots != 0) {
+		(void)save_boots(0);
+	}
+	if (!changed) {
+		return false;
+	}
+	LOG_INF("user present (BLE) - reset backoff dropped (boot #%u%s)", info.boot_count,
+		info.halted ? ", was halted" : "");
+	info.halted = false;
+	atomic_set(&holdoff_until_s, MIN(diag_holdoff_until_s(), base));
+	return true;
+}
+
 bool diag_measure_halted(void)
 {
 	return info.halted;
 }
 
-int64_t diag_holdoff_until_ms(void)
+uint32_t diag_holdoff_until_s(void)
 {
-	return holdoff_until_ms;
+	return (uint32_t)atomic_get(&holdoff_until_s);
 }
 
 const char *diag_reset_str(enum diag_reset r)
@@ -212,7 +231,7 @@ void diag_print(void (*out)(void *ctx, const char *fmt, ...), void *ctx)
 	out(ctx, "reset=%s (hw 0x%x)  fatal=%s  boot=%u/%u%s", diag_reset_str(info.reset),
 	    info.hw_cause, diag_fatal_str(info.fatal), info.boot_count,
 	    CONFIG_SNOWGAUGE_BOOT_MAX_RESETS, info.halted ? "  MEASUREMENTS HALTED" : "");
-	out(ctx, "hold-off until uptime %lld s (now %lld s)", holdoff_until_ms / 1000,
+	out(ctx, "hold-off until uptime %u s (now %lld s)", diag_holdoff_until_s(),
 	    k_uptime_get() / 1000);
 }
 

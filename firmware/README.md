@@ -64,6 +64,8 @@ cd /opt/nordic/ncs/v3.4.0 && nrfutil sdk-manager toolchain launch --ncs-version 
 
 Add `-p` after `west build` for a pristine rebuild; `-- -DEXTRA_CONF_FILE=overlay-auto60.conf` builds the bench variant that measures every 60 s. Output: `firmware/build/firmware/zephyr/zephyr.uf2` and `zephyr.hex` (sysbuild layout).
 
+Host regression check: run `python3 firmware/tests/test_regressions.py` from the repository root (Python 3 and `cc` required). It runs the firmware functions with stubbed hardware/settings to check reset backoff, BLE wakeups, measurement success and settings errors; it does not validate hardware timing or brown-outs.
+
 **Sensor variants** (Kconfig choice `SNOWGAUGE_SENSOR`, same board overlay, same pins):
 
 | Build | Sensor / U2 | Extra args | BLE name |
@@ -132,7 +134,7 @@ Open the USB serial port (`/dev/cu.usbmodem*`, `COMx`, `/dev/ttyACM0`) with e.g.
 
 Bench test (breadboard STEP 5 / PCB bring-up): `rail status` → `rail on` (sensor node = 5 V with the TFmini LED on / 3.3 V for the TSD20) → `lidar raw 500` → `lidar read 100` → `batt` → `rail off` (sensor node = 0 V) → `measure`. Measured on the breadboard (2026-09-03, 6 V bench supply): `vbat = 5624 mV`, 100 frames / 997 ms, `cksum_err=0`, median 197 cm, strength ~6830, chip temp 65 °C. If the TFmini stays dimly alive with the rail off, the UART is not parked — check that `rail off` returned 0.
 
-Boot behaviour worth knowing on the bench: the first *scheduled* measurement is held off for 10 min × consecutive-reset count (`CONFIG_SNOWGAUGE_BOOT_HOLDOFF_MIN`); `measure` and `auto` are not affected. After `CONFIG_SNOWGAUGE_BOOT_MAX_RESETS` (12) consecutive resets scheduled measurements stop for that boot (advertising continues, flag MEAS_HALTED); the counter clears after 10 min of running, so a `reboot` (or the page's reset) restores normal operation. Vbat < 4600 mV skips the TFmini burst. Every boot appends a line to `/lfs1/boot.log` (`diag log`), e.g. `~2026-09-07T10:00:00Z boot=2 cause=watchdog fatal=none hw=0x2 fw=TFmini Plus`.
+Boot behaviour worth knowing on the bench: the first *scheduled* measurement is held off for 10 min × consecutive-reset count (`CONFIG_SNOWGAUGE_BOOT_HOLDOFF_MIN`, multiplier capped at 12); `measure` and `auto` bypass this hold-off. The NVS counter clears after the first attempted sensor rail burst whose record is successfully stored (manual or scheduled), or on BLE connection; elapsed time alone never clears it. This proves the board survived the rail load, not that the sensor returned a valid distance: zero valid frames or capture errors still clear the counter when the record is stored. Bursts skipped by the low-battery guard (`lidar_ret == -ENOTSUP`), measurement-cycle errors and storage failures retain the counter. At `CONFIG_SNOWGAUGE_BOOT_MAX_RESETS` (12), scheduled measurements (including `auto`) halt while BLE keeps advertising (flag MEAS_HALTED). **Rebooting or power-cycling alone does not recover a halted unit.** Connect over BLE to drop the halt and multiplier immediately (the base 10 min hold-off remains), or run a manual `measure` with a non-skipped burst and successfully store its record, then reboot. Counter-clear write failures are logged and retried on the next stored, non-skipped burst or BLE connection. Vbat < 4600 mV skips the TFmini burst. Every boot appends a line to `/lfs1/boot.log` (`diag log`), e.g. `~2026-09-07T10:00:00Z boot=2 cause=watchdog fatal=none hw=0x2 fw=TFmini Plus`.
 
 ## Shell output fields
 

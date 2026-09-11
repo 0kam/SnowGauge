@@ -149,17 +149,21 @@ config SNOWGAUGE_BOOT_HOLDOFF_MIN
 	  A reset restores the clock from the last record, which would make the
 	  scheduler fire immediately (and again after every brown-out reset).
 	  The first scheduled measurement is held off by this many minutes,
-	  multiplied by the number of resets within the last hold-off window.
+	  multiplied by the boot count since the last stored, non-skipped burst
+	  or BLE connection (multiplier capped at 12).
 
 config SNOWGAUGE_BOOT_MAX_RESETS
 	int "Consecutive resets after which scheduled measurements are halted"
 	default 12
 	range 2 15
 	help
-	  Counted in GPREGRET2 (cleared after one hold-off window of normal
-	  operation, or by a power cycle). Past this count the device keeps
-	  advertising and answering BLE but does not measure until the next
-	  reboot: a reset loop (brown-out, crash) then cannot drain the cells.
+	  Counted in NVS, cleared after a sensor rail burst is attempted and its
+	  record is stored, or on BLE connection. Low-battery skips do not clear
+	  it; valid distance data is not required. At this count scheduled
+	  measurements halt while BLE keeps advertising. A BLE connection drops
+	  the halt; a stored, non-skipped manual burst followed by reboot also
+	  recovers. Reboot alone does not:
+	  a reset loop (brown-out, crash) then cannot drain the cells.
 
 config SNOWGAUGE_WDT_TIMEOUT_S
 	int "Hardware watchdog timeout (s)"

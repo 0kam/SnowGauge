@@ -17,6 +17,7 @@
 #include "record.h"
 #include "cal_gatt.h"
 #include "diag.h"
+#include "app.h"
 
 LOG_MODULE_REGISTER(ble_adv, CONFIG_LOG_DEFAULT_LEVEL);
 
@@ -115,11 +116,24 @@ static int adv_start(void)
 	return 0;
 }
 
+/* Off the BT RX thread: diag_user_present() writes the settings (flash). */
+static void user_present_fn(struct k_work *work)
+{
+	ARG_UNUSED(work);
+	if (diag_user_present()) {
+		app_wake_scheduler();
+	}
+}
+static K_WORK_DEFINE(user_present_work, user_present_fn);
+
 static void on_connected(struct bt_conn *conn, uint8_t err)
 {
 	ARG_UNUSED(conn);
 	connected = (err == 0);
 	LOG_INF("BLE connected (err %u)", err);
+	if (connected) {
+		k_work_submit(&user_present_work);
+	}
 }
 
 /*

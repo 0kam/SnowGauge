@@ -164,7 +164,8 @@ int tilt_read(struct tilt_reading *r, uint8_t n_samples)
 		return -ERANGE;
 	}
 	/*
-	 * Project gravity on the optical axis (down) and the two lateral axes.
+	 * Project gravity on the optical axis (down). Use the accelerometer
+	 * components (+a, not gravity's -a) on the two lateral axes for pitch/roll.
 	 * The accelerometer reads +1 g on the axis that points up, so the
 	 * component of gravity along an optical axis pointing down is -a on
 	 * that axis.

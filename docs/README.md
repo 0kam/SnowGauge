@@ -15,7 +15,7 @@
 
 | 文書 | 内容 |
 |---|---|
-| [../SnowGauge_設計仕様書_v0.15.md](../SnowGauge_設計仕様書_v0.15.md) | 要件・設計判断・電力収支・改版履歴。全文改版制（変更のたびに版を上げてファイル名も変える） |
+| [../SnowGauge_設計仕様書_v0.16.md](../SnowGauge_設計仕様書_v0.16.md) | 要件・設計判断・電力収支・改版履歴。全文改版制（変更のたびに版を上げてファイル名も変える） |
 | [../pcb/README.md](../pcb/README.md) | **ピンマップと電気トポロジの正**。基板は `pcb/generate_board.py` から生成（手編集禁止） |
 | [../firmware/README.md](../firmware/README.md) | ビルド、書き込み、ベンチ用シェルコマンド |
 | [record_format.md](record_format.md) | 40 バイトレコード、フラッシュ配置、CSV 列定義 |
