@@ -5,7 +5,7 @@
  */
 'use strict';
 
-const APP_VERSION = '2026-09-05a';
+const APP_VERSION = '2026-09-11a';
 
 /* ---------- project schemas ---------- */
 
@@ -98,7 +98,57 @@ function isoLocal(epoch, tzMin) {
 }
 function hhmm(min) { return String(Math.floor(min / 60)).padStart(2, '0') + ':' + String(min % 60).padStart(2, '0'); }
 function parseHHMM(s) { const m = /^(\d{1,2}):(\d{2})$/.exec(s.trim()); if (!m) return null; const v = +m[1] * 60 + +m[2]; return v < 1440 ? v : null; }
-function saveBlob(name, blob) { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 5000); }
+/* ---------- saving files ----------
+ * Android / PC Chrome: <a download>. iOS (Bluefy and every other WKWebView
+ * browser) silently ignores the download attribute - nothing is saved and no
+ * error is raised - so there the file goes through the share sheet ("ファイルに保存")
+ * with a copy-to-clipboard view as the last resort.
+ */
+const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+  /^Mac/.test(navigator.platform || '') && navigator.maxTouchPoints > 1 &&   /* iPadOS says "Macintosh" */
+  !/Android|Windows|CrOS|Linux x86/.test(navigator.userAgent);
+function anchorSave(name, blob) {
+  const a = document.createElement('a');
+  const url = URL.createObjectURL(blob);
+  a.href = url; a.download = name; a.style.display = 'none';
+  /* Detached on iOS on purpose: there the click must stay a no-op. An anchor in
+   * the document could make WKWebView navigate to the blob instead of saving
+   * it, which would drop the BLE session in the middle of a site visit. */
+  if (!IS_IOS) document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+}
+function asFiles(list) { return list.map(f => new File([f.blob], f.name, { type: f.blob.type || 'application/octet-stream' })); }
+async function shareFiles(list) {
+  const files = asFiles(list);
+  if (!(navigator.canShare && navigator.canShare({ files }))) throw new Error('この端末は共有に対応していません（下の「共有できないとき」からコピー／別タブで開いてください）');
+  await navigator.share({ files, title: files[0].name });
+}
+/* Returns 'download' | 'share' | 'pending' | 'abort'. The anchor is always
+ * clicked (it is a no-op on iOS, and keeps working if the detection is wrong);
+ * on iOS the share sheet is offered on top of it. */
+async function saveFiles(list, textForCopy) {
+  state.pending = { list, text: textForCopy || null };
+  renderSaveFallback();
+  for (const f of list) anchorSave(f.name, f.blob);
+  if (!IS_IOS) return 'download';
+  if (navigator.userActivation && navigator.userActivation.isActive) {
+    try { await shareFiles(list); return 'share'; }
+    catch (e) { if (e && e.name === 'AbortError') return 'abort'; log(e.message, 'warn'); }
+  }
+  return 'pending';
+}
+function renderSaveFallback() {
+  const box = $('save-fallback'), p = state.pending;
+  if (!box) return;
+  box.hidden = !(IS_IOS && p && p.list.length);
+  $('btn-share').disabled = !(p && p.list.length);
+  $('btn-copy').disabled = !(p && p.text);
+  $('btn-open').disabled = !(p && p.list.length);
+  $('save-text').value = p && p.text ? p.text : '';
+  $('save-files').textContent = p ? p.list.map(f => f.name).join('\n') : '';
+}
 /* Button feedback: disable + "処理中…" while the async action runs, toast at the end. */
 function toast(msg, cls = '') {
   const t = $('toast'); t.textContent = msg; t.className = 'show ' + cls;
@@ -123,11 +173,11 @@ function updateEraseButton() {
   $('erase-help').textContent = state.downloadedThisSession ? '' : '消去はこのセッションでデータをダウンロードした後に有効になります。';
   return ok;
 }
-function csvEscape(v) { if (v === null || v === undefined) return ''; const s = String(v); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; }
+function csvEscape(v) { if (v === null || v === undefined) return ''; const s = String(v); return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; }
 
 /* ---------- state ---------- */
 
-const state = { device: null, smp: null, cal: null, site: null, settings: {}, records: [], rawFiles: {}, deviceId: '', timeOk: false, downloadedThisSession: false };
+const state = { device: null, smp: null, cal: null, site: null, settings: {}, records: [], rawFiles: {}, deviceId: '', timeOk: false, downloadedThisSession: false, pending: null };
 
 /* ---------- connection ---------- */
 
@@ -327,8 +377,11 @@ async function downloadAll() {
     $('dl-progress').textContent = `合計 ${state.records.length} 件`;
     renderData();
     /* One step for the field: the CSV is saved right away, and only then may ERASE be used. */
-    if (state.records.length) { exportCSV(); log('CSV を保存しました（端末のダウンロードフォルダ）'); }
-    else log('レコードがありません（CSV は作成しません）');
+    if (state.records.length) {
+      const how = await exportCSV();
+      log(how === 'download' ? 'CSV を保存しました（端末のダウンロードフォルダ）'
+        : 'CSV を用意しました。下の「共有して保存」から保存してください', how === 'download' ? '' : 'warn');
+    } else log('レコードがありません（CSV は作成しません）');
     state.downloadedThisSession = true;
   }
 }
@@ -393,7 +446,49 @@ function drawChart() {
   ctx.fillStyle = '#666';
   ctx.fillText(isoLocal(t0, tzMin()).slice(0, 16), pad, H - 8); ctx.fillText(isoLocal(t1, tzMin()).slice(0, 16), W - pad - 130 * devicePixelRatio, H - 8);
 }
-function exportCSV() {
+/* CSV text encoding. UTF-8 with a BOM is the default; some Japanese apps on the
+ * phone ignore the BOM and show mojibake, so Shift_JIS (CP932) can be picked in
+ * the UI. The encoding table is built at run time from TextDecoder (which every
+ * browser has) - there is no TextEncoder for legacy encodings. */
+let sjisTable = null;
+function sjisMap() {
+  if (sjisTable) return sjisTable;
+  sjisTable = new Map();
+  const dec = new TextDecoder('shift_jis');
+  const buf = new Uint8Array(2);
+  for (let hi = 0x81; hi <= 0xfc; hi++) {
+    if (hi >= 0xa0 && hi <= 0xdf) continue;   /* single-byte half-width kana */
+    for (let lo = 0x40; lo <= 0xfc; lo++) {
+      if (lo === 0x7f) continue;
+      buf[0] = hi; buf[1] = lo;
+      const ch = dec.decode(buf);
+      if (ch.length === 1 && ch !== '\ufffd' && !sjisTable.has(ch)) sjisTable.set(ch, (hi << 8) | lo);
+    }
+  }
+  return sjisTable;
+}
+function encodeSJIS(str) {
+  const map = sjisMap(), out = [];
+  for (const ch of str) {
+    const c = ch.codePointAt(0);
+    if (c < 0x80) { out.push(c); continue; }
+    if (c === 0xa5) { out.push(0x5c); continue; }          /* yen sign */
+    if (c >= 0xff61 && c <= 0xff9f) { out.push(c - 0xfec0); continue; }  /* half-width kana */
+    const w = map.get(ch);
+    if (w) out.push(w >> 8, w & 0xff); else out.push(0x3f); /* '?' */
+  }
+  return new Uint8Array(out);
+}
+const CSV_ENCODINGS = {
+  /* Default. Excel needs the BOM; an app that ignores it shows "ï»¿" before the
+   * first column name and mojibake in the Japanese fields (it read Latin-1). */
+  utf8bom: { label: 'UTF-8 (BOM)', blob: t => new Blob(['\ufeff' + t], { type: 'text/csv;charset=utf-8' }) },
+  utf8: { label: 'UTF-8', blob: t => new Blob([t], { type: 'text/csv;charset=utf-8' }) },
+  sjis: { label: 'Shift_JIS', blob: t => new Blob([encodeSJIS(t)], { type: 'text/csv;charset=shift_jis' }) },
+};
+function csvEncoding() { const v = $('csv-enc') && $('csv-enc').value; return CSV_ENCODINGS[v] ? v : 'utf8bom'; }
+function csvBlob(text) { return CSV_ENCODINGS[csvEncoding()].blob(text); }
+function csvText() {
   const tz = tzMin(), s = state.site || {};
   const lines = [CSV_COLUMNS.join(',')];
   for (const r of state.records) {
@@ -405,13 +500,21 @@ function exportCSV() {
       vbat_start_mv: r.vbat_start_mv, vbat_end_mv: r.vbat_end_mv, d0_cm: d.d0, theta0_deg: d.theta0, snow_depth_cm: d.depth };
     lines.push(CSV_COLUMNS.map(c => csvEscape(row[c])).join(','));
   }
-  const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
-  saveBlob(`${state.deviceId || 'snowgauge'}_${stamp}.csv`, new Blob(['\ufeff' + lines.join('\n') + '\n'], { type: 'text/csv;charset=utf-8' }));
-  log('CSV 保存: ' + state.records.length + ' 件');
+  return lines.join('\r\n') + '\r\n';   /* CRLF: what spreadsheet apps expect */
 }
-function exportRaw() {
-  for (const [name, bytes] of Object.entries(state.rawFiles)) saveBlob(`${state.deviceId || 'snowgauge'}_${name}`, new Blob([bytes], { type: 'application/octet-stream' }));
-  if (state.site) saveBlob(`${state.deviceId || 'snowgauge'}_site.json`, new Blob([JSON.stringify(state.site, null, 2)], { type: 'application/json' }));
+async function exportCSV() {
+  const text = csvText();
+  const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
+  const how = await saveFiles([{ name: `${state.deviceId || 'snowgauge'}_${stamp}.csv`, blob: csvBlob(text) }], text);
+  log(`CSV ${how === 'pending' ? '作成' : '保存'}: ${state.records.length} 件（${CSV_ENCODINGS[csvEncoding()].label}）`);
+  return how;
+}
+async function exportRaw() {
+  const list = Object.entries(state.rawFiles).map(([name, bytes]) =>
+    ({ name: `${state.deviceId || 'snowgauge'}_${name}`, blob: new Blob([bytes], { type: 'application/octet-stream' }) }));
+  if (state.site) list.push({ name: `${state.deviceId || 'snowgauge'}_site.json`, blob: new Blob([JSON.stringify(state.site, null, 2)], { type: 'application/json' }) });
+  if (!list.length) throw new Error('保存できる生データがありません');
+  return saveFiles(list);
 }
 
 /* ---------- calibration (custom GATT) ---------- */
@@ -551,8 +654,34 @@ if (typeof window !== 'undefined') window.addEventListener('load', () => {
   $('btn-settings-reload').onclick = busy($('btn-settings-reload'), loadSettings);
   $('btn-download').onclick = busy($('btn-download'), downloadAll);
   $('btn-showall').onclick = () => { state.showAll = !state.showAll; renderData(); };
-  $('btn-csv').onclick = () => { exportCSV(); toast('CSV をもう一度保存しました'); };
-  $('btn-raw').onclick = () => { exportRaw(); toast('生データを保存しました'); };
+  const saveClick = (fn, done) => async () => {
+    try { const how = await fn(); toast(how === 'pending' ? '保存の準備ができました。「共有して保存」へ' : done); }
+    catch (e) { log(e.message, 'err'); toast('失敗: ' + e.message, 'err'); }
+  };
+  $('btn-csv').onclick = saveClick(exportCSV, 'CSV をもう一度保存しました');
+  $('btn-raw').onclick = saveClick(exportRaw, '生データを保存しました');
+  $('btn-share').onclick = async () => {
+    if (!state.pending || !state.pending.list.length) return;
+    try { await shareFiles(state.pending.list); toast('共有しました'); }
+    catch (e) { if (e.name !== 'AbortError') { log(e.message, 'err'); toast('共有できませんでした: ' + e.message, 'err'); } }
+  };
+  $('btn-open').onclick = () => {
+    const p = state.pending;
+    if (!p || !p.list.length) return;
+    const url = URL.createObjectURL(p.list[0].blob);
+    if (!window.open(url, '_blank')) toast('別タブを開けませんでした（ポップアップ設定を確認）', 'err');
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+  };
+  $('btn-copy').onclick = async () => {
+    const t = state.pending && state.pending.text;
+    if (!t) return;
+    try { await navigator.clipboard.writeText(t); toast('CSV をコピーしました'); }
+    catch (e) { $('save-text').select(); toast('コピーできませんでした。選択してコピーしてください', 'err'); }
+  };
+  /* localStorage throws when the browser blocks site data (private mode, some WKWebView setups). */
+  try { const enc = localStorage.getItem('sg-csv-enc'); if (CSV_ENCODINGS[enc]) $('csv-enc').value = enc; } catch (e) { /* keep the default */ }
+  $('csv-enc').onchange = () => { try { localStorage.setItem('sg-csv-enc', $('csv-enc').value); } catch (e) { /* not remembered */ } };
+  renderSaveFallback();
   $('btn-live-on').onclick = busy($('btn-live-on'), liveOn); $('btn-live-off').onclick = busy($('btn-live-off'), liveOff);
   $('btn-cal-status').onclick = busy($('btn-cal-status'), calStatus);
   $('btn-zero').onclick = () => twoTap($('btn-zero'), 'ZERO（無雪の地面）', busy($('btn-zero'), () => setReference(0)));

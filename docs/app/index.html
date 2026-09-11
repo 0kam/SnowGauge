@@ -23,6 +23,7 @@
   button.danger { background: var(--red); } button.secondary { background: var(--grey); }
   button:disabled, button.secondary:disabled, button.danger:disabled { background: #cfd8dc; color: #90a4ae; }
   .row { display: flex; gap: 8px; } .row > * { flex: 1; }
+  textarea { width: 100%; border: 1px solid #b0bec5; border-radius: 8px; padding: 8px; }
   input, select { font-size: 19px; min-height: 52px; padding: 8px 10px; width: 100%; border: 1px solid #b0bec5; border-radius: 8px; background: #fff; }
   select.big { font-weight: 600; }
   table { border-collapse: collapse; width: 100%; }
@@ -75,8 +76,24 @@
   <h2>2. 観測データ</h2>
   <button id="btn-download" class="needs-conn" disabled>ダウンロードして CSV 保存</button>
   <div id="dl-progress" class="help"></div>
-  <details><summary>もう一度保存 / 生データ</summary>
+  <div id="save-fallback" hidden>
+    <div class="help">iPhone（Bluefy）はダウンロードを保存できません。<b>「共有して保存」→「ファイルに保存」</b>を使ってください。</div>
+    <button id="btn-share" class="secondary">共有して保存</button>
+    <div class="help" id="save-files"></div>
+    <details><summary>共有できないとき（コピー / 別タブ）</summary>
+      <div class="row"><button id="btn-copy" class="secondary">クリップボードにコピー</button><button id="btn-open" class="secondary">別タブで開く</button></div>
+      <textarea id="save-text" readonly rows="6" style="font-family: ui-monospace, monospace; font-size: 12px"></textarea>
+    </details>
+  </div>
+  <details><summary>もう一度保存 / 生データ / 文字コード</summary>
     <div class="row"><button id="btn-csv" class="secondary" disabled>CSV をもう一度保存</button><button id="btn-raw" class="secondary" disabled>生データ保存</button></div>
+    <label class="help" for="csv-enc">CSV の文字コード</label>
+    <select id="csv-enc">
+      <option value="utf8bom">UTF-8（BOM 付き・標準）</option>
+      <option value="utf8">UTF-8（BOM なし）</option>
+      <option value="sjis">Shift_JIS</option>
+    </select>
+    <div class="help">開いた CSV が化けるときだけ変えて「CSV をもう一度保存」。1 列目が <code>ï»¿device_id</code> になるなら「BOM なし」、日本語だけ化けるなら「Shift_JIS」。PC の Excel は標準のままで開けます。</div>
   </details>
   <canvas id="chart"></canvas>
   <div id="data-summary" class="help"></div>
