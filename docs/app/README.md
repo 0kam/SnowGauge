@@ -26,11 +26,11 @@ Saving files: `saveFiles()` clicks an `<a download>` (Android / PC) and, on iOS,
 also offers `navigator.share({files})` plus a copy / new-tab view — WKWebView
 browsers such as Bluefy ignore the download attribute silently, so the anchor
 alone saves nothing there. The share call needs live user activation, hence the
-separate 「共有して保存」 button. CSV is UTF-8 with a BOM and CRLF by default; the 文字コード
-picker (`CSV_ENCODINGS`) also offers UTF-8 without the BOM - for apps that show
-`ï»¿device_id`, i.e. that ignore the BOM and read the file as Latin-1 - and
-Shift_JIS (CP932 table built at run time from `TextDecoder`, since there is no
-`TextEncoder` for legacy encodings).
+separate 「共有して保存」 button. CSV is UTF-8 with a BOM and CRLF; the 文字コード picker
+(`CSV_ENCODINGS`) also writes Shift_JIS (CP932 table built at run time from
+`TextDecoder`, since there is no `TextEncoder` for legacy encodings) because
+Excel for Mac reads CSV as Shift_JIS whatever the BOM says. Sheets on Android
+reads Latin-1 whatever the file is - no encoding fixes that one.
 
 Reusing for another logger: keep `cbor.js` / `smp.js`, replace the two schemas
 and the calibration panel in `app.js`.

@@ -12,7 +12,7 @@
 - ファイル名: **`<本体名>_<保存日時>.csv`**、例 `SG-3F2A_2026-12-31-03-15-20.csv`
   - 本体名 = Bluetooth に出る `SG-TFM-XXXX`（TFmini 版）/ `SG-TSD-XXXX`（TSD20 版）。旧ファームウェアは `SG-XXXX`。
   - 保存日時はスマホがファイルを作った時刻（**UTC**）です。観測時刻ではありません。
-- 1 行目が見出し、2 行目以降が 1 観測 = 1 行。UTF-8（BOM 付き）・改行 CRLF。Excel でそのまま開けます。日本語（サイト名）が化けるアプリで開くときは、アプリ側で BOM なし UTF-8 / Shift_JIS でも保存できます（[04_app.md](04_app.md) パネル 2）。
+- 1 行目が見出し、2 行目以降が 1 観測 = 1 行。UTF-8（BOM 付き）・改行 CRLF。Excel でそのまま開けます。Mac の Excel は CSV を Shift_JIS として開くので、その場合はアプリ側で Shift_JIS 版を保存してください（[04_app.md](04_app.md) パネル 2 に実測表）。
 - 列の並びと意味: [record_format.md の「CSV export」](record_format.md#csv-export-web-bluetooth-page-docsapp) を見てください。
 - 本体に入っている**全期間**の記録が毎回入ります（消去しない限り、前回と同じ行がもう一度入ります → 第 5 節の重複除去）。
 

@@ -77,11 +77,10 @@
   <button id="btn-download" class="needs-conn" disabled>ダウンロードして CSV 保存</button>
   <div id="dl-progress" class="help"></div>
   <div id="save-fallback" hidden>
-    <div class="help" id="ios-help" hidden>iPhone（Bluefy）はダウンロードを保存できません。<b>「共有して保存」→「ファイルに保存」</b>を使ってください。</div>
-    <button id="btn-share" class="secondary" hidden>共有して保存</button>
+    <div class="help">iPhone（Bluefy）はダウンロードを保存できません。<b>「共有して保存」→「ファイルに保存」</b>を使ってください。</div>
+    <button id="btn-share" class="secondary">共有して保存</button>
     <div class="help" id="save-files"></div>
-    <details><summary>保存した CSV を画面で確認 / コピー / 別タブ</summary>
-      <div class="help">ここに出る文字が正しければ、CSV の中身は正しく、化けているのは開いたアプリの文字コード判定です。その場合は別タブで開くか、PC に移してから開いてください。</div>
+    <details><summary>共有できないとき（コピー / 別タブ）</summary>
       <div class="row"><button id="btn-copy" class="secondary">クリップボードにコピー</button><button id="btn-open" class="secondary">別タブで開く</button></div>
       <textarea id="save-text" readonly rows="6" style="font-family: ui-monospace, monospace; font-size: 12px"></textarea>
     </details>
@@ -90,11 +89,9 @@
     <div class="row"><button id="btn-csv" class="secondary" disabled>CSV をもう一度保存</button><button id="btn-raw" class="secondary" disabled>生データ保存</button></div>
     <label class="help" for="csv-enc">CSV の文字コード</label>
     <select id="csv-enc">
-      <option value="utf8bom">UTF-8（BOM 付き・標準）</option>
-      <option value="utf8">UTF-8（BOM なし）</option>
-      <option value="sjis">Shift_JIS</option>
+      <option value="utf8bom">UTF-8（標準）</option>
+      <option value="sjis">Shift_JIS（Mac の Excel 用）</option>
     </select>
-    <div class="help">開いた CSV が化けるときだけ変えて「CSV をもう一度保存」。1 列目が <code>ï»¿device_id</code> になるなら「BOM なし」、日本語だけ化けるなら「Shift_JIS」。PC の Excel は標準のままで開けます。</div>
   </details>
   <canvas id="chart"></canvas>
   <div id="data-summary" class="help"></div>

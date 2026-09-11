@@ -5,7 +5,7 @@
  */
 'use strict';
 
-const APP_VERSION = '2026-09-11b';
+const APP_VERSION = '2026-09-11c';
 
 /* ---------- project schemas ---------- */
 
@@ -122,7 +122,7 @@ function anchorSave(name, blob) {
 function asFiles(list) { return list.map(f => new File([f.blob], f.name, { type: f.blob.type || 'application/octet-stream' })); }
 async function shareFiles(list) {
   const files = asFiles(list);
-  if (!(navigator.canShare && navigator.canShare({ files }))) throw new Error('この端末は共有に対応していません（下の「画面で確認 / コピー / 別タブ」を使ってください）');
+  if (!(navigator.canShare && navigator.canShare({ files }))) throw new Error('この端末は共有に対応していません（下の「共有できないとき」からコピー／別タブで開いてください）');
   await navigator.share({ files, title: files[0].name });
 }
 /* Returns 'download' | 'share' | 'pending' | 'abort'. The anchor is always
@@ -142,10 +142,7 @@ async function saveFiles(list, textForCopy) {
 function renderSaveFallback() {
   const box = $('save-fallback'), p = state.pending;
   if (!box) return;
-  /* Shown on every platform: the text view is also how the field checks whether
-   * a mojibake CSV is broken in the file or only in the app that opened it. */
-  box.hidden = !(p && p.list.length);
-  $('ios-help').hidden = $('btn-share').hidden = !IS_IOS;
+  box.hidden = !(IS_IOS && p && p.list.length);
   $('btn-share').disabled = !(p && p.list.length);
   $('btn-copy').disabled = !(p && p.text);
   $('btn-open').disabled = !(p && p.list.length);
@@ -482,11 +479,12 @@ function encodeSJIS(str) {
   }
   return new Uint8Array(out);
 }
+/* Measured 2026-09-11 with site name "テスト": Google Sheets on the desktop reads
+ * the UTF-8 file correctly, Excel for Mac reads CSV as Shift_JIS whatever the
+ * BOM says (shows 繝せ繝), and Sheets on Android reads Latin-1 no matter what
+ * the file contains (ãƒ†ã‚¹ãƒˆ) - no encoding fixes that one, open it elsewhere. */
 const CSV_ENCODINGS = {
-  /* Default. Excel needs the BOM; an app that ignores it shows "ï»¿" before the
-   * first column name and mojibake in the Japanese fields (it read Latin-1). */
   utf8bom: { label: 'UTF-8 (BOM)', blob: t => new Blob(['\ufeff' + t], { type: 'text/csv;charset=utf-8' }) },
-  utf8: { label: 'UTF-8', blob: t => new Blob([t], { type: 'text/csv;charset=utf-8' }) },
   sjis: { label: 'Shift_JIS', blob: t => new Blob([encodeSJIS(t)], { type: 'text/csv;charset=shift_jis' }) },
 };
 function csvEncoding() { const v = $('csv-enc') && $('csv-enc').value; return CSV_ENCODINGS[v] ? v : 'utf8bom'; }
